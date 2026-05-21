@@ -1,4 +1,4 @@
-name: Build Windows exe
+name: Build Windows exe (Electron)
 
 on:
   push:
@@ -19,37 +19,32 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Install @yao-pkg/pkg
-        run: npm install -g @yao-pkg/pkg
-
-      - name: Create dist dir
-        run: mkdir -p dist
-
-      - name: Build exe
-        run: pkg . --target node22-win-x64 --output dist/dlsite-tracker.exe
-
-      - name: Smoke test (status)
-        run: dist\dlsite-tracker.exe --mode=status
+      - name: Build portable exe
+        run: npx electron-builder --win --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dlsite-tracker-win-x64
-          path: dist/dlsite-tracker.exe
-          retention-days: 30
+          name: DLsiteTracker-win-x64
+          path: dist/DLsiteTracker-portable.exe
+          retention-days: 90
 
-      - name: Create release
-        if: github.ref == 'refs/heads/main'
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: "Build #${{ github.run_number }}"
           body: |
-            自動ビルド: dlsite-tracker.exe (Windows x64)
-            コミット: ${{ github.sha }}
-          files: dist/dlsite-tracker.exe
+            ## DLsite Price Tracker - Windows版
+
+            ダウンロードして実行するだけで使えます（インストール不要）。
+
+            **起動方法:** `DLsiteTracker-portable.exe` をダブルクリック
+          files: dist/DLsiteTracker-portable.exe
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

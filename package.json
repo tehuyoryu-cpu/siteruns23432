@@ -1,36 +1,48 @@
 {
   "name": "dlsite-price-tracker",
   "version": "1.0.0",
-  "description": "DLsite price history collector - low-load, diff-only",
-  "main": "main.js",
+  "description": "DLsite price history collector",
+  "main": "electron-main.js",
   "type": "commonjs",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "scripts": {
-    "start": "node main.js",
+    "start":    "electron .",
+    "dev":      "node main.js --mode=ui",
+    "status":   "node main.js --mode=status",
     "discover": "node main.js --mode=discover",
-    "fetch": "node main.js --mode=fetch",
-    "status": "node main.js --mode=status"
+    "fetch":    "node main.js --mode=fetch",
+    "dist":     "electron-builder --win --x64"
   },
   "dependencies": {
-    "cheerio": "^1.0.0",
-    "express": "^5.2.1",
+    "cheerio":   "^1.0.0",
     "node-cron": "^3.0.3",
-    "sql.js": "^1.14.1"
+    "sql.js":    "^1.14.1"
   },
-  "bin": "main.js",
-  "pkg": {
-    "targets": [
-      "node18-win-x64"
+  "devDependencies": {
+    "electron":         "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId":       "com.dlsite.tracker",
+    "productName": "DLsite Price Tracker",
+    "directories": { "output": "dist" },
+    "files": [
+      "electron-main.js",
+      "main.js",
+      "config.js",
+      "crawler/**",
+      "node_modules/**",
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder/**"
     ],
-    "outputPath": "dist",
-    "assets": [
-      "node_modules/sql.js/dist/sql-wasm.wasm"
+    "extraResources": [
+      { "from": "node_modules/sql.js/dist/sql-wasm.wasm", "to": "sql-wasm.wasm" }
     ],
-    "scripts": [
-      "crawler/*.js",
-      "config.js"
-    ]
+    "win": {
+      "target": [{ "target": "portable", "arch": ["x64"] }],
+      "icon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "DLsiteTracker-portable.exe"
+    }
   }
 }
