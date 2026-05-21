@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest        # ← Linux で Windows exe をクロスビルド
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -24,20 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Wine (electron-builder cross-build requirement)
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -y wine wine32 wine64 2>/dev/null || true
-
       - name: Build Windows portable exe
         run: npx electron-builder --win portable --x64
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          USE_SYSTEM_FPM: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List dist
-        run: ls -lh dist/
+        run: dir dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
