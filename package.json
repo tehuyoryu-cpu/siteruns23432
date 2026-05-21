@@ -5,26 +5,28 @@
   "main": "electron-main.js",
   "type": "commonjs",
   "scripts": {
-    "start":    "electron .",
-    "dev":      "node main.js --mode=ui",
-    "status":   "node main.js --mode=status",
+    "start": "electron .",
+    "dev": "node main.js --mode=ui",
+    "status": "node main.js --mode=status",
     "discover": "node main.js --mode=discover",
-    "fetch":    "node main.js --mode=fetch",
-    "dist":     "electron-builder --win --x64"
+    "fetch": "node main.js --mode=fetch",
+    "dist": "electron-builder --win --x64"
   },
   "dependencies": {
-    "cheerio":   "^1.0.0",
+    "cheerio": "^1.0.0",
     "node-cron": "^3.0.3",
-    "sql.js":    "^1.14.1"
+    "sql.js": "^1.14.1"
   },
   "devDependencies": {
-    "electron":         "^31.0.0",
+    "electron": "^31.0.0",
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId":       "com.dlsite.tracker",
+    "appId": "com.dlsite.tracker",
     "productName": "DLsite Price Tracker",
-    "directories": { "output": "dist" },
+    "directories": {
+      "output": "dist"
+    },
     "files": [
       "electron-main.js",
       "main.js",
@@ -35,14 +37,25 @@
       "!node_modules/electron-builder/**"
     ],
     "extraResources": [
-      { "from": "node_modules/sql.js/dist/sql-wasm.wasm", "to": "sql-wasm.wasm" }
+      {
+        "from": "node_modules/sql.js/dist/sql-wasm.wasm",
+        "to": "sql-wasm.wasm"
+      }
     ],
     "win": {
-      "target": [{ "target": "portable", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "assets/icon.ico"
     },
     "portable": {
       "artifactName": "DLsiteTracker-portable.exe"
-    }
+    },
+    "forceCodeSigning": false
   }
 }

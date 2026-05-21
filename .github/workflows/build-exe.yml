@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -22,15 +25,20 @@ jobs:
         run: npm install
 
       - name: Build portable exe
-        run: npx electron-builder --win --x64
+        run: npx electron-builder --win portable --x64
         env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # コード署名スキップ
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List dist contents
+        run: dir dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: DLsiteTracker-win-x64
-          path: dist/DLsiteTracker-portable.exe
+          path: dist/*.exe
+          if-no-files-found: error
           retention-days: 90
 
       - name: Create Release
@@ -43,8 +51,8 @@ jobs:
 
             ダウンロードして実行するだけで使えます（インストール不要）。
 
-            **起動方法:** `DLsiteTracker-portable.exe` をダブルクリック
-          files: dist/DLsiteTracker-portable.exe
+            **起動方法:** ダウンロードした `.exe` をダブルクリック
+          files: dist/*.exe
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
