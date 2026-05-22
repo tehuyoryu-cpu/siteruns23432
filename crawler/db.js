@@ -150,12 +150,49 @@ function _all(sql, params = []) {
 /**
  * Execute an INSERT / UPDATE / DELETE, then persist to disk.
  */
+/**
+ * 単発ミューテーション（即時保存）。
+ * バッチ処理には runInTransaction() を使うこと。
+ */
 function _run(sql, params = []) {
   const stmt = _db.prepare(sql);
   stmt.bind(params);
   stmt.step();
   stmt.free();
+  // _save() は呼ばない: transaction() または明示的 save() で制御
+}
+
+/** 複数の _run をひとまとめにして最後に1回だけ保存。 */
+function transaction(fn) {
+  fn();
   _save();
+}
+
+/**
+ * 複数ミューテーションをトランザクションでラップし最後に1回だけ保存。
+ * @param {Function} fn  db操作を行う同期関数
+ */
+function runInTransaction(fn) {
+  _db.run('BEGIN');
+  try {
+    fn();
+    _db.run('COMMIT');
+  } catch (err) {
+    _db.run('ROLLBACK');
+    throw err;
+  }
+  _save();   // ← 1回だけ
+}
+
+/**
+ * トランザクション内用: 保存なしで実行。
+ * runInTransaction() のコールバック内でのみ使う。
+ */
+function _runNoSave(sql, params = []) {
+  const stmt = _db.prepare(sql);
+  stmt.bind(params);
+  stmt.step();
+  stmt.free();
 }
 
 /** Persist the in-memory DB to disk. Called after every mutation. */
@@ -233,6 +270,15 @@ function boostCircleWorks(makerId, priority, checkInterval) {
   `, [priority, checkInterval, makerId]);
 }
 
+/** ② セール終了: サークル全作品の優先度と間隔を通常値に戻す */
+function resetCircleWorksPriority(makerId, priority, checkInterval) {
+  _run(`
+    UPDATE works
+    SET priority = ?, check_interval = ?, is_on_sale = 0
+    WHERE maker_id = ? AND is_on_sale = 1
+  `, [priority, checkInterval, makerId]);
+}
+
 // ─── price_history ──────────────────────────────────────────────────────────
 
 function getLatestPrice(rjCode) {
@@ -290,9 +336,23 @@ function upsertCircle(makerId, circleName) {
     INSERT INTO circles (maker_id, circle_name, works_count)
     VALUES (?,?,1)
     ON CONFLICT(maker_id) DO UPDATE SET
-      circle_name = excluded.circle_name,
-      works_count = works_count + 1
+      circle_name = excluded.circle_name
   `, [makerId, circleName]);
+}
+
+/** works テーブルのmaker_id別件数でcirclesを同期（正確なworks_count） */
+function syncCircleWorksCounts() {
+  _run(`
+    UPDATE circles SET works_count = (
+      SELECT COUNT(*) FROM works WHERE works.maker_id = circles.maker_id
+    )
+  `, []);
+  _save();
+}
+
+/** ① scheduler用: on_sale=1 のサークル一覧を返す（sql.js対応） */
+function getCirclesOnSale() {
+  return _all('SELECT maker_id FROM circles WHERE on_sale = 1');
 }
 
 function markCircleOnSale(makerId, onSale) {
@@ -316,7 +376,10 @@ function getStats() {
     onSale:        _get('SELECT COUNT(*) AS n FROM works WHERE is_on_sale = 1').n,
     priceChanges:  _get('SELECT COUNT(*) AS n FROM price_history').n,
     circlesOnSale: _get('SELECT COUNT(*) AS n FROM circles WHERE on_sale = 1').n,
-    dueNow:        getDueWorks(9999).length,
+    dueNow: _get(
+      'SELECT COUNT(*) AS n FROM works WHERE (last_checked + check_interval) <= ?',
+      [unixNow()]
+    ).n,
   };
 }
 
@@ -398,11 +461,16 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
     params.push(like, like, like);
   }
 
+  // latest_price を WITH句で事前集計し コリレートサブクエリを排除
   const baseSql = `
-    FROM works w
-    LEFT JOIN price_history ph ON ph.id = (
-      SELECT id FROM price_history WHERE rj_code = w.rj_code ORDER BY checked_at DESC LIMIT 1
+    WITH latest_price AS (
+      SELECT rj_code,
+             MAX(checked_at) AS max_at
+      FROM price_history GROUP BY rj_code
     )
+    FROM works w
+    LEFT JOIN latest_price lp ON lp.rj_code = w.rj_code
+    LEFT JOIN price_history ph ON ph.rj_code = lp.rj_code AND ph.checked_at = lp.max_at
     WHERE 1=1 ${where}
   `;
 
@@ -420,12 +488,14 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
  */
 function getSaleWorks(limit = 200) {
   return _all(`
+    WITH latest_ph AS (
+      SELECT rj_code, price, sale_price, discount_rate, point, checked_at
+      FROM price_history WHERE id IN (SELECT MAX(id) FROM price_history GROUP BY rj_code)
+    )
     SELECT w.rj_code, w.title, w.circle, w.maker_id,
            ph.price, ph.sale_price, ph.discount_rate, ph.checked_at
     FROM works w
-    JOIN price_history ph ON ph.id = (
-      SELECT id FROM price_history WHERE rj_code = w.rj_code ORDER BY checked_at DESC LIMIT 1
-    )
+    JOIN latest_ph ph ON ph.rj_code = w.rj_code
     WHERE w.is_on_sale = 1 AND ph.discount_rate IS NOT NULL
     ORDER BY ph.discount_rate DESC
     LIMIT ?
@@ -438,26 +508,44 @@ function unixNow() {
   return Math.floor(Date.now() / 1000);
 }
 
+/** セール中サークル一覧を返す（scheduler用） */
+function getCirclesOnSale() {
+  return _all('SELECT maker_id FROM circles WHERE on_sale = 1');
+}
+
+/** 全RJコードをSetで返す（discovery高速照合用） */
+function getAllRjCodes() {
+  return new Set(_all('SELECT rj_code FROM works').map(r => r.rj_code));
+}
+
 module.exports = {
   init,
   open,
   close,
+  runInTransaction,
   upsertWork,
   markChecked,
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,
   boostCircleWorks,
+  resetCircleWorksPriority,
   getLatestPrice,
   savePriceIfChanged,
   getPriceHistory,
   upsertCircle,
+  syncCircleWorksCounts,
+  getCirclesOnSale,
   markCircleOnSale,
   getCircle,
+  getCirclesOnSale,
   getStats,
   backup,
+  transaction,
+  save: _save,
   exportAllHistory,
   searchWorks,
   getSaleWorks,
+  getAllRjCodes,
   unixNow,
 };

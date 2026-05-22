@@ -82,17 +82,19 @@ async function _fetchBatch(works, siteId) {
     return result;
   }
 
-  // 各RJをボディから個別にパース・保存
-  for (const work of works) {
-    try {
-      const changed = _processOne(work.rj_code, body);
-      result.processed++;
-      if (changed) result.priceChanges++;
-    } catch (err) {
-      log.error('[detailFetcher] process error', work.rj_code, err.message);
-      result.errors++;
+  // バッチ全体を1トランザクションでまとめて保存 (③)
+  db.transaction(() => {
+    for (const work of works) {
+      try {
+        const changed = _processOne(work.rj_code, body);
+        result.processed++;
+        if (changed) result.priceChanges++;
+      } catch (err) {
+        log.error('[detailFetcher] process error', work.rj_code, err.message);
+        result.errors++;
+      }
     }
-  }
+  });
 
   return result;
 }
@@ -141,16 +143,22 @@ function _processOne(rjCode, body) {
 // ─── サークルセール伝播 ──────────────────────────────────────────────────────
 
 function _propagateCircleSale(rjCode, makerId, price) {
-  const circle       = db.getCircle(makerId);
+  const circle      = db.getCircle(makerId);
   if (!circle) return;
 
-  const isNowOnSale  = price.is_on_sale === 1;
-  const wasOnSale    = circle.on_sale === 1;
+  const isNowOnSale = price.is_on_sale === 1;
+  const wasOnSale   = circle.on_sale === 1;
 
   if (isNowOnSale && !wasOnSale) {
-    log.info('[detailFetcher] circle sale – boosting all works', makerId);
+    // ② セール開始: サークル全作品を優先チェック
+    log.info('[detailFetcher] circle sale start – boosting all works', makerId);
     db.markCircleOnSale(makerId, true);
     db.boostCircleWorks(makerId, config.priority.circleOnSale, config.checkInterval.onSale);
+  } else if (!isNowOnSale && wasOnSale) {
+    // ② セール終了検知: サークルフラグをクリアし通常頻度に戻す
+    log.info('[detailFetcher] circle sale end detected', makerId);
+    db.markCircleOnSale(makerId, false);
+    db.resetCircleWorksPriority(makerId, config.priority.normal, config.checkInterval.normal);
   }
 }
 

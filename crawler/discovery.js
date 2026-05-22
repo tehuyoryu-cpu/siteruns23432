@@ -24,9 +24,15 @@ const BASE = config.dlsite.baseUrl;
 async function runDiscovery() {
   log.info('[discovery] start');
 
+  // ⑦ 既知RJをSetで一括ロード (N回SELECT → 1回SELECT)
+  const knownRjs = new Set(
+    db.open().exec('SELECT rj_code FROM works')[0]?.values?.map(r => r[0]) ?? []
+  );
+  log.debug('[discovery] known RJs loaded', knownRjs.size);
+
   // 両サイトを並列で全ソース探索
   const siteResults = await Promise.all(
-    config.dlsite.sites.map(site => _discoverSite(site))
+    config.dlsite.sites.map(site => _discoverSite(site, knownRjs))
   );
 
   const summary = siteResults.reduce(
@@ -43,25 +49,25 @@ async function runDiscovery() {
 
 // ─── サイト内全ソース並列取得 ────────────────────────────────────────────────
 
-async function _discoverSite(site) {
+async function _discoverSite(site, knownRjs) {
   // 新着・ランキング・セールを並列実行 (各内部はページループのみ)
   const [newCount, rankCount, saleCount] = await Promise.all([
-    _discoverNew(site),
-    _discoverRanking(site),
-    _discoverSale(site),
+    _discoverNew(site, knownRjs),
+    _discoverRanking(site, knownRjs),
+    _discoverSale(site, knownRjs),
   ]);
   return { new: newCount, ranking: rankCount, sale: saleCount };
 }
 
 // ─── 新着 ────────────────────────────────────────────────────────────────────
 
-async function _discoverNew(site) {
+async function _discoverNew(site, knownRjs) {
   let count = 0;
   for (let page = 1; page <= config.dlsite.discoveryPages.new; page++) {
     const url   = `${BASE}/${site}/new/=/per_page/100/page/${page}.html`;
     const codes = await _fetchAndParse(url, parser.parseWorkList);
     if (!codes.length) break;
-    count += _upsertNew(codes, site);
+    count += _upsertNew(codes, site, knownRjs);
     await sleep(config.fetch.rateLimit);
   }
   return count;
@@ -69,25 +75,25 @@ async function _discoverNew(site) {
 
 // ─── ランキング ──────────────────────────────────────────────────────────────
 
-async function _discoverRanking(site) {
+async function _discoverRanking(site, knownRjs) {
   let count = 0;
   // term別を並列取得してから集約
   const terms   = ['day', 'week', 'month'];
   const pages   = config.dlsite.discoveryPages.ranking;
   const results = await Promise.all(
-    terms.map(term => _discoverRankingTerm(site, term, pages))
+    terms.map(term => _discoverRankingTerm(site, term, pages, knownRjs))
   );
   results.forEach(n => { count += n; });
   return count;
 }
 
-async function _discoverRankingTerm(site, term, pages) {
+async function _discoverRankingTerm(site, term, pages, knownRjs) {
   let count = 0;
   for (let page = 1; page <= pages; page++) {
     const url   = `${BASE}/${site}/ranking/=/term/${term}/page/${page}.html`;
     const codes = await _fetchAndParse(url, parser.parseRankingList);
     if (!codes.length) break;
-    count += _upsertNew(codes, site);
+    count += _upsertNew(codes, site, knownRjs);
     await sleep(config.fetch.rateLimit);
   }
   return count;
@@ -95,13 +101,13 @@ async function _discoverRankingTerm(site, term, pages) {
 
 // ─── セール ──────────────────────────────────────────────────────────────────
 
-async function _discoverSale(site) {
+async function _discoverSale(site, knownRjs) {
   let count = 0;
   for (let page = 1; page <= config.dlsite.discoveryPages.sale; page++) {
     const url   = `${BASE}/${site}/campaign/=/per_page/100/page/${page}.html`;
     const codes = await _fetchAndParse(url, parser.parseSalePage);
     if (!codes.length) break;
-    count += _upsertNew(codes, site);
+    count += _upsertNew(codes, site, knownRjs);
     await sleep(config.fetch.rateLimit);
   }
   return count;
@@ -116,7 +122,7 @@ async function _discoverFromKnownCircles() {
     for (const site of config.dlsite.sites) {
       const url   = `${BASE}/${site}/circle/works/=/maker_id/${makerId}/order/release_d.html`;
       const codes = await _fetchAndParse(url, parser.parseCircleWorks);
-      count += _upsertNew(codes, site);
+      count += _upsertNew(codes, site, knownRjs);
       await sleep(config.fetch.rateLimit);
     }
   }
@@ -137,17 +143,20 @@ async function _fetchAndParse(url, parseFn) {
   }
 }
 
-/** 未登録のRJだけupsert。既知はスキップして余計なDB書き込みを避ける。 */
-function _upsertNew(codes, siteId) {
-  let count = 0;
-  for (const rjCode of codes) {
-    if (!db.getWorkByRj(rjCode)) {
+/** ⑦ 未登録のRJだけupsert。既知Setで照合 (N×SELECT → 0×SELECT)。 */
+function _upsertNew(codes, siteId, knownRjs) {
+  const newCodes = codes.filter(rj => !knownRjs.has(rj));
+  if (!newCodes.length) return 0;
+
+  db.transaction(() => {
+    for (const rjCode of newCodes) {
       db.upsertWork({ rj_code: rjCode, title: null, circle: null, maker_id: null,
         work_type: null, site_id: siteId, release_date: null, dl_count: 0 });
-      count++;
+      knownRjs.add(rjCode);  // 同一セッション内の重複追加も防ぐ
     }
-  }
-  return count;
+  });
+
+  return newCodes.length;
 }
 
 module.exports = { runDiscovery };

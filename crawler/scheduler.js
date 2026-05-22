@@ -81,18 +81,17 @@ function _startSaleBoostJob() {
     _running.saleBoost = true;
 
     try {
-      // find circles still on sale
-      const onSaleCircles = db.open()
-        .prepare('SELECT maker_id FROM circles WHERE on_sale = 1')
-        .all();
+      const onSaleCircles = db.getCirclesOnSale();  // ① sql.js対応ヘルパー使用
 
-      for (const { maker_id } of onSaleCircles) {
-        db.boostCircleWorks(
-          maker_id,
-          config.priority.circleOnSale,
-          config.checkInterval.onSale
-        );
-      }
+      db.transaction(() => {
+        for (const { maker_id } of onSaleCircles) {
+          db.boostCircleWorks(
+            maker_id,
+            config.priority.circleOnSale,
+            config.checkInterval.onSale
+          );
+        }
+      });
 
       if (onSaleCircles.length > 0) {
         log.debug('[scheduler] re-boosted', onSaleCircles.length, 'circles');
@@ -110,7 +109,10 @@ function _startSaleBoostJob() {
 
 function _startBackupJob() {
   cron.schedule('0 3 * * *', () => {
-    try { db.backup(); }
+    try {
+      db.backup();
+      db.syncCircleWorksCounts();  // ⑥ works_count を正確な値に同期
+    }
     catch (err) { log.error('[scheduler] backup error', err.message); }
   });
   log.info('[scheduler] backup job scheduled (daily 03:00)');
