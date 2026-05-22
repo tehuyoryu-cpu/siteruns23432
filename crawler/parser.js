@@ -2,61 +2,43 @@
 
 /**
  * crawler/parser.js
- * Parses DLsite responses into normalised data structures.
  *
- * Two data sources:
- *   1. product/info/ajax  → JSON (price, circle, meta)
- *   2. works listing HTML  → RJ code list (discovery)
- *
- * DOM-change resilience:
- *   - Use multiple selector fallbacks per field
- *   - Never throw on missing field; return null and log
+ * C: parseWorkListWithPrice() — 一覧HTMLからRJコード + 価格を同時抽出
+ * D: parseProductInfo() — product/info/ajax の全フィールドパターンを網羅
  */
 
 const cheerio = require('cheerio');
 const log     = require('./logger');
 
-// ─── Product Info API (JSON) ─────────────────────────────────────────────────
+// ─── D: Product Info API (JSON) ──────────────────────────────────────────────
 
 /**
- * Parse the response body from:
- *   /maniax/product/info/ajax?product_id=RJ123456
- *
- * @param {string} rjCode
- * @param {object} body  – parsed JSON (may contain multiple RJ keys)
- * @returns {{ work, price } | null}
+ * /maniax/product/info/ajax?product_id=RJ... のレスポンスを解析。
+ * フィールド名は DLsite のバージョンで変わるため全パターンを網羅。
  */
 function parseProductInfo(rjCode, body) {
   try {
-    const data = body[rjCode];
-    if (!data) {
-      log.warn('[parser] product info: key not found', rjCode);
+    const d = body[rjCode];
+    if (!d) {
+      log.warn('[parser] key not found in response', rjCode);
       return null;
     }
 
-    // price resolution: DLsite may return price_work or price
-    const rawPrice     = _int(data.price_work ?? data.price);
-    const rawSalePrice = data.is_sale ? _int(data.price_without_tax_sale ?? data.price_sale) : null;
-    const discountRate = data.discount_rate ? _int(data.discount_rate) : null;
-    const point        = _int(data.point ?? data.dl_point);
+    // D: 価格フィールド — 税込/税別 × 通常/セール の全パターン
+    const price = _resolvePrice(d);
+    if (price.price === null) {
+      log.warn('[parser] price field not found', rjCode, Object.keys(d).join(','));
+    }
 
     const work = {
       rj_code:      rjCode,
-      title:        _str(data.work_name ?? data.name),
-      circle:       _str(data.maker_name ?? data.brand_name),
-      maker_id:     _str(data.maker_id),
-      work_type:    _str(data.work_type),
-      site_id:      _str(data.site_id ?? 'maniax'),
-      release_date: _str(data.regist_date ?? data.product_date),
-      dl_count:     _int(data.dl_count ?? data.down_count),
-    };
-
-    const price = {
-      price:         rawPrice,
-      sale_price:    rawSalePrice,
-      point:         point,
-      discount_rate: discountRate,
-      is_on_sale:    data.is_sale ? 1 : 0,
+      title:        _str(d.work_name    ?? d.name          ?? d.title),
+      circle:       _str(d.maker_name   ?? d.brand_name    ?? d.circle_name),
+      maker_id:     _str(d.maker_id     ?? d.brand_id),
+      work_type:    _str(d.work_type    ?? d.work_type_id),
+      site_id:      _str(d.site_id      ?? d.domain        ?? 'maniax'),
+      release_date: _str(d.regist_date  ?? d.product_date  ?? d.sales_date ?? d.date),
+      dl_count:     _int(d.dl_count     ?? d.down_count    ?? d.sales_count),
     };
 
     return { work, price };
@@ -66,80 +48,146 @@ function parseProductInfo(rjCode, body) {
   }
 }
 
-// ─── Works Listing HTML (discovery) ─────────────────────────────────────────
+/**
+ * D: DLsite の価格フィールドは時期・サイトで名前が変わる。
+ * 優先順位付きで解決する。
+ */
+function _resolvePrice(d) {
+  // 通常価格: 税込表示を優先
+  const price =
+    _int(d.price_work)            ??  // 最新API
+    _int(d.price)                 ??  // 旧API
+    _int(d.price_with_tax)        ??  // 一部作品
+    _int(d.prices?.JPY)           ??  // 多通貨対応版
+    null;
+
+  const isOnSale = !!(d.is_sale || d.on_sale || d.discount_rate);
+
+  // セール価格
+  const salePrice = isOnSale
+    ? (_int(d.price_without_tax_sale) ??  // 最新
+       _int(d.price_sale)             ??  // 旧
+       _int(d.discount_price)         ??  // 一部
+       null)
+    : null;
+
+  // 割引率: APIが返す場合はそのまま、なければ計算
+  let discountRate =
+    _int(d.discount_rate) ??
+    _int(d.rate)          ??
+    null;
+
+  if (discountRate === null && price && salePrice) {
+    discountRate = Math.round((1 - salePrice / price) * 100);
+  }
+
+  // ポイント: 購入ポイント
+  const point =
+    _int(d.point)      ??
+    _int(d.dl_point)   ??
+    _int(d.point_rate) ??
+    null;
+
+  return {
+    price,
+    sale_price:    salePrice,
+    point,
+    discount_rate: discountRate,
+    is_on_sale:    isOnSale ? 1 : 0,
+  };
+}
+
+// ─── C: 一覧HTML からRJコード + 価格を同時抽出 ──────────────────────────────
 
 /**
- * Extract RJ codes from a works listing HTML page.
- * Tries multiple selector strategies in order.
+ * C: 一覧ページHTMLからRJコードと価格情報を同時に取得する。
+ * detail fetchを節約できる（discovery時に初期価格を保存）。
  *
  * @param {string} html
- * @returns {string[]}  array of RJ codes like ['RJ123456', ...]
+ * @returns {Array<{ rjCode, price, salePrice, discountRate, isOnSale }>}
  */
-function parseWorkList(html) {
+function parseWorkListWithPrice(html) {
   try {
-    const $ = cheerio.load(html);
-    const codes = new Set();
+    const $    = cheerio.load(html);
+    const items = new Map(); // rjCode → priceData
 
-    // Strategy 1: data-product_id attributes (most stable)
+    // 各作品要素をたどる（複数セレクタ戦略）
+    const containers = [
+      '.work_1col',       // 新着リスト
+      '.search_result_img_box_inner', // 検索結果
+      'li[data-product_id]',          // data属性ベース
+      '.work_img_main',               // ランキング
+    ];
+
+    for (const sel of containers) {
+      $(sel).each((_, el) => {
+        const $el   = $(el);
+        const rjRaw = $el.attr('data-product_id')
+                   || _findRjInAttr($el, 'href')
+                   || _findRjInAttr($el.find('a'), 'href');
+        const rj = _extractRj(rjRaw);
+        if (!rj || items.has(rj)) return;
+
+        // 価格要素を探す（複数パターン）
+        const priceEl    = $el.find('.work_price .work_price_base, .price_base, .work_price:not(.type_sale)').first();
+        const salePriceEl = $el.find('.work_price_sale, .price_sale, .work_price.type_sale .price').first();
+        const rateEl     = $el.find('.work_discount_rate, .rate_off, [data-discount-rate]').first();
+
+        const price     = _parseJpyText(priceEl.text() || $el.attr('data-price'));
+        const salePrice = _parseJpyText(salePriceEl.text() || $el.attr('data-sale_price'));
+        const rateRaw   = rateEl.text() || $el.attr('data-discount-rate');
+        const discRate  = rateRaw ? _int(rateRaw.replace(/[^0-9]/g, '')) : null;
+        const isOnSale  = !!(salePrice || discRate);
+
+        items.set(rj, {
+          rjCode:       rj,
+          price:        price,
+          salePrice:    isOnSale ? salePrice : null,
+          discountRate: discRate ?? (price && salePrice ? Math.round((1 - salePrice/price)*100) : null),
+          isOnSale,
+        });
+      });
+    }
+
+    // 価格が取れなかったものも RJコードだけ収録（従来の動作を維持）
     $('[data-product_id]').each((_, el) => {
-      const val = $(el).attr('data-product_id');
-      const rj  = _extractRj(val);
-      if (rj) codes.add(rj);
+      const rj = _extractRj($(el).attr('data-product_id'));
+      if (rj && !items.has(rj)) {
+        const priceRaw = _parseJpyText($(el).attr('data-price'));
+        const saleRaw  = _parseJpyText($(el).attr('data-sale_price'));
+        items.set(rj, {
+          rjCode: rj, price: priceRaw, salePrice: saleRaw ?? null,
+          discountRate: null, isOnSale: !!(saleRaw),
+        });
+      }
     });
-
-    // Strategy 2: links containing /product_id/RJ
     $('a[href*="/product_id/RJ"]').each((_, el) => {
-      const href = $(el).attr('href') ?? '';
-      const rj   = _extractRj(href);
-      if (rj) codes.add(rj);
+      const rj = _extractRj($(el).attr('href'));
+      if (rj && !items.has(rj)) {
+        items.set(rj, { rjCode: rj, price: null, salePrice: null, discountRate: null, isOnSale: false });
+      }
     });
 
-    // Strategy 3: dl.work_img_main or similar containers
-    $('dt.work_img_main a, .work_name a').each((_, el) => {
-      const href = $(el).attr('href') ?? '';
-      const rj   = _extractRj(href);
-      if (rj) codes.add(rj);
-    });
-
-    // Strategy 4: any href containing RJ followed by digits
-    $('a[href]').each((_, el) => {
-      const href = $(el).attr('href') ?? '';
-      const rj   = _extractRj(href);
-      if (rj) codes.add(rj);
-    });
-
-    const result = [...codes];
-    log.debug('[parser] parseWorkList found', result.length, 'codes');
+    const result = [...items.values()];
+    const withPrice = result.filter(r => r.price !== null).length;
+    log.debug('[parser] parseWorkListWithPrice', result.length, 'codes,', withPrice, 'with price');
     return result;
   } catch (err) {
-    log.error('[parser] parseWorkList error', err.message);
+    log.error('[parser] parseWorkListWithPrice error', err.message);
     return [];
   }
 }
 
-/**
- * Extract RJ codes from ranking HTML.
- * Same as parseWorkList but separate for clarity / future divergence.
- */
-function parseRankingList(html) {
-  return parseWorkList(html); // ranking uses same selector strategies
+/** 後方互換: RJコードのみ返す */
+function parseWorkList(html) {
+  return parseWorkListWithPrice(html).map(r => r.rjCode);
 }
 
-/**
- * Parse circle works page to extract all RJ codes for that circle.
- */
-function parseCircleWorks(html) {
-  return parseWorkList(html);
-}
+function parseRankingList(html) { return parseWorkList(html); }
+function parseCircleWorks(html) { return parseWorkList(html); }
+function parseSalePage(html)    { return parseWorkListWithPrice(html); }
 
-/**
- * Parse sale/campaign page for RJ codes currently on sale.
- */
-function parseSalePage(html) {
-  return parseWorkList(html);
-}
-
-// ─── helpers ────────────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 const RJ_PATTERN = /\b(RJ\d{6,8})\b/i;
 
@@ -147,6 +195,19 @@ function _extractRj(str) {
   if (!str) return null;
   const m = str.match(RJ_PATTERN);
   return m ? m[1].toUpperCase() : null;
+}
+
+function _findRjInAttr($el, attr) {
+  if (!$el || !$el.length) return null;
+  const val = $el.first().attr(attr);
+  return val ? _extractRj(val) : null;
+}
+
+/** "¥1,100" "1100円" → 1100 */
+function _parseJpyText(text) {
+  if (!text) return null;
+  const n = parseInt(String(text).replace(/[^0-9]/g, ''), 10);
+  return isNaN(n) || n === 0 ? null : n;
 }
 
 function _int(v) {
@@ -162,6 +223,7 @@ function _str(v) {
 
 module.exports = {
   parseProductInfo,
+  parseWorkListWithPrice,
   parseWorkList,
   parseRankingList,
   parseCircleWorks,

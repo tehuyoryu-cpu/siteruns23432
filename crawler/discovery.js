@@ -16,6 +16,7 @@ const db     = require('./db');
 const parser = require('./parser');
 const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
+const { saveDiscoveredPrice } = require('./detailFetcher');
 
 const BASE = config.dlsite.baseUrl;
 
@@ -65,9 +66,10 @@ async function _discoverNew(site, knownRjs) {
   let count = 0;
   for (let page = 1; page <= config.dlsite.discoveryPages.new; page++) {
     const url   = `${BASE}/${site}/new/=/per_page/100/page/${page}.html`;
-    const codes = await _fetchAndParse(url, parser.parseWorkList);
-    if (!codes.length) break;
-    count += _upsertNew(codes, site, knownRjs);
+    // C: 価格付き取得
+    const items = await _fetchAndParseWithPrice(url);
+    if (!items.length) break;
+    count += _upsertNewWithPrice(items, site, knownRjs);
     await sleep(config.fetch.rateLimit);
   }
   return count;
@@ -105,9 +107,10 @@ async function _discoverSale(site, knownRjs) {
   let count = 0;
   for (let page = 1; page <= config.dlsite.discoveryPages.sale; page++) {
     const url   = `${BASE}/${site}/campaign/=/per_page/100/page/${page}.html`;
-    const codes = await _fetchAndParse(url, parser.parseSalePage);
-    if (!codes.length) break;
-    count += _upsertNew(codes, site, knownRjs);
+    // C: セールページは価格付きで取得 (割引率もHTML上に表示される)
+    const items = await _fetchAndParseWithPrice(url);
+    if (!items.length) break;
+    count += _upsertNewWithPrice(items, site, knownRjs);
     await sleep(config.fetch.rateLimit);
   }
   return count;
@@ -143,20 +146,50 @@ async function _fetchAndParse(url, parseFn) {
   }
 }
 
-/** ⑦ 未登録のRJだけupsert。既知Setで照合 (N×SELECT → 0×SELECT)。 */
+/** C: 価格付き一覧を取得。RJコード + 初期価格を同時収集する。 */
+async function _fetchAndParseWithPrice(url) {
+  try {
+    const res = await fetchWithRetry(url);
+    if (!res.ok) { log.warn('[discovery] non-200', res.status, url); return []; }
+    return parser.parseWorkListWithPrice(await res.text());
+  } catch (err) {
+    log.error('[discovery] fetch error', url, err.message);
+    return [];
+  }
+}
+
+/** 後方互換: コードのみのupsert */
 function _upsertNew(codes, siteId, knownRjs) {
-  const newCodes = codes.filter(rj => !knownRjs.has(rj));
-  if (!newCodes.length) return 0;
+  const items = codes.map(rj => ({ rjCode: rj, price: null, salePrice: null, discountRate: null, isOnSale: false }));
+  return _upsertNewWithPrice(items, siteId, knownRjs);
+}
+
+/** C: RJコード + 初期価格を同時upsert。既知Setで照合。 */
+function _upsertNewWithPrice(items, siteId, knownRjs) {
+  const newItems = items.filter(r => !knownRjs.has(r.rjCode));
+  if (!newItems.length) return 0;
 
   db.transaction(() => {
-    for (const rjCode of newCodes) {
-      db.upsertWork({ rj_code: rjCode, title: null, circle: null, maker_id: null,
+    for (const item of newItems) {
+      db.upsertWork({ rj_code: item.rjCode, title: null, circle: null, maker_id: null,
         work_type: null, site_id: siteId, release_date: null, dl_count: 0 });
-      knownRjs.add(rjCode);  // 同一セッション内の重複追加も防ぐ
+      knownRjs.add(item.rjCode);
+
+      // C: 価格が取れていれば即保存 (detail fetchを節約)
+      if (item.price !== null) {
+        saveDiscoveredPrice(item.rjCode, {
+          price:         item.price,
+          sale_price:    item.salePrice,
+          discount_rate: item.discountRate,
+          point:         null,
+          is_on_sale:    item.isOnSale ? 1 : 0,
+        });
+        log.debug('[discovery] initial price saved', item.rjCode, item.price);
+      }
     }
   });
 
-  return newCodes.length;
+  return newItems.length;
 }
 
 module.exports = { runDiscovery };

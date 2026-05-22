@@ -92,8 +92,12 @@ function _applySchema() {
       check_interval        INTEGER DEFAULT 86400,
       priority              INTEGER DEFAULT 20,
       is_on_sale            INTEGER DEFAULT 0,
-      consecutive_no_change INTEGER DEFAULT 0
+      consecutive_no_change INTEGER DEFAULT 0,
+      consecutive_errors    INTEGER DEFAULT 0
     );
+
+    -- forward-only migration: 既存テーブルへのカラム追加
+    CREATE TABLE IF NOT EXISTS _migrations (id TEXT PRIMARY KEY);
 
     CREATE TABLE IF NOT EXISTS price_history (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,6 +122,15 @@ function _applySchema() {
     CREATE INDEX IF NOT EXISTS idx_ph_at       ON price_history(checked_at);
     CREATE INDEX IF NOT EXISTS idx_works_maker ON works(maker_id);
   `);
+
+  // 既存DBへの安全なカラム追加 (IF NOT EXISTS は使えないのでtry/catch)
+  const migrations = [
+    'ALTER TABLE works ADD COLUMN consecutive_errors INTEGER DEFAULT 0',
+  ];
+  for (const sql of migrations) {
+    try { _db.run(sql); log.info('[db] migrated:', sql.slice(0, 60)); }
+    catch (_) { /* already exists */ }
+  }
 }
 
 // ─── low-level query helpers ─────────────────────────────────────────────────
@@ -230,16 +243,36 @@ function markChecked(rjCode, fields) {
       check_interval        = ?,
       priority              = ?,
       is_on_sale            = ?,
-      consecutive_no_change = ?
+      consecutive_no_change = ?,
+      consecutive_errors    = ?
     WHERE rj_code = ?
   `, [
     unixNow(),
     fields.check_interval,
     fields.priority,
     fields.is_on_sale,
-    fields.consecutive_no_change,
+    fields.consecutive_no_change ?? 0,
+    fields.consecutive_errors    ?? 0,
     rjCode,
   ]);
+}
+
+/** A: フェッチエラー記録。連続エラー数に応じてintervalを延ばす。 */
+function recordFetchError(rjCode) {
+  const w = getWorkByRj(rjCode);
+  if (!w) return;
+  const errs = (w.consecutive_errors ?? 0) + 1;
+  // 5回連続エラー→72h, 10回→7日 でほぼ停止
+  const interval = errs >= 10 ? 7 * 86400
+                 : errs >=  5 ? 3 * 86400
+                 : w.check_interval ?? 86400;
+  _run(`
+    UPDATE works SET
+      last_checked       = ?,
+      consecutive_errors = ?,
+      check_interval     = ?
+    WHERE rj_code = ?
+  `, [unixNow(), errs, interval, rjCode]);
 }
 
 function getDueWorks(limit = 50) {
@@ -525,6 +558,7 @@ module.exports = {
   runInTransaction,
   upsertWork,
   markChecked,
+  recordFetchError,
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,

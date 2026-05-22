@@ -2,13 +2,12 @@
 
 /**
  * crawler/detailFetcher.js
- * 価格詳細取得。
  *
- * 効率化ポイント:
- *   - product/info/ajax に最大50件のRJを1リクエストで投げる (バッチ取得)
- *   - サイト別にバッチを分割 (maniax / home)
- *   - 同一価格は保存しない (差分のみ)
- *   - サークルセール検知: 1作品がセール→同サークル全作品を優先チェック
+ * 改良点:
+ *   A. consecutive_errors 追跡: 連続失敗でintervalを延長、成功でリセット
+ *   B. バッチフォールバック: 50件失敗→10件→1件 で壊れたRJを分離
+ *   C. discovery価格を取り込み: 外部から初期価格を受け取って保存
+ *   D. フィールド解釈はparser.jsに集約
  */
 
 const config = require('../config');
@@ -20,30 +19,28 @@ const { fetchWithRetry, sleep } = require('./queue');
 const BASE       = config.dlsite.baseUrl;
 const BATCH_SIZE = config.fetch.batchSize ?? 50;
 
-// ─── public: バッチ処理エントリ ──────────────────────────────────────────────
+// ─── public ──────────────────────────────────────────────────────────────────
 
-/**
- * DBのdue worksをバッチで処理する。
- * 1リクエストで最大BATCH_SIZE件取得 → 従来比 ~50倍効率。
- */
 async function runDetailFetch(limit = 300) {
   const due = db.getDueWorks(limit);
-  if (!due.length) { log.info('[detailFetcher] no due works'); return { processed:0, priceChanges:0, errors:0 }; }
+  if (!due.length) {
+    log.info('[detailFetcher] no due works');
+    return { processed: 0, priceChanges: 0, errors: 0 };
+  }
 
-  log.info('[detailFetcher] due works', due.length, '→ batches', Math.ceil(due.length / BATCH_SIZE));
+  log.info('[detailFetcher] due:', due.length,
+    '/ batches:', Math.ceil(due.length / BATCH_SIZE));
 
-  // サイト別に分けてからバッチ処理
   const bySite = _groupBy(due, w => w.site_id ?? 'maniax');
   const result = { processed: 0, priceChanges: 0, errors: 0 };
 
   for (const [siteId, works] of Object.entries(bySite)) {
     for (let i = 0; i < works.length; i += BATCH_SIZE) {
       const batch = works.slice(i, i + BATCH_SIZE);
-      const r     = await _fetchBatch(batch, siteId);
+      const r     = await _fetchBatchWithFallback(batch, siteId);
       result.processed    += r.processed;
       result.priceChanges += r.priceChanges;
       result.errors       += r.errors;
-
       if (i + BATCH_SIZE < works.length) await sleep(config.fetch.rateLimit);
     }
   }
@@ -52,65 +49,118 @@ async function runDetailFetch(limit = 300) {
   return result;
 }
 
-// ─── バッチ fetch ────────────────────────────────────────────────────────────
+// C: discovery が取得した価格を直接保存するエントリポイント
+function saveDiscoveredPrice(rjCode, priceData) {
+  return db.savePriceIfChanged(rjCode, priceData);
+}
 
-async function _fetchBatch(works, siteId) {
+// ─── B: バッチフォールバック ─────────────────────────────────────────────────
+// 50件失敗 → 10件ずつ再試行 → 10件失敗 → 1件ずつ再試行
+
+async function _fetchBatchWithFallback(works, siteId) {
   const result = { processed: 0, priceChanges: 0, errors: 0 };
+  const body   = await _apiBatch(works, siteId);
 
-  // 最大50件を1URLに詰める
-  const params = works.map(w => `product_id=${w.rj_code}`).join('&');
-  const url    = `${BASE}/${siteId}/product/info/ajax?${params}&cdn_cache_min=1`;
-
-  let body;
-  try {
-    const res = await fetchWithRetry(url, {
-      headers: { Accept: 'application/json, text/javascript, */*' },
+  if (body !== null) {
+    // 成功: バッチ全体をトランザクションで処理
+    db.transaction(() => {
+      for (const work of works) {
+        try {
+          if (_processOne(work.rj_code, body)) result.priceChanges++;
+          result.processed++;
+        } catch (err) {
+          log.error('[detailFetcher] process error', work.rj_code, err.message);
+          db.recordFetchError(work.rj_code);  // A
+          result.errors++;
+        }
+      }
     });
-
-    if (!res.ok) {
-      log.warn('[detailFetcher] batch non-200', res.status, `(${works.length} works)`);
-      works.forEach(w => _markCheckedNoChange(w.rj_code));
-      result.errors += works.length;
-      return result;
-    }
-
-    body = await res.json();
-  } catch (err) {
-    log.error('[detailFetcher] batch fetch failed', err.message, `(${works.length} works)`);
-    works.forEach(w => _markCheckedNoChange(w.rj_code));
-    result.errors += works.length;
     return result;
   }
 
-  // バッチ全体を1トランザクションでまとめて保存 (③)
-  db.transaction(() => {
-    for (const work of works) {
-      try {
-        const changed = _processOne(work.rj_code, body);
-        result.processed++;
-        if (changed) result.priceChanges++;
-      } catch (err) {
-        log.error('[detailFetcher] process error', work.rj_code, err.message);
+  // バッチ失敗 → 10件ずつ再試行
+  log.warn('[detailFetcher] batch failed, splitting to size-10', `(${works.length} works)`);
+  const SUB = 10;
+  for (let i = 0; i < works.length; i += SUB) {
+    const sub  = works.slice(i, i + SUB);
+    const body2 = await _apiBatch(sub, siteId);
+
+    if (body2 !== null) {
+      db.transaction(() => {
+        for (const w of sub) {
+          try {
+            if (_processOne(w.rj_code, body2)) result.priceChanges++;
+            result.processed++;
+          } catch (err) {
+            db.recordFetchError(w.rj_code);  // A
+            result.errors++;
+          }
+        }
+      });
+      continue;
+    }
+
+    // 10件も失敗 → 1件ずつ
+    log.warn('[detailFetcher] sub-batch failed, going individual', `(${sub.length} works)`);
+    for (const w of sub) {
+      await sleep(config.fetch.rateLimit);
+      const body3 = await _apiBatch([w], siteId);
+      if (body3 !== null) {
+        db.transaction(() => {
+          try {
+            if (_processOne(w.rj_code, body3)) result.priceChanges++;
+            result.processed++;
+          } catch (err) {
+            db.recordFetchError(w.rj_code);  // A
+            result.errors++;
+          }
+        });
+      } else {
+        // 個別でも失敗: A エラーカウント
+        db.recordFetchError(w.rj_code);
         result.errors++;
+        log.warn('[detailFetcher] individual fail', w.rj_code);
       }
     }
-  });
+    if (i + SUB < works.length) await sleep(config.fetch.rateLimit);
+  }
 
   return result;
 }
 
-// ─── 1件処理 ────────────────────────────────────────────────────────────────
+// ─── API fetch ───────────────────────────────────────────────────────────────
+
+/** 1〜50件をAPIから取得。失敗時は null を返す（例外を投げない）。 */
+async function _apiBatch(works, siteId) {
+  const params = works.map(w => `product_id=${w.rj_code}`).join('&');
+  const url    = `${BASE}/${siteId}/product/info/ajax?${params}&cdn_cache_min=1`;
+
+  try {
+    const res = await fetchWithRetry(url, {
+      headers: { Accept: 'application/json, text/javascript, */*' },
+    });
+    if (!res.ok) {
+      log.warn('[detailFetcher] API non-200', res.status, siteId, `(${works.length} works)`);
+      return null;
+    }
+    return await res.json();
+  } catch (err) {
+    log.error('[detailFetcher] API fetch error', err.message, `(${works.length} works)`);
+    return null;
+  }
+}
+
+// ─── 1件処理 ─────────────────────────────────────────────────────────────────
 
 function _processOne(rjCode, body) {
   const parsed = parser.parseProductInfo(rjCode, body);
   if (!parsed) {
     log.warn('[detailFetcher] parse failed', rjCode);
-    _markCheckedNoChange(rjCode);
+    db.recordFetchError(rjCode);  // A: パース失敗もエラー扱い
     return false;
   }
 
   const { work, price } = parsed;
-
   db.upsertWork(work);
 
   if (work.maker_id && work.circle) {
@@ -129,6 +179,7 @@ function _processOne(rjCode, body) {
     priority:              priority,
     is_on_sale:            price.is_on_sale,
     consecutive_no_change: noChangeCount,
+    consecutive_errors:    0,  // A: 成功でリセット
   });
 
   if (priceChanged) {
@@ -145,47 +196,34 @@ function _processOne(rjCode, body) {
 function _propagateCircleSale(rjCode, makerId, price) {
   const circle      = db.getCircle(makerId);
   if (!circle) return;
-
   const isNowOnSale = price.is_on_sale === 1;
   const wasOnSale   = circle.on_sale === 1;
 
   if (isNowOnSale && !wasOnSale) {
-    // ② セール開始: サークル全作品を優先チェック
-    log.info('[detailFetcher] circle sale start – boosting all works', makerId);
+    log.info('[detailFetcher] circle sale start', makerId);
     db.markCircleOnSale(makerId, true);
     db.boostCircleWorks(makerId, config.priority.circleOnSale, config.checkInterval.onSale);
   } else if (!isNowOnSale && wasOnSale) {
-    // ② セール終了検知: サークルフラグをクリアし通常頻度に戻す
-    log.info('[detailFetcher] circle sale end detected', makerId);
+    log.info('[detailFetcher] circle sale end', makerId);
     db.markCircleOnSale(makerId, false);
     db.resetCircleWorksPriority(makerId, config.priority.normal, config.checkInterval.normal);
   }
 }
 
-// ─── 単体fetch (--rjオプション用) ───────────────────────────────────────────
+// ─── 単体fetch (--rjオプション用) ────────────────────────────────────────────
 
 async function fetchAndStore(rjCode, siteId = 'maniax') {
-  const url = `${BASE}/${siteId}/product/info/ajax?product_id=${rjCode}&cdn_cache_min=1`;
-  let body;
-  try {
-    const res = await fetchWithRetry(url, {
-      headers: { Accept: 'application/json, text/javascript, */*' },
-    });
-    if (!res.ok) {
-      log.warn('[detailFetcher] non-200', res.status, rjCode);
-      _markCheckedNoChange(rjCode);
-      return false;
-    }
-    body = await res.json();
-  } catch (err) {
-    log.error('[detailFetcher] fetch failed', rjCode, err.message);
-    _markCheckedNoChange(rjCode);
+  const body = await _apiBatch([{ rj_code: rjCode }], siteId);
+  if (!body) {
+    db.recordFetchError(rjCode);  // A
     return false;
   }
-  return _processOne(rjCode, body);
+  let changed = false;
+  db.transaction(() => { changed = _processOne(rjCode, body); });
+  return changed;
 }
 
-// ─── スケジュール計算 ────────────────────────────────────────────────────────
+// ─── スケジュール計算 ─────────────────────────────────────────────────────────
 
 function _calcSchedule(work, price, noChangeCount) {
   const ci = config.checkInterval, prio = config.priority;
@@ -205,20 +243,8 @@ function _ageDays(d) {
   catch { return 9999; }
 }
 
-function _markCheckedNoChange(rjCode) {
-  const w = db.getWorkByRj(rjCode);
-  if (!w) return;
-  const n = (w.consecutive_no_change ?? 0) + 1;
-  const { interval, priority } = _calcSchedule(w, { is_on_sale: w.is_on_sale }, n);
-  db.markChecked(rjCode, { check_interval: interval, priority, is_on_sale: w.is_on_sale ?? 0, consecutive_no_change: n });
+function _groupBy(arr, fn) {
+  return arr.reduce((acc, x) => { const k = fn(x); (acc[k] ??= []).push(x); return acc; }, {});
 }
 
-function _groupBy(arr, keyFn) {
-  return arr.reduce((acc, item) => {
-    const k = keyFn(item);
-    (acc[k] ??= []).push(item);
-    return acc;
-  }, {});
-}
-
-module.exports = { runDetailFetch, fetchAndStore };
+module.exports = { runDetailFetch, fetchAndStore, saveDiscoveredPrice };
