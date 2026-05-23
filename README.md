@@ -1,67 +1,79 @@
 # DLsite Price Tracker
 
-DLsite 全RJ作品の価格履歴収集・セール検知システム。
+DLsite の価格履歴を自動収集するデスクトップアプリ。
 
-## 特徴
+## ダウンロード
 
-- **差分保存**: 価格変化時のみ `price_history` に追加
-- **低負荷設計**: 同時接続 2、リクエスト間隔 2秒
-- **動的巡回頻度**: 作品状態で自動調整
-  - セール中: 2時間ごと
-  - 新作(7日以内): 6時間ごと
-  - 最近作(30日以内): 12時間ごと
-  - 人気作(DL数1000+): 12時間ごと
-  - 通常: 24時間ごと
-  - 低変動(5回変化なし): 72時間ごと
-- **サークル一括セール検知**: 1作品がセール → 同サークル全作品を優先チェック
-- **DOM変更耐性**: 複数セレクタ戦略でHTML変更に対応
+**[最新版 DLsiteTracker-portable.exe](https://github.com/tehuyoryu-cpu/siteruns23432/releases/latest)**
 
-## 構成
+ダウンロードしてダブルクリックするだけ。インストール不要。
 
-```
-main.js               エントリーポイント
-config.js             設定
-crawler/
-  db.js               SQLite (better-sqlite3)
-  logger.js           構造化ログ
-  queue.js            レート制限付き非同期キュー
-  parser.js           DLsiteレスポンスパーサー
-  discovery.js        RJコード収集 (新着/ランキング/セール/サークル)
-  detailFetcher.js    個別作品詳細取得・価格保存
-  scheduler.js        cronベースのスケジューラー
-```
+---
 
-## 実行
+## 使い方
+
+### 起動
+
+`DLsiteTracker-portable.exe` をダブルクリック → ウィンドウが開く。
+
+### 操作
+
+| 場所 | 操作 |
+|---|---|
+| ツールバー | RJ収集 / 価格更新 / セール優先 / 全て巡回 / 全収集 / 全セール収集 |
+| メニューバー「巡回」 | 同上（キーボードショートカット付き） |
+| タスクトレイ右クリック | バックグラウンドでジョブ実行 |
+
+### キーボードショートカット
+
+| キー | 動作 |
+|---|---|
+| `Ctrl+1` | RJ収集 |
+| `Ctrl+2` | 価格更新 |
+| `Ctrl+3` | セール優先 |
+| `Ctrl+Shift+A` | 全て巡回 |
+| `Ctrl+Shift+F` | 全収集（FSR全ページ） |
+| `Ctrl+Shift+S` | 全セール収集 |
+
+### 自動巡回スケジュール
+
+起動後は自動で動き続ける。
+
+| 間隔 | 内容 |
+|---|---|
+| 6時間ごと | 新着/ランキング/セールからRJ収集 |
+| 20分ごと | 期限切れ作品の価格更新 |
+| 10分ごと | セール中サークルの優先度維持 |
+
+### データ
+
+- `dlsite.db`（exe と同じフォルダに自動生成）に蓄積
+- メニュー「ファイル → データベースの場所を開く」で確認
+- ツールバーの「CSV保存」「JSON保存」でエクスポート可能
+
+### 終了
+
+ウィンドウを閉じてもタスクトレイに常駐し続ける。  
+完全終了はトレイアイコン右クリック → **終了**。
+
+---
+
+## 収集対象
+
+- **maniax**（男性向け）: 全年齢 / R15 / 成人向け
+- **girls**（女性向け）: 同人 / 書籍 / ドラマCD / PC
+- **言語**: JPN / ENG / CHI / CHI_HANS / CHI_HANT / KO_KR / SPA / GER / FRE / IND / ITA / POR / SWE / THA / VIE / その他 / 言語不問
+
+---
+
+## ビルド（開発者向け）
 
 ```bash
+git clone https://github.com/tehuyoryu-cpu/siteruns23432.git
+cd siteruns23432
 npm install
-
-# デーモン起動
-node main.js
-
-# 一回限りの探索
-node main.js --mode=discover
-
-# 一回限りの詳細取得
-node main.js --mode=fetch
-
-# 統計確認
-node main.js --mode=status
-
-# 特定RJ取得
-node main.js --rj=RJ123456
+npm start          # 開発起動（Electronウィンドウ）
+npm run dev        # UIのみ（ブラウザで http://127.0.0.1:7777）
 ```
 
-## DB スキーマ
-
-| テーブル | 用途 |
-|---|---|
-| `works` | 作品メタデータ + 次回チェック設定 |
-| `price_history` | 価格変化ログ (差分のみ) |
-| `circles` | サークルのセール状態 |
-
-## 環境変数
-
-| 変数 | デフォルト | 説明 |
-|---|---|---|
-| `LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` |
+GitHub に push すると Actions が自動で exe をビルドして Releases に上げる。
