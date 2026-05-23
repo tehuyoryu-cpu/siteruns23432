@@ -59,7 +59,7 @@ module.exports = {
     // {page} をページ番号に置換して使う
     fsrUrls: {
       maniax: {
-        all:  'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/order/trend/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/KO_KR/options%5B4%5D/SPA/options%5B5%5D/GER/options%5B6%5D/FRE/options%5B7%5D/IND/options%5B8%5D/ITA/options%5B9%5D/POR/options%5B10%5D/SWE/options%5B11%5D/THA/options%5B12%5D/VIE/options%5B13%5D/OTL/options%5B14%5D/NM/per_page/100/page/{page}/show_type/3',
+        all:  'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/order/trend/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/CHI_HANS/options%5B4%5D/CHI_HANT/options%5B5%5D/KO_KR/options%5B6%5D/SPA/options%5B7%5D/GER/options%5B8%5D/FRE/options%5B9%5D/IND/options%5B10%5D/ITA/options%5B11%5D/POR/options%5B12%5D/SWE/options%5B13%5D/THA/options%5B14%5D/VIE/options%5B15%5D/OTL/options%5B16%5D/NM/per_page/100/page/{page}/show_type/3',
         sale: 'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/order/trend/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/CHI_HANS/options%5B4%5D/CHI_HANT/options%5B5%5D/KO_KR/options%5B6%5D/SPA/options%5B7%5D/GER/options%5B8%5D/FRE/options%5B9%5D/IND/options%5B10%5D/ITA/options%5B11%5D/POR/options%5B12%5D/SWE/options%5B13%5D/THA/options%5B14%5D/VIE/options%5B15%5D/OTL/options%5B16%5D/NM/per_page/100/page/{page}/campaign/campaign/show_type/3',
       },
       girls: {
@@ -86,6 +86,6 @@ module.exports = {
     //   locale       = 日本語表示・JPY価格
     //   adultchecked = 年齢確認通過済み
     //   agecheck     = 旧形式の年齢確認フラグ
-    cookies: 'locale=ja-jp; adultchecked=1; agecheck=1; dl_lang=ja',
+    cookies: 'locale=ja-jp; adultchecked=1; agecheck=1',
   },
 };
