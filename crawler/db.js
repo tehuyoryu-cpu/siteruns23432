@@ -24,7 +24,11 @@ const log        = require('./logger');
 
 let _db      = null;   // sql.js Database instance
 let _SQL     = null;   // sql.js namespace
-const DB_PATH = path.resolve(config.db.path);
+// electron-builder portable exe では PORTABLE_EXECUTABLE_DIR が exe のディレクトリを指す
+const _exeDir = process.env.PORTABLE_EXECUTABLE_DIR
+  || (process.resourcesPath ? path.join(process.resourcesPath, '..') : null)
+  || process.cwd();
+const DB_PATH = path.resolve(_exeDir, config.db.path);
 
 // ─── init / open / close ────────────────────────────────────────────────────
 
@@ -38,10 +42,16 @@ async function init() {
   // Locate the WASM file correctly both in dev and inside a pkg exe.
   _SQL = await initSqlJs({
     locateFile: file => {
+      // 1. electron-builder でパッケージされた場合（本番exe）
+      //    extraResources で {resources}/sql-wasm.wasm に配置される
+      if (process.resourcesPath) {
+        return path.join(process.resourcesPath, file);
+      }
+      // 2. pkg でパッケージされた場合
       if (process.pkg) {
-        // When running as pkg exe, WASM lives next to the executable.
         return path.join(path.dirname(process.execPath), file);
       }
+      // 3. 開発環境
       return path.join(__dirname, '..', 'node_modules', 'sql.js', 'dist', file);
     },
   });

@@ -41,7 +41,7 @@ async function runDiscovery() {
     { new: 0, ranking: 0, sale: 0 }
   );
 
-  summary.circle = await _discoverFromKnownCircles();
+  summary.circle = await _discoverFromKnownCircles(knownRjs);
 
   const total = Object.values(summary).reduce((a, b) => a + b, 0);
   log.info('[discovery] done', { total, ...summary });
@@ -118,7 +118,7 @@ async function _discoverSale(site, knownRjs) {
 
 // ─── サークル ────────────────────────────────────────────────────────────────
 
-async function _discoverFromKnownCircles() {
+async function _discoverFromKnownCircles(knownRjs) {
   const makerIds = db.getAllMakerIds().slice(0, 20);
   let count = 0;
   for (const makerId of makerIds) {
