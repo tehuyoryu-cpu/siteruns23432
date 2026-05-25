@@ -2,13 +2,7 @@
 
 /**
  * crawler/discovery.js
- * RJコード収集。
- *
- * 効率化ポイント:
- *   - maniax/home を並列取得 (Promise.all)
- *   - 新着/ランキング/セールも並列化
- *   - 既知RJはスキップ (DB照合)
- *   - サークル探索は最大20件/セッション (変更なし)
+ * RJコード収集。新着/ランキング/セール/FSR全収集。
  */
 
 const config = require('../config');
@@ -16,175 +10,162 @@ const db     = require('./db');
 const parser = require('./parser');
 const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
-const { saveDiscoveredPrice } = require('./detailFetcher');
 
 const BASE = config.dlsite.baseUrl;
+const RL   = config.fetch.rateLimit;
 
-// ─── メインエントリ ──────────────────────────────────────────────────────────
+// ─── 通常discovery ───────────────────────────────────────────────────────────
 
 async function runDiscovery() {
   log.info('[discovery] start');
 
-  // ⑦ 既知RJをSetで一括ロード (N回SELECT → 1回SELECT)
-  const knownRjs = new Set(
-    db.open().exec('SELECT rj_code FROM works')[0]?.values?.map(r => r[0]) ?? []
-  );
-  log.debug('[discovery] known RJs loaded', knownRjs.size);
+  const knownRjs = _loadKnown();
+  const results  = {};
 
-  // 両サイトを並列で全ソース探索
-  const siteResults = await Promise.all(
-    config.dlsite.sites.map(site => _discoverSite(site, knownRjs))
-  );
-
-  const summary = siteResults.reduce(
-    (acc, r) => ({ new: acc.new + r.new, ranking: acc.ranking + r.ranking, sale: acc.sale + r.sale }),
-    { new: 0, ranking: 0, sale: 0 }
-  );
-
-  summary.circle = await _discoverFromKnownCircles(knownRjs);
-
-  const total = Object.values(summary).reduce((a, b) => a + b, 0);
-  log.info('[discovery] done', { total, ...summary });
-  return { discovered: total, sources: summary };
-}
-
-// ─── サイト内全ソース並列取得 ────────────────────────────────────────────────
-
-async function _discoverSite(site, knownRjs) {
-  // 新着・ランキング・セールを並列実行 (各内部はページループのみ)
-  const [newCount, rankCount, saleCount] = await Promise.all([
-    _discoverNew(site, knownRjs),
-    _discoverRanking(site, knownRjs),
-    _discoverSale(site, knownRjs),
+  // maniax のみ: 新着・ランキング・セール を並列取得
+  const [n, r, s] = await Promise.all([
+    _collectPages('new',      knownRjs),
+    _collectPages('ranking',  knownRjs),
+    _collectPages('sale',     knownRjs),
   ]);
-  return { new: newCount, ranking: rankCount, sale: saleCount };
+  results.new = n; results.ranking = r; results.sale = s;
+
+  // 既知サークルの新作確認（直列・上限20）
+  results.circle = await _collectCircles(knownRjs);
+
+  const total = Object.values(results).reduce((a, b) => a + b, 0);
+  log.info('[discovery] done', { total, ...results });
+  return { discovered: total, sources: results };
 }
 
-// ─── 新着 ────────────────────────────────────────────────────────────────────
+// ─── 全収集 (FSR) ────────────────────────────────────────────────────────────
 
-async function _discoverNew(site, knownRjs) {
-  let count = 0;
-  for (let page = 1; page <= config.dlsite.discoveryPages.new; page++) {
-    const url   = `${BASE}/${site}/new/=/per_page/100/page/${page}.html`;
-    // C: 価格付き取得
-    const items = await _fetchAndParseWithPrice(url);
-    if (!items.length) break;
-    count += _upsertNewWithPrice(items, site, knownRjs);
-    await sleep(config.fetch.rateLimit);
+async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {}) {
+  log.info('[discovery] fullScan start', { sale, maxPages });
+
+  const knownRjs  = _loadKnown();   // ページをまたいで使い回す
+  const fsrUrls   = config.dlsite.fsrUrls ?? {};
+  let   grandTotal = 0;
+  const sites     = {};
+
+  for (const [site, urls] of Object.entries(fsrUrls)) {
+    const baseUrl = sale ? urls.sale : urls.all;
+    if (!baseUrl) continue;
+
+    let page = 1, siteTotal = 0;
+
+    while (true) {
+      if (maxPages > 0 && page > maxPages) break;
+
+      const url   = baseUrl.replace('{page}', page);
+      const items = await _fetchWithPrice(url);
+
+      if (!items.length) {
+        log.info('[discovery] fullScan end', { site, page });
+        break;
+      }
+
+      const added = _upsert(items, site, knownRjs);
+      siteTotal += added;
+      grandTotal += added;
+
+      if (onProgress) onProgress({ site, page, found: added, total: siteTotal });
+      log.info('[discovery] fullScan', { site, page, found: added, total: siteTotal });
+
+      if (items.length < 50) break;   // 最終ページ（100件未満）
+
+      page++;
+      await sleep(RL);
+    }
+
+    sites[site] = siteTotal;
   }
-  return count;
+
+  log.info('[discovery] fullScan done', { grandTotal, ...sites });
+  return { grandTotal, sites };
 }
 
-// ─── ランキング ──────────────────────────────────────────────────────────────
+// ─── ページ種別別収集 ─────────────────────────────────────────────────────────
 
-async function _discoverRanking(site, knownRjs) {
+async function _collectPages(type, knownRjs) {
+  const urlFor = (site, page) => {
+    if (type === 'new')     return `${BASE}/${site}/new/=/per_page/100/page/${page}.html`;
+    if (type === 'ranking') return `${BASE}/${site}/ranking/=/term/week/per_page/100/page/${page}.html`;
+    if (type === 'sale')    return `${BASE}/${site}/campaign/=/per_page/100/page/${page}.html`;
+  };
+
+  const maxPages = {
+    new:     config.dlsite.discoveryPages?.new     ?? 5,
+    ranking: config.dlsite.discoveryPages?.ranking ?? 3,
+    sale:    config.dlsite.discoveryPages?.sale    ?? 5,
+  }[type];
+
   let count = 0;
-  // term別を並列取得してから集約
-  const terms   = ['day', 'week', 'month'];
-  const pages   = config.dlsite.discoveryPages.ranking;
-  const results = await Promise.all(
-    terms.map(term => _discoverRankingTerm(site, term, pages, knownRjs))
-  );
-  results.forEach(n => { count += n; });
-  return count;
-}
-
-async function _discoverRankingTerm(site, term, pages, knownRjs) {
-  let count = 0;
-  for (let page = 1; page <= pages; page++) {
-    const url   = `${BASE}/${site}/ranking/=/term/${term}/page/${page}.html`;
-    const codes = await _fetchAndParse(url, parser.parseRankingList);
-    if (!codes.length) break;
-    count += _upsertNew(codes, site, knownRjs);
-    await sleep(config.fetch.rateLimit);
-  }
-  return count;
-}
-
-// ─── セール ──────────────────────────────────────────────────────────────────
-
-async function _discoverSale(site, knownRjs) {
-  let count = 0;
-  for (let page = 1; page <= config.dlsite.discoveryPages.sale; page++) {
-    const url   = `${BASE}/${site}/campaign/=/per_page/100/page/${page}.html`;
-    // C: セールページは価格付きで取得 (割引率もHTML上に表示される)
-    const items = await _fetchAndParseWithPrice(url);
-    if (!items.length) break;
-    count += _upsertNewWithPrice(items, site, knownRjs);
-    await sleep(config.fetch.rateLimit);
-  }
-  return count;
-}
-
-// ─── サークル ────────────────────────────────────────────────────────────────
-
-async function _discoverFromKnownCircles(knownRjs) {
-  const makerIds = db.getAllMakerIds().slice(0, 20);
-  let count = 0;
-  for (const makerId of makerIds) {
-    for (const site of config.dlsite.sites) {
-      const url   = `${BASE}/${site}/circle/works/=/maker_id/${makerId}/order/release_d.html`;
-      const codes = await _fetchAndParse(url, parser.parseCircleWorks);
-      count += _upsertNew(codes, site, knownRjs);
-      await sleep(config.fetch.rateLimit);
+  for (const site of config.dlsite.sites) {
+    for (let page = 1; page <= maxPages; page++) {
+      const items = await _fetchWithPrice(urlFor(site, page));
+      if (!items.length) break;
+      count += _upsert(items, site, knownRjs);
+      await sleep(RL);
     }
   }
-  log.debug('[discovery] circles', makerIds.length, 'new', count);
   return count;
 }
 
-// ─── ヘルパー ────────────────────────────────────────────────────────────────
+async function _collectCircles(knownRjs) {
+  const makerIds = db.getAllMakerIds().slice(0, 20);
+  let count = 0;
+  for (const mid of makerIds) {
+    for (const site of config.dlsite.sites) {
+      const url   = `${BASE}/${site}/circle/works/=/maker_id/${mid}/order/release_d.html`;
+      const items = await _fetchWithPrice(url);
+      count += _upsert(items, site, knownRjs);
+      await sleep(RL);
+    }
+  }
+  return count;
+}
 
-async function _fetchAndParse(url, parseFn) {
+// ─── fetch + parse ───────────────────────────────────────────────────────────
+
+async function _fetchWithPrice(url) {
   try {
     const res = await fetchWithRetry(url);
-    if (!res.ok) { log.warn('[discovery] non-200', res.status, url); return []; }
-    return parseFn(await res.text());
-  } catch (err) {
-    log.error('[discovery] fetch error', url, err.message);
+    if (!res.ok) {
+      log.warn('[discovery] fetch non-200', res.status, url);
+      return [];
+    }
+    const html = await res.text();
+    return parser.parseWorkListWithPrice(html);
+  } catch (e) {
+    log.error('[discovery] fetch error', url, e.message);
     return [];
   }
 }
 
-/** C: 価格付き一覧を取得。RJコード + 初期価格を同時収集する。 */
-async function _fetchAndParseWithPrice(url) {
-  try {
-    const res = await fetchWithRetry(url);
-    if (!res.ok) { log.warn('[discovery] non-200', res.status, url); return []; }
-    return parser.parseWorkListWithPrice(await res.text());
-  } catch (err) {
-    log.error('[discovery] fetch error', url, err.message);
-    return [];
-  }
-}
+// ─── DB書き込み ──────────────────────────────────────────────────────────────
 
-/** 後方互換: コードのみのupsert */
-function _upsertNew(codes, siteId, knownRjs) {
-  const items = codes.map(rj => ({ rjCode: rj, price: null, salePrice: null, discountRate: null, isOnSale: false }));
-  return _upsertNewWithPrice(items, siteId, knownRjs);
-}
-
-/** C: RJコード + 初期価格を同時upsert。既知Setで照合。 */
-function _upsertNewWithPrice(items, siteId, knownRjs) {
-  const newItems = items.filter(r => !knownRjs.has(r.rjCode));
+function _upsert(items, siteId, knownRjs) {
+  const newItems = items.filter(i => !knownRjs.has(i.rjCode));
   if (!newItems.length) return 0;
 
   db.transaction(() => {
     for (const item of newItems) {
-      db.upsertWork({ rj_code: item.rjCode, title: null, circle: null, maker_id: null,
-        work_type: null, site_id: siteId, release_date: null, dl_count: 0 });
+      db.upsertWork({
+        rj_code: item.rjCode, title: null, circle: null,
+        maker_id: null, work_type: null, site_id: siteId,
+        release_date: null, dl_count: 0,
+      });
       knownRjs.add(item.rjCode);
 
-      // C: 価格が取れていれば即保存 (detail fetchを節約)
       if (item.price !== null) {
-        saveDiscoveredPrice(item.rjCode, {
+        db.savePriceIfChanged(item.rjCode, {
           price:         item.price,
-          sale_price:    item.salePrice,
-          discount_rate: item.discountRate,
+          sale_price:    item.salePrice ?? null,
+          discount_rate: item.discountRate ?? null,
           point:         null,
           is_on_sale:    item.isOnSale ? 1 : 0,
         });
-        log.debug('[discovery] initial price saved', item.rjCode, item.price);
       }
     }
   });
@@ -192,72 +173,9 @@ function _upsertNewWithPrice(items, siteId, knownRjs) {
   return newItems.length;
 }
 
-// ─── 全収集 (FSR全ページ走査) ────────────────────────────────────────────────
-
-/**
- * FSR URLを使って全作品・全セール作品を網羅的に収集。
- * 通常discoveryより時間がかかるが、取りこぼしなし。
- *
- * @param {object} opts
- *   sale {boolean}    - trueでセール作品のみ
- *   maxPages {number} - 最大ページ数 (0=無制限)
- *   onProgress {function} - ({ site, page, found, total }) コールバック
- */
-async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {}) {
-  log.info('[discovery] fullScan start', { sale, maxPages });
-  const fsrUrls = config.dlsite.fsrUrls;
-  const summary = {};
-  let grandTotal = 0;
-
-  for (const [site, urls] of Object.entries(fsrUrls)) {
-    const baseUrl = sale ? urls.sale : urls.all;
-    if (!baseUrl) continue;
-
-    let page = 1;
-    let siteTotal = 0;
-
-    while (true) {
-      if (maxPages > 0 && page > maxPages) {
-        log.info('[discovery] fullScan maxPages reached', { site, page });
-        break;
-      }
-
-      const url   = baseUrl.replace('{page}', page);
-      const items = await _fetchAndParseWithPrice(url);
-
-      if (!items.length) {
-        log.info('[discovery] fullScan end of pages', { site, page });
-        break;
-      }
-
-      // knownRjs をDBから都度取得（全収集は長時間なので鮮度を保つ）
-      const knownSet = new Set(
-        db.open().exec('SELECT rj_code FROM works')[0]?.values?.map(r => r[0]) ?? []
-      );
-      const added = _upsertNewWithPrice(items, site, knownSet);
-      siteTotal += added;
-      grandTotal += added;
-
-      if (onProgress) {
-        onProgress({ site, page, found: added, total: siteTotal });
-      }
-
-      log.info('[discovery] fullScan page', { site, page, found: added, siteTotal });
-
-      if (items.length < 100) {
-        // 100件未満 = 最終ページ
-        break;
-      }
-
-      page++;
-      await sleep(config.fetch.rateLimit);
-    }
-
-    summary[site] = siteTotal;
-  }
-
-  log.info('[discovery] fullScan done', { grandTotal, ...summary });
-  return { grandTotal, sites: summary };
+function _loadKnown() {
+  const rows = db.open().exec('SELECT rj_code FROM works')[0]?.values ?? [];
+  return new Set(rows.map(r => r[0]));
 }
 
 module.exports = { runDiscovery, runFullScan };
