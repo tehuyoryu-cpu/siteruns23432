@@ -1,5 +1,12 @@
 'use strict';
 
+// Use Electron net.fetch when available (Chromium stack, bypasses Cloudflare).
+// Falls back to global fetch in Node.js CLI mode.
+const _netFetch = (() => {
+  try { const { net } = require('electron'); return net.fetch.bind(net); }
+  catch { return (...a) => fetch(...a); }
+})();
+
 /**
  * crawler/queue.js
  * シンプルなfetch wrapper。レート制限・リトライ。
