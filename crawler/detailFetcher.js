@@ -51,7 +51,9 @@ async function runDetailFetch(limit = 300) {
 
 // C: discovery が取得した価格を直接保存するエントリポイント
 function saveDiscoveredPrice(rjCode, priceData) {
-  return db.savePriceIfChanged(rjCode, priceData);
+  const changed = db.savePriceIfChanged(rjCode, priceData);
+  if (changed) db.save(); // Fix#7: ensure persistence outside transaction
+  return changed;
 }
 
 // ─── B: バッチフォールバック ─────────────────────────────────────────────────
