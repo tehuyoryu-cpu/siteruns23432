@@ -21,20 +21,63 @@ const {
 let db, apiServer, scheduler, discovery, detailFetcher;
 
 
-// Preventive: load DLsite in a hidden Chromium window to obtain real session cookies
-// (CF clearance, age-check) before the crawler starts.
+// DLsite をヘッドレスChromiumで開き、CF/年齢確認をクリアして
+// セッションCookieを確立する。以後 electron.net.fetch が自動でそのCookieを使う。
 async function warmUpSession() {
   return new Promise(resolve => {
-    const { BrowserWindow } = require('electron');
+    const { BrowserWindow, session } = require('electron');
     const w = new BrowserWindow({
       show: false,
       webPreferences: { nodeIntegration: false, contextIsolation: true },
     });
-    const done = () => { try { w.destroy(); } catch {} resolve(); };
-    w.loadURL('https://www.dlsite.com/');
-    w.webContents.once('did-finish-load', () => setTimeout(done, 1500));
-    w.webContents.once('did-fail-load',   done);
-    setTimeout(done, 20000);
+
+    let resolved = false;
+    const done = () => {
+      if (resolved) return;
+      resolved = true;
+      try { w.destroy(); } catch {}
+      resolve();
+    };
+
+    // ページロード完了ごとに年齢確認ボタンをクリック試行
+    w.webContents.on('did-finish-load', async () => {
+      try {
+        // 年齢確認ボタン（複数のセレクタに対応）
+        await w.webContents.executeJavaScript(`
+          (function() {
+            const selectors = [
+              'a.btn_yes', 'a[href*="adult=1"]', '.btn_adult',
+              'a[href*="age_check"]', 'input[value*="はい"]',
+              'a:contains("はい")', '.age_check_yes'
+            ];
+            for (const sel of selectors) {
+              try {
+                const el = document.querySelector(sel);
+                if (el) { el.click(); return true; }
+              } catch {}
+            }
+            return false;
+          })()
+        `);
+      } catch {}
+
+      // 2秒後にCookieを確認して完了
+      setTimeout(async () => {
+        try {
+          const cookies = await session.defaultSession.cookies.get(
+            { domain: 'dlsite.com' }
+          );
+          console.log('[warmUp] cookies obtained:', cookies.map(c => c.name).join(', '));
+        } catch {}
+        done();
+      }, 2000);
+    });
+
+    w.webContents.once('did-fail-load', done);
+    setTimeout(done, 25000); // タイムアウト25秒
+
+    // 成人向けコンテンツページを直接開く（年齢確認をトリガー）
+    w.loadURL('https://www.dlsite.com/maniax/');
   });
 }
 async function startBackend() {
@@ -46,25 +89,30 @@ async function startBackend() {
 
   await db.init();
 
-  // Inject DLsite cookies into Chromium session so net.fetch sends them automatically.
-  try {
-    const { session } = require('electron');
-    const ses = session.defaultSession;
-    const dlUrl = 'https://www.dlsite.com';
-    for (const [name, value] of [
-      ['locale', 'ja-jp'],
-      ['adultchecked', '1'],
-      ['agecheck', '1'],
-    ]) {
-      await ses.cookies.set({ url: dlUrl, name, value, domain: '.dlsite.com', path: '/' })
-        .catch(e => console.warn('[cookie]', name, e.message));
-    }
-  } catch(e) { console.warn('[cookie] session not ready', e.message); }
-
   apiServer.start();
   await new Promise(r => setTimeout(r, 400));
 
-  await warmUpSession(); // load DLsite in hidden window for CF session
+  // 1. 必須 Cookie を事前注入（年齢確認・ロケール）
+  try {
+    const { session } = require('electron');
+    const ses = session.defaultSession;
+    const base = { url: 'https://www.dlsite.com', domain: '.dlsite.com', path: '/', httpOnly: false };
+    for (const [name, value] of [
+      ['locale',        'ja-jp'],
+      ['adultchecked',  '1'],
+      ['agecheck',      '1'],
+    ]) {
+      await ses.cookies.set({ ...base, name, value })
+        .catch(e => console.warn('[cookie] set failed', name, e.message));
+    }
+    console.log('[startBackend] cookies pre-injected');
+  } catch(e) { console.warn('[cookie] session not ready', e.message); }
+
+  // 2. DLsite を実際に開いてCF/年齢確認をクリア（Cookie が session に蓄積される）
+  await warmUpSession();
+  console.log('[startBackend] session warmed up, starting scheduler');
+
+  // 3. クローラー起動
   scheduler.start().catch(err =>
     console.error('[electron] scheduler error', err.message)
   );

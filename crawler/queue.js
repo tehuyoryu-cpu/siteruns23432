@@ -1,46 +1,70 @@
 'use strict';
 
-// Use Electron net.fetch when available (Chromium stack, bypasses Cloudflare).
-// Falls back to global fetch in Node.js CLI mode.
-const _netFetch = (() => {
-  try { const { net } = require('electron'); return net.fetch.bind(net); }
-  catch { return (...a) => fetch(...a); }
-})();
-
 /**
  * crawler/queue.js
- * シンプルなfetch wrapper。レート制限・リトライ。
+ *
+ * Electron main process → electron.net.fetch（Chromiumスタック）
+ *   セッションCookieを自動送信 → CF/年齢確認を通過できる
+ * Node.js CLI → globalThis.fetch（開発用）
  */
 
 const config = require('../config');
 const log    = require('./logger');
 
-const HEADERS = {
-  'User-Agent':      config.dlsite.userAgent,
-  'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'ja,en;q=0.5',
-  'Referer':         'https://www.dlsite.com/',
-  'Cookie':          config.dlsite.cookies,
-};
+// ─── fetch 実装を選択 ─────────────────────────────────────────────────────────
+const _isElectron = process.type === 'browser';
 
-/** fetch with timeout + retry (exponential backoff) */
+const _fetch = (() => {
+  if (_isElectron) {
+    try {
+      const { net } = require('electron');
+      log.info('[queue] using electron.net.fetch (Chromium session)');
+      return net.fetch.bind(net);
+    } catch (e) {
+      log.warn('[queue] electron.net unavailable, fallback to globalThis.fetch', e.message);
+    }
+  }
+  return (...a) => globalThis.fetch(...a);
+})();
+
+// ─── ヘッダー ─────────────────────────────────────────────────────────────────
+// Electron では Cookie ヘッダーを付けない（セッションが自動送信）
+// Node.js CLI では手動 Cookie を付ける
+const _baseHeaders = _isElectron
+  ? {
+      'User-Agent':      config.dlsite.userAgent,
+      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'ja,en;q=0.5',
+      'Referer':         'https://www.dlsite.com/',
+    }
+  : {
+      'User-Agent':      config.dlsite.userAgent,
+      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'ja,en;q=0.5',
+      'Referer':         'https://www.dlsite.com/',
+      'Cookie':          config.dlsite.cookies,
+    };
+
+// ─── fetchWithRetry ───────────────────────────────────────────────────────────
+
 async function fetchWithRetry(url, opts = {}) {
-  const max   = config.fetch.retryMax;
-  const delay = config.fetch.retryBaseDelay;
+  const maxRetry  = config.fetch.retryMax;
+  const baseDelay = config.fetch.retryBaseDelay;
   let last;
 
-  for (let i = 0; i <= max; i++) {
+  for (let i = 0; i <= maxRetry; i++) {
     if (i > 0) {
-      const wait = delay * 2 ** (i - 1);
-      log.warn(`[fetch] retry ${i}/${max} wait ${wait}ms`, url);
+      const wait = baseDelay * 2 ** (i - 1);
+      log.warn(`[fetch] retry ${i}/${maxRetry} wait ${wait}ms`, url);
       await sleep(wait);
     }
     try {
       const ctrl = new AbortController();
       const tid  = setTimeout(() => ctrl.abort(), config.fetch.timeout);
-      const res  = await fetch(url, {
+
+      const res = await _fetch(url, {
         ...opts,
-        headers: { ...HEADERS, ...opts.headers },
+        headers: { ..._baseHeaders, ...opts.headers },
         signal: ctrl.signal,
       });
       clearTimeout(tid);
@@ -50,10 +74,7 @@ async function fetchWithRetry(url, opts = {}) {
         last = new Error(`HTTP ${res.status}`);
         continue;
       }
-
-      if (!res.ok) {
-        log.warn(`[fetch] ${res.status}`, url);
-      }
+      if (!res.ok) log.warn(`[fetch] ${res.status}`, url);
       return res;
     } catch (e) {
       last = e;
