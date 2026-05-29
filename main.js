@@ -16,6 +16,7 @@
 
 const log       = require('./crawler/logger');
 const db        = require('./crawler/db');
+const newsDb    = require('./crawler/newsDb');
 const scheduler = require('./crawler/scheduler');
 const { start: startApiServer } = require('./crawler/apiServer');
 const { runDiscovery }    = require('./crawler/discovery');
@@ -33,6 +34,8 @@ async function main() {
 
   // Always init DB on start (async – loads WASM)
   await db.init();
+  // ニュースDB初期化
+  await newsDb.init().catch(err => log.warn('[main] newsDb init error', err.message));
 
   const mode = args.mode;
   const rj   = args.rj;
