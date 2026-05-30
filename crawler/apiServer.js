@@ -932,6 +932,66 @@ body {
 }
 .news-stat-item {display:flex;gap:3px;align-items:center;}
 .news-stat-num  {font-weight:bold;color:#0055aa;}
+
+/* ── 株価ページ ── */
+.stock-toolbar {
+  display:flex;gap:6px;align-items:center;padding:4px 8px;
+  background:#f8f8f8;border-bottom:1px solid #ccc;flex-shrink:0;flex-wrap:wrap;
+}
+.stock-add-row { display:flex;gap:4px;align-items:center; }
+.stock-add-row input {
+  width:110px;height:22px;border:1px solid #aaa;border-radius:2px;
+  padding:0 6px;font-family:inherit;font-size:12px;text-transform:uppercase;
+}
+.stock-add-row button {
+  height:22px;padding:0 10px;font-size:12px;font-family:inherit;
+  background:linear-gradient(to bottom,#fff,#ddd);border:1px solid #aaa;
+  border-radius:2px;cursor:default;
+}
+.stock-add-row button:hover { background:linear-gradient(to bottom,#e5f1fb,#c8ddf0);border-color:#0078d7; }
+.stock-refresh-btn {
+  margin-left:auto;height:22px;padding:0 10px;font-size:12px;font-family:inherit;
+  background:linear-gradient(to bottom,#fff,#ddd);border:1px solid #aaa;
+  border-radius:2px;cursor:default;
+}
+.stock-refresh-btn:hover { background:linear-gradient(to bottom,#e5f1fb,#c8ddf0);border-color:#0078d7; }
+.stock-last-update { font-size:10px;color:#888;align-self:center; }
+.stock-grid {
+  flex:1;overflow-y:auto;padding:8px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;
+  align-content:start;
+}
+.stock-card {
+  background:#fff;border:1px solid #ddd;border-radius:3px;padding:10px 12px;
+  position:relative;transition:border-color .15s;
+}
+.stock-card:hover { border-color:#0078d7; }
+.stock-card-top { display:flex;justify-content:space-between;align-items:flex-start; }
+.stock-ticker { font-size:16px;font-weight:bold;color:#111;letter-spacing:.5px; }
+.stock-name   { font-size:10px;color:#888;margin-top:1px;line-height:1.2; }
+.stock-price  { font-size:22px;font-weight:bold;color:#111;margin:6px 0 2px; }
+.stock-change { font-size:12px;font-weight:bold; }
+.stock-change.up   { color:#008000; }
+.stock-change.down { color:#cc0000; }
+.stock-change.flat { color:#888; }
+.stock-meta { font-size:10px;color:#aaa;margin-top:4px;display:flex;gap:8px;flex-wrap:wrap; }
+.stock-del-btn {
+  position:absolute;top:5px;right:6px;
+  background:none;border:none;font-size:14px;color:#ccc;cursor:default;line-height:1;
+}
+.stock-del-btn:hover { color:#cc0000; }
+.stock-error { font-size:11px;color:#cc4444;margin-top:4px; }
+.stock-loading { opacity:.5; }
+.stock-empty {
+  grid-column:1/-1;padding:40px;text-align:center;color:#aaa;font-size:13px;
+}
+.stock-tag {
+  font-size:9px;padding:1px 5px;border-radius:2px;font-weight:bold;
+  background:#eee;color:#555;
+}
+.stock-tag.jp  { background:#ffe0e0;color:#990000; }
+.stock-tag.us  { background:#e0f0ff;color:#003399; }
+.stock-tag.idx { background:#e8ffe8;color:#006600; }
 </style>
 </head>
 <body>
@@ -991,6 +1051,11 @@ body {
   <button class="tb-btn" onclick="setMainTab('news')" id="tbNews" title="ニュース">
     <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="12" rx="1" fill="none" stroke="#0078d7" stroke-width="1.3"/><path d="M3 6h10M3 9h7M3 12h5" stroke="#0078d7" stroke-width="1.2" stroke-linecap="round"/></svg>
     ニュース
+  </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="setMainTab('stock')" id="tbStock" title="株価">
+    <svg viewBox="0 0 16 16"><polyline points="1,12 5,7 8,9 12,4 15,6" fill="none" stroke="#008000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    株価
   </button>
   <button class="tb-btn" onclick="showLog()" title="ログを確認">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
@@ -1124,6 +1189,21 @@ body {
     </div>
     <div class="news-list" id="newsList">読み込み中...</div>
     <div class="news-pager" id="newsPager"></div>
+  </div>
+  <!-- 株価ページ -->
+  <div class="main-area" id="stockArea" style="display:none;flex-direction:column;">
+    <div class="stock-toolbar">
+      <div class="stock-add-row">
+        <input type="text" id="stockTickerInput" placeholder="例: 7203.T / AAPL" maxlength="20"
+          onkeydown="if(event.key==='Enter')addStock()">
+        <button onclick="addStock()">＋ 追加</button>
+      </div>
+      <span class="stock-last-update" id="stockLastUpdate"></span>
+      <button class="stock-refresh-btn" onclick="refreshAllStocks()">↻ 更新</button>
+    </div>
+    <div class="stock-grid" id="stockGrid">
+      <div class="stock-empty">ティッカーを追加してください<br><span style="font-size:11px;color:#bbb">例: AAPL, MSFT, 7203.T（東証は.T付き）, ^N225（日経平均）</span></div>
+    </div>
   </div>
 
 <!-- ステータスバー -->
@@ -1760,6 +1840,184 @@ async function loadNewsStats() {
 }
 
 // ── メインタブ切り替え（DLsite ↔ ニュース） ──────────────────────────────────
+
+// ── 株価 ────────────────────────────────────────────────────────────────────
+const STOCK_STORAGE_KEY = 'siteruns_stocks_v1';
+let _stocks = {};          // { ticker: { data, error, loading } }
+let _stockTickers = [];    // 登録順リスト
+let _stockRefreshTimer = null;
+
+function _stockLoad() {
+  try {
+    const raw = localStorage.getItem(STOCK_STORAGE_KEY);
+    if (raw) _stockTickers = JSON.parse(raw);
+  } catch(_) { _stockTickers = []; }
+}
+
+function _stockSave() {
+  localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(_stockTickers));
+}
+
+function addStock() {
+  const input = document.getElementById('stockTickerInput');
+  const ticker = (input.value || '').trim().toUpperCase();
+  if (!ticker) return;
+  if (_stockTickers.includes(ticker)) { input.value = ''; return; }
+  _stockTickers.push(ticker);
+  _stockSave();
+  input.value = '';
+  _stocks[ticker] = { data: null, error: null, loading: true };
+  _renderStockGrid();
+  _fetchStock(ticker);
+}
+
+function removeStock(ticker) {
+  _stockTickers = _stockTickers.filter(t => t !== ticker);
+  delete _stocks[ticker];
+  _stockSave();
+  _renderStockGrid();
+}
+
+async function refreshAllStocks() {
+  for (const ticker of _stockTickers) {
+    _stocks[ticker] = { ..._stocks[ticker], loading: true, error: null };
+  }
+  _renderStockGrid();
+  for (const ticker of _stockTickers) {
+    await _fetchStock(ticker);
+    await new Promise(r => setTimeout(r, 300));
+  }
+  document.getElementById('stockLastUpdate').textContent =
+    '更新: ' + new Date().toLocaleTimeString('ja-JP');
+}
+
+async function _fetchStock(ticker) {
+  // Yahoo Finance 非公式JSONエンドポイント（CORSプロキシ経由）
+  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
+    encodeURIComponent(ticker) + '?interval=1d&range=5d';
+  const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+
+  try {
+    const res = await fetch(proxy, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+
+    const meta = json?.chart?.result?.[0]?.meta;
+    if (!meta) throw new Error('データなし');
+
+    const price   = meta.regularMarketPrice;
+    const prev    = meta.chartPreviousClose || meta.previousClose;
+    const change  = prev ? price - prev : null;
+    const changePct = prev ? (change / prev) * 100 : null;
+    const currency = meta.currency || '';
+    const name     = meta.shortName || meta.longName || ticker;
+    const exch     = meta.fullExchangeName || meta.exchangeName || '';
+    const high52   = meta.fiftyTwoWeekHigh;
+    const low52    = meta.fiftyTwoWeekLow;
+    const volume   = meta.regularMarketVolume;
+    const marketState = meta.marketState; // REGULAR / PRE / POST / CLOSED
+
+    _stocks[ticker] = {
+      loading: false, error: null,
+      data: { price, prev, change, changePct, currency, name, exch,
+              high52, low52, volume, marketState }
+    };
+  } catch(e) {
+    _stocks[ticker] = { loading: false, error: e.message, data: null };
+  }
+  _renderStockCard(ticker);
+}
+
+function _renderStockGrid() {
+  const grid = document.getElementById('stockGrid');
+  if (!_stockTickers.length) {
+    grid.innerHTML = '<div class="stock-empty">ティッカーを追加してください<br><span style="font-size:11px;color:#bbb">例: AAPL, MSFT, 7203.T（東証は.T付き）, ^N225（日経平均）</span></div>';
+    return;
+  }
+  grid.innerHTML = _stockTickers.map(t => _stockCardHTML(t)).join('');
+}
+
+function _renderStockCard(ticker) {
+  const el = document.getElementById('scard-' + ticker.replace(/[^a-zA-Z0-9]/g, '_'));
+  if (!el) { _renderStockGrid(); return; }
+  el.outerHTML = _stockCardHTML(ticker);
+}
+
+function _stockCardHTML(ticker) {
+  const s = _stocks[ticker] || { loading: true };
+  const safeId = ticker.replace(/[^a-zA-Z0-9]/g, '_');
+  const isJP  = ticker.endsWith('.T') || ticker.startsWith('^N') || /^\d{4}/.test(ticker);
+  const isIdx = ticker.startsWith('^');
+  const tag   = isIdx ? '<span class="stock-tag idx">指数</span>' :
+                isJP  ? '<span class="stock-tag jp">東証</span>' :
+                        '<span class="stock-tag us">米株</span>';
+
+  if (s.loading) {
+    return `<div class="stock-card stock-loading" id="scard-${safeId}">
+      <button class="stock-del-btn" onclick="removeStock('${esc(ticker)}')">✕</button>
+      <div class="stock-card-top"><div><div class="stock-ticker">${esc(ticker)}</div>${tag}</div></div>
+      <div class="stock-price">---</div>
+      <div style="font-size:11px;color:#aaa">読み込み中...</div>
+    </div>`;
+  }
+
+  if (s.error) {
+    return `<div class="stock-card" id="scard-${safeId}">
+      <button class="stock-del-btn" onclick="removeStock('${esc(ticker)}')">✕</button>
+      <div class="stock-card-top"><div><div class="stock-ticker">${esc(ticker)}</div>${tag}</div></div>
+      <div class="stock-error">取得失敗: ${esc(s.error)}</div>
+    </div>`;
+  }
+
+  const d = s.data;
+  const fmt = (n, dec=2) => n == null ? '-' : Number(n).toLocaleString('ja-JP', {minimumFractionDigits:dec,maximumFractionDigits:dec});
+  const fmtVol = v => v == null ? '-' : v >= 1e8 ? (v/1e8).toFixed(1)+'億' : v >= 1e4 ? (v/1e4).toFixed(0)+'万' : v.toLocaleString();
+  const sign  = d.change == null ? '' : d.change > 0 ? '+' : '';
+  const cls   = d.change == null ? 'flat' : d.change > 0 ? 'up' : d.change < 0 ? 'down' : 'flat';
+  const arrow = d.change == null ? '' : d.change > 0 ? '▲' : d.change < 0 ? '▼' : '─';
+  const dec   = d.currency === 'JPY' ? 0 : 2;
+  const stateLabel = { REGULAR:'取引中', PRE:'時間外(前)', POST:'時間外(後)', CLOSED:'クローズ' }[d.marketState] || d.marketState || '';
+
+  return `<div class="stock-card" id="scard-${safeId}">
+    <button class="stock-del-btn" onclick="removeStock('${esc(ticker)}')">✕</button>
+    <div class="stock-card-top">
+      <div>
+        <div class="stock-ticker">${esc(ticker)}</div>
+        ${tag}
+      </div>
+      <div style="font-size:10px;color:#aaa;text-align:right">${esc(stateLabel)}<br>${esc(d.exch)}</div>
+    </div>
+    <div class="stock-name">${esc(d.name)}</div>
+    <div class="stock-price">${esc(d.currency)} ${fmt(d.price, dec)}</div>
+    <div class="stock-change ${cls}">${arrow} ${sign}${fmt(d.change, dec)} (${sign}${fmt(d.changePct)}%)</div>
+    <div class="stock-meta">
+      <span>前日: ${fmt(d.prev, dec)}</span>
+      <span>出来高: ${fmtVol(d.volume)}</span>
+    </div>
+    <div class="stock-meta">
+      <span>52週高: ${fmt(d.high52, dec)}</span>
+      <span>52週安: ${fmt(d.low52, dec)}</span>
+    </div>
+  </div>`;
+}
+
+function _stockInit() {
+  _stockLoad();
+  if (_stockTickers.length) {
+    _stockTickers.forEach(t => { _stocks[t] = { loading: true, data: null, error: null }; });
+    _renderStockGrid();
+    refreshAllStocks();
+  }
+  // 3分ごとに自動更新
+  _stockRefreshTimer = setInterval(() => {
+    if (document.getElementById('stockArea')?.style.display !== 'none') {
+      refreshAllStocks();
+    }
+  }, 3 * 60 * 1000);
+}
+
 function setMainTab(tab) {
   const dlArea   = document.querySelector('.main-area:not(#newsArea)');
   const newsArea = document.getElementById('newsArea');
@@ -1767,18 +2025,24 @@ function setMainTab(tab) {
   const tbAll    = document.getElementById('tbAll');
   const tbSale   = document.getElementById('tbSale');
 
+  const stockArea = document.getElementById('stockArea');
+  const tbStock   = document.getElementById('tbStock');
+
+  // 全エリアを非表示にしてアクティブをクリア
+  [dlArea, newsArea, stockArea].forEach(el => { if(el) el.style.display = 'none'; });
+  [tb, tbStock, tbAll, tbSale].forEach(el => { if(el) el.classList.remove('active'); });
+
   if (tab === 'news') {
-    if (dlArea)   dlArea.style.display   = 'none';
     if (newsArea) newsArea.style.display = 'flex';
-    if (tb)     tb.classList.add('active');
-    if (tbAll)  tbAll.classList.remove('active');
-    if (tbSale) tbSale.classList.remove('active');
+    if (tb) tb.classList.add('active');
     loadNews(1);
     loadNewsStats();
+  } else if (tab === 'stock') {
+    if (stockArea) stockArea.style.display = 'flex';
+    if (tbStock) tbStock.classList.add('active');
+    _stockInit();
   } else {
-    if (newsArea) newsArea.style.display = 'none';
-    if (dlArea)   dlArea.style.display   = 'flex';
-    if (tb) tb.classList.remove('active');
+    if (dlArea) dlArea.style.display = 'flex';
     setTab(tab);
   }
 }
