@@ -221,9 +221,7 @@ async function _naturalizeWithAI(translatedTitle, originalTitle) {
 元の英語: ${originalTitle}`;
 
   const MODELS = [
-    'google/gemma-3-27b-it:free',
-    'mistralai/mistral-7b-instruct:free',
-    'meta-llama/llama-3.2-3b-instruct:free',
+    'qwen/qwen3-next-80b-a3b-instruct:free',
   ];
 
   for (const model of MODELS) {
