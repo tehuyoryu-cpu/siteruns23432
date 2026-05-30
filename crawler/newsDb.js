@@ -39,6 +39,13 @@ async function init() {
   }
 
   _applySchema();
+  // content カラムがなければ追加（既存DBへの互換マイグレーション）
+  try { _db.run('ALTER TABLE news_articles ADD COLUMN content      TEXT'); } catch(_) {}
+  try { _db.run('ALTER TABLE news_articles ADD COLUMN content_ja   TEXT'); } catch(_) {}
+  try { _db.run('ALTER TABLE news_articles ADD COLUMN top_image    TEXT'); } catch(_) {}
+  try { _db.run('ALTER TABLE news_articles ADD COLUMN content_fetched_at INTEGER'); } catch(_) {}
+  try { _db.run('ALTER TABLE news_articles ADD COLUMN fetch_error  TEXT'); } catch(_) {}
+
   _save();
   log.info('[newsDb] ready', DB_PATH);
 }
@@ -61,10 +68,18 @@ function _applySchema() {
       translated_at INTEGER
     );
 
+    -- 本文カラム（ALTER TABLE で後から追加）
     CREATE TABLE IF NOT EXISTS news_translation_queue (
       article_id  TEXT PRIMARY KEY,
       queued_at   INTEGER NOT NULL,
       attempts    INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS news_content_queue (
+      article_id   TEXT PRIMARY KEY,
+      queued_at    INTEGER NOT NULL,
+      attempts     INTEGER DEFAULT 0,
+      last_error   TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_news_source   ON news_articles(source_id);
@@ -201,6 +216,67 @@ function getNewsStats() {
   return { byCategory: rows, total: totalCount };
 }
 
+/** IDで記事1件取得 */
+function getArticleById(id) {
+  const stmt = _db.prepare('SELECT * FROM news_articles WHERE id = ?');
+  stmt.bind([id]);
+  const row = stmt.step() ? stmt.getAsObject() : null;
+  stmt.free();
+  return row;
+}
+
+/** 本文フェッチキューに追加 */
+function queueContentFetch(articleId) {
+  _db.run(
+    'INSERT OR IGNORE INTO news_content_queue (article_id, queued_at) VALUES (?,?)',
+    [articleId, Math.floor(Date.now() / 1000)]
+  );
+  _save();
+}
+
+/** 本文フェッチキュー取得 */
+function getContentFetchQueue(limit = 3) {
+  const stmt = _db.prepare(`
+    SELECT a.id, a.url, a.lang
+    FROM news_content_queue q
+    JOIN news_articles a ON a.id = q.article_id
+    WHERE a.content IS NULL AND (q.attempts < 3)
+    ORDER BY q.queued_at ASC
+    LIMIT ?
+  `);
+  stmt.bind([limit]);
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  return rows;
+}
+
+/** 本文保存 */
+function saveArticleContent(articleId, content, contentJa, topImage) {
+  _db.run(`
+    UPDATE news_articles
+    SET content = ?, content_ja = ?, top_image = ?, content_fetched_at = ?, fetch_error = NULL
+    WHERE id = ?
+  `, [content || null, contentJa || null, topImage || null,
+      Math.floor(Date.now() / 1000), articleId]);
+  _db.run('DELETE FROM news_content_queue WHERE article_id = ?', [articleId]);
+  _save();
+}
+
+/** フェッチ失敗を記録 */
+function markFetchFailed(articleId, error) {
+  _db.run(`
+    UPDATE news_content_queue
+    SET attempts = attempts + 1, last_error = ?
+    WHERE article_id = ?
+  `, [error, articleId]);
+  _db.run(
+    'UPDATE news_articles SET fetch_error = ? WHERE id = ?',
+    [error, articleId]
+  );
+  _save();
+}
+
 module.exports = {
   init,
   upsertArticle,
@@ -209,4 +285,9 @@ module.exports = {
   saveTranslation,
   getArticles,
   getNewsStats,
+  getArticleById,
+  queueContentFetch,
+  getContentFetchQueue,
+  saveArticleContent,
+  markFetchFailed,
 };
