@@ -272,6 +272,14 @@ function createServer() {
         return;
       }
 
+      // ── 診断 ──────────────────────────────────────────────────────────────
+      if (pathname === '/api/diagnostics') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        const result = await _runDiagnostics();
+        res.end(JSON.stringify(result));
+        return;
+      }
+
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
 
@@ -310,6 +318,74 @@ function _csvEscape(v) {
   const s = String(v);
   return s.includes(',') || s.includes('"') || s.includes('\n')
     ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+async function _runDiagnostics() {
+  const { fetchWithRetry } = require('./queue');
+  const parser = require('./parser');
+  const result = {
+    timestamp: new Date().toISOString(),
+    dbStats: db.getStats(),
+    dbPath: require('path').resolve(
+      process.env.DLSITE_DATA_DIR || process.cwd(),
+      require('../config').db.path
+    ),
+    logPath: log.getLogPath(),
+    isElectron: process.type === 'browser',
+    tests: [],
+  };
+
+  // テスト1: DLsite新着ページ取得
+  const testUrl = 'https://www.dlsite.com/maniax/new/=/per_page/30/page/1.html';
+  try {
+    const t0  = Date.now();
+    const res = await fetchWithRetry(testUrl);
+    const ms  = Date.now() - t0;
+    const html = await res.text();
+    const items = parser.parseWorkListWithPrice(html);
+    result.tests.push({
+      name: '新着ページ取得',
+      url: testUrl,
+      status: res.status,
+      ok: res.ok,
+      ms,
+      parsed: items.length,
+      htmlLen: html.length,
+      sample: items.slice(0, 3).map(i => i.rjCode),
+      cfBlock: html.includes('cf-browser-verification') || html.includes('Checking your browser'),
+      ageCheck: html.includes('adultcheck') || html.includes('agecheck'),
+    });
+  } catch (e) {
+    result.tests.push({ name: '新着ページ取得', url: testUrl, ok: false, error: e.message });
+  }
+
+  // テスト2: Product Info API
+  const knownRjs = db.open().exec('SELECT rj_code FROM works LIMIT 3')[0]?.values ?? [];
+  if (knownRjs.length) {
+    const codes = knownRjs.map(r => r[0]);
+    const apiUrl = `https://www.dlsite.com/maniax/product/info/ajax?${codes.map(c => `product_id=${c}`).join('&')}&cdn_cache_min=1`;
+    try {
+      const t0  = Date.now();
+      const res = await fetchWithRetry(apiUrl);
+      const ms  = Date.now() - t0;
+      const body = await res.json();
+      result.tests.push({
+        name: 'Product Info API',
+        url: apiUrl,
+        status: res.status,
+        ok: res.ok,
+        ms,
+        returnedKeys: Object.keys(body).length,
+        testedCodes: codes,
+      });
+    } catch (e) {
+      result.tests.push({ name: 'Product Info API', url: apiUrl, ok: false, error: e.message });
+    }
+  } else {
+    result.tests.push({ name: 'Product Info API', ok: null, note: 'DB内に作品なし (discovery未実施)' });
+  }
+
+  return result;
 }
 
 module.exports = { start, createServer };
@@ -904,6 +980,10 @@ body {
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
     ログ確認
   </button>
+  <button class="tb-btn" onclick="showDiag()" title="巡回テスト・診断">
+    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 5v3.5l2.5 1.5" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
+    診断
+  </button>
 </div>
 
 <!-- フィルタバー -->
@@ -965,6 +1045,17 @@ body {
       <span class="modal-close" onclick="closeLog()">✕</span>
     </div>
     <div class="modal-body" id="logBody">読み込み中...</div>
+  </div>
+</div>
+
+<!-- 診断モーダル -->
+<div class="modal-overlay" id="diagModal" onclick="if(event.target===this)closeDiag()">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-header">
+      🔍 巡回診断
+      <span class="modal-close" onclick="closeDiag()">✕</span>
+    </div>
+    <div class="modal-body" id="diagBody" style="font-family:monospace;font-size:12px;white-space:pre-wrap">実行中...</div>
   </div>
 </div>
 
@@ -1417,6 +1508,48 @@ async function showLog() {
   } catch(e) { body.textContent = 'エラー: ' + e.message; }
 }
 function closeLog() { document.getElementById('logModal').classList.remove('open'); }
+
+async function showDiag() {
+  document.getElementById('diagModal').classList.add('open');
+  const body = document.getElementById('diagBody');
+  body.textContent = '診断中... DLsiteに接続テストしています (数秒かかります)';
+  try {
+    const r = await fetch('/api/diagnostics');
+    const d = await r.json();
+    let out = '';
+    out += `診断時刻: ${d.timestamp}\n`;
+    out += `実行環境: ${d.isElectron ? 'Electron (electron.net.fetch)' : 'Node.js (globalThis.fetch)'}\n`;
+    out += `DBパス:   ${d.dbPath}\n`;
+    out += `ログパス: ${d.logPath}\n`;
+    out += `\n── DB統計 ──\n`;
+    out += `  追跡作品数: ${d.dbStats?.totalWorks ?? 0}\n`;
+    out += `  セール中:   ${d.dbStats?.onSale ?? 0}\n`;
+    out += `  確認待ち:   ${d.dbStats?.dueNow ?? 0}\n`;
+    out += `  価格記録:   ${d.dbStats?.priceChanges ?? 0}\n`;
+    out += `\n── 接続テスト ──\n`;
+    for (const t of d.tests) {
+      const icon = t.ok === true ? '✅' : t.ok === false ? '❌' : '⚠️';
+      out += `\n${icon} ${t.name}\n`;
+      if (t.url)      out += `  URL:    ${t.url}\n`;
+      if (t.status)   out += `  HTTP:   ${t.status}\n`;
+      if (t.ms)       out += `  応答:   ${t.ms}ms\n`;
+      if (t.htmlLen)  out += `  HTML:   ${t.htmlLen.toLocaleString()} bytes\n`;
+      if (t.parsed != null) out += `  RJ取得: ${t.parsed}件\n`;
+      if (t.sample?.length) out += `  サンプル: ${t.sample.join(', ')}\n`;
+      if (t.cfBlock)  out += `  ⚠ Cloudflare ブロック検出\n`;
+      if (t.ageCheck) out += `  ⚠ 年齢確認ページ検出\n`;
+      if (t.returnedKeys != null) out += `  APIキー数: ${t.returnedKeys}件\n`;
+      if (t.testedCodes) out += `  テスト対象: ${t.testedCodes.join(', ')}\n`;
+      if (t.error)    out += `  エラー: ${t.error}\n`;
+      if (t.note)     out += `  メモ: ${t.note}\n`;
+    }
+    body.textContent = out;
+  } catch (e) {
+    body.textContent = '診断失敗: ' + e.message;
+  }
+}
+
+function closeDiag() { document.getElementById('diagModal').classList.remove('open'); }
 
 // ── ジョブ完了後の結果表示 ──────────────────────────────────────────────────
 function _showJobResult(job, status) {
