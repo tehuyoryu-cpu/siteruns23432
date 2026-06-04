@@ -152,7 +152,15 @@ function handleRunStatus() {
   };
 }
 
-function handleStats()         { return db.getStats(); }
+function handleStats() {
+  const stats = db.getStats();
+  // DBパスをUIに伝える（場所確認用）
+  stats.dbPath = require('path').resolve(
+    process.env.DLSITE_DATA_DIR || process.env.PORTABLE_EXECUTABLE_DIR || process.cwd(),
+    require('../config').db.path
+  );
+  return stats;
+}
 function handleSales()         { return db.getSaleWorks(200); }
 function handleExportJson()    { return db.exportAllHistory(); }
 
@@ -1004,6 +1012,7 @@ body {
   <div class="sb-panel sb-sale">セール中: <b id="sbSale">–</b> 作品</div>
   <div class="sb-panel">価格記録: <b id="sbChanges">–</b> 件</div>
   <div class="sb-panel">確認待ち: <b id="sbDue">–</b> 件</div>
+  <div class="sb-panel" id="sbLastUpdate" style="color:#888;font-size:10px"></div>
   <div class="sb-panel" id="sbStatus">準備完了</div>
 </div>
 
@@ -1017,6 +1026,8 @@ let _charts = {}, _searchTimer = null;
   await loadStats();
   await loadWorks(1);
   setInterval(loadStats, 20000);
+  // worksリストも60秒ごとに自動更新（スケジューラー結果を反映）
+  setInterval(() => loadWorks(_page), 60000);
 
   // Electron 起動時: IPC でジョブ完了/開始通知を受け取りUIに反映
   if (window.electronAPI) {
@@ -1051,6 +1062,13 @@ async function loadStats() {
   setText('sbDue',     s.dueNow);
   const dot = document.getElementById('sbDot');
   if (dot) dot.className = 'sb-dot ' + (s.onSale > 0 ? 'red' : 'green');
+  // 最終更新時刻
+  const luEl = document.getElementById('sbLastUpdate');
+  if (luEl) {
+    const now = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    luEl.textContent = '最終更新: ' + now;
+    if (s.dbPath) luEl.title = 'DB: ' + s.dbPath;
+  }
 }
 
 // ── Works list ─────────────────────────────────────────────────────────────

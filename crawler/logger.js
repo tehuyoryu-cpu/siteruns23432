@@ -12,9 +12,9 @@ const path = require('path');
 const LEVELS   = { debug: 0, info: 1, warn: 2, error: 3 };
 const MIN_LEVEL = LEVELS[(process.env.LOG_LEVEL || 'info').toLowerCase()] ?? 1;
 
-// ログファイルパス: exeの隣 or カレントディレクトリ
-const LOG_DIR  = process.env.PORTABLE_EXECUTABLE_DIR
-  || (process.resourcesPath ? path.join(process.resourcesPath, '..') : null)
+// ログファイルパス: electron-main が DLSITE_DATA_DIR を設定済み
+const LOG_DIR  = process.env.DLSITE_DATA_DIR
+  || process.env.PORTABLE_EXECUTABLE_DIR
   || process.cwd();
 const LOG_PATH = path.join(LOG_DIR, 'dlsite-tracker.log');
 

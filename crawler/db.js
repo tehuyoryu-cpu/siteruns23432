@@ -25,8 +25,8 @@ const log        = require('./logger');
 let _db      = null;   // sql.js Database instance
 let _SQL     = null;   // sql.js namespace
 // electron-builder portable exe ã§ã¯ PORTABLE_EXECUTABLE_DIR ã exe ã®ãã£ã¬ã¯ããªãæã
-const _exeDir = process.env.PORTABLE_EXECUTABLE_DIR
-  || (process.resourcesPath ? path.join(process.resourcesPath, '..') : null)
+const _exeDir = process.env.DLSITE_DATA_DIR
+  || process.env.PORTABLE_EXECUTABLE_DIR
   || process.cwd();
 const DB_PATH = path.resolve(_exeDir, config.db.path);
 
@@ -220,8 +220,12 @@ function _runNoSave(sql, params = []) {
 
 /** Persist the in-memory DB to disk. Called after every mutation. */
 function _save() {
-  const data = _db.export();
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
+  try {
+    const data = _db.export();
+    fs.writeFileSync(DB_PATH, Buffer.from(data));
+  } catch (err) {
+    log.error('[db] _save failed', err.message, 'path:', DB_PATH);
+  }
 }
 
 // âââ works ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ

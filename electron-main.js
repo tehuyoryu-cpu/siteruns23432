@@ -16,6 +16,20 @@ const {
   shell, ipcMain, dialog,
 } = require('electron');
 
+// ─── data dir ────────────────────────────────────────────────────────────────
+// portableビルドでは PORTABLE_EXECUTABLE_DIR が設定されるが、
+// app.getPath('exe') の親ディレクトリが最も確実。
+// db.js / logger.js が require される前に設定する。
+{
+  const path = require('path');
+  const exeDir = path.dirname(app.getPath('exe'));
+  // 開発時（electron . で起動）は CWD を使う
+  process.env.DLSITE_DATA_DIR = process.env.NODE_ENV === 'development'
+    ? process.cwd()
+    : exeDir;
+  console.log('[main] data dir:', process.env.DLSITE_DATA_DIR);
+}
+
 // ─── backend ──────────────────────────────────────────────────────────────────
 
 let db, apiServer, scheduler, discovery, detailFetcher;
