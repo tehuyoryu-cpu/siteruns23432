@@ -16,15 +16,16 @@ const BATCH = config.fetch.batchSize ?? 50;
 
 // ─── public ──────────────────────────────────────────────────────────────────
 
-async function runDetailFetch(limit = 300) {
+async function runDetailFetch(limit = 300, { onProgress } = {}) {
   const due = db.getDueWorks(limit);
   if (!due.length) {
     log.info('[detail] no due works');
-    return { processed: 0, priceChanges: 0, errors: 0 };
+    return { processed: 0, priceChanges: 0, errors: 0, total: 0 };
   }
 
-  log.info('[detail] due:', due.length);
-  const result = { processed: 0, priceChanges: 0, errors: 0 };
+  const total = due.length;
+  log.info('[detail] due:', total);
+  const result = { processed: 0, priceChanges: 0, errors: 0, total };
 
   // サイト別グループ
   const bySite = {};
@@ -40,6 +41,7 @@ async function runDetailFetch(limit = 300) {
       result.processed    += r.processed;
       result.priceChanges += r.priceChanges;
       result.errors       += r.errors;
+      onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total });
       if (i + BATCH < works.length) await sleep(config.fetch.rateLimit);
     }
   }

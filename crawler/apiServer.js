@@ -81,8 +81,15 @@ async function handleRun(job, res) {
       _sseSend('log', `discovery完了 — 新規: ${r?.discovered ?? 0}件`);
 
     } else if (job === 'fetch') {
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const r = await detailFetcher.runDetailFetch(300);
+      const startedAt = Math.floor(Date.now() / 1000);
+      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt, done: false });
+      const r = await detailFetcher.runDetailFetch(300, {
+        onProgress: ({ processed, priceChanges, total }) => {
+          Object.assign(_progress, { found: processed, total });
+          _sseSend('progress', { processed, priceChanges, total });
+          if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
+        },
+      });
       _lastResult[job] = { ok: true, ...r, finishedAt: Date.now() };
       _sseSend(r?.priceChanges > 0 ? 'change' : 'log',
         `価格更新完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`);
@@ -97,7 +104,12 @@ async function handleRun(job, res) {
 
     } else if (job === 'all') {
       await runDiscovery();
-      await detailFetcher.runDetailFetch(300);
+      await detailFetcher.runDetailFetch(300, {
+        onProgress: ({ processed, priceChanges, total }) => {
+          Object.assign(_progress, { found: processed, total });
+          _sseSend('progress', { processed, priceChanges, total });
+        },
+      });
       const circles = db.getCirclesOnSale();
       db.transaction(() => {
         for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
@@ -111,6 +123,7 @@ async function handleRun(job, res) {
         maxPages: 0,
         onProgress: ({ site, page, found: pageFound, total }) => {
           Object.assign(_progress, { site, page, found: total, totalPages: null });
+          _sseSend('progress', { site, page, found: total });
         },
       });
       Object.assign(_progress, { done: true });
@@ -1329,9 +1342,22 @@ function _spStartSSE() {
   if (typeof EventSource === 'undefined') { _spStartPolling(); return; }
   _sseConn = new EventSource('/api/log-stream');
   _sseConn.addEventListener('log',    e => _spLog(e.data));
-  _sseConn.addEventListener('change', e => { _spChanges++; _spLog(e.data, 'change'); _spUpdate(); });
+  _sseConn.addEventListener('change', e => { _spLog(e.data, 'change'); });
   _sseConn.addEventListener('warn',   e => _spLog(e.data, 'warn'));
   _sseConn.addEventListener('error',  e => _spLog(e.data, 'err'));
+  _sseConn.addEventListener('progress', e => {
+    try {
+      const d = JSON.parse(e.data);
+      if (typeof d.processed === 'number') {
+        _spScanned = d.processed;
+        _spChanges = d.priceChanges ?? _spChanges;
+        if (d.total) _spTotal = d.total;
+      } else if (typeof d.found === 'number') {
+        _spScanned = d.found;
+      }
+      _spUpdate();
+    } catch {}
+  });
   _sseConn.onerror = () => {
     _spLog('接続が切れました。再接続中...', 'warn');
     setTimeout(() => { if (_sseConn) _spStartSSE(); }, 5000);
@@ -1495,18 +1521,19 @@ function updateProgressBar(p, job) {
   const elapsed = p.elapsed ? Math.floor(p.elapsed) + 's' : '';
 
   if (job === 'fullscan' || job === 'fullscan_sale') {
-    // ページ数が不明なので不定形アニメーション
     fill.classList.add('indeterminate');
     const site  = p.site ? '[' + p.site + ']' : '';
     const page  = p.page ? 'p.' + p.page : '';
     const found = p.found ? p.found + '件' : '';
     label.textContent = [site, page, found, elapsed].filter(Boolean).join(' ');
-  } else if (job === 'fetch') {
+  } else if (job === 'fetch' || job === 'all') {
+    const processed = _spScanned || p.found || 0;
+    const total     = _spTotal   || p.total || 0;
+    const pct = total > 0 ? Math.min(99, Math.round(processed / total * 100)) : 0;
     fill.classList.remove('indeterminate');
-    // due worksに対する進捗（近似値）
-    const pct = p.found ? Math.min(99, Math.round(p.found / 3)) : 30;
-    fill.style.width = pct + '%';
-    label.textContent = (p.found || 0) + '件更新 ' + elapsed;
+    fill.style.width = (pct || 2) + '%';
+    const changes = _spChanges > 0 ? ` 変動:${_spChanges}件` : '';
+    label.textContent = `${processed}/${total}件${changes} ${elapsed}`;
   } else {
     fill.classList.add('indeterminate');
     label.textContent = (_JOB_LABELS[job] ?? job) + '中... ' + elapsed;
