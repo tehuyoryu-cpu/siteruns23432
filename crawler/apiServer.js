@@ -2,22 +2,25 @@
 
 /**
  * crawler/apiServer.js
- * Built-in http API server + embedded dashboard HTML.
- * No external dependencies – works inside the pkg exe as-is.
+ * Built-in HTTP API server + embedded dashboard.
  *
  * Endpoints:
- *   GET /                    → dashboard HTML
- *   GET /api/stats           → overall counters
- *   GET /api/works           → paginated works list  ?page&q&sort&onSale
- *   GET /api/history/:rj     → price history array for charting
- *   GET /api/sales           → works currently on sale (sorted by discount)
- *   GET /api/export/json     → full price_history JSON download
- *   GET /api/export/csv      → full price_history CSV download
- *   GET /api/run/status      → job running flags
- *   POST /api/run/discover   → 即時 discovery 実行
- *   POST /api/run/fetch      → 即時 detail fetch 実行
- *   POST /api/run/saleboost  → 即時 sale boost 実行
- *   POST /api/run/all        → 全ジョブ即時実行
+ *   GET  /                         → dashboard HTML
+ *   GET  /api/stats                → overall counters
+ *   GET  /api/works                → paginated works list  ?page&q&sort&onSale
+ *   GET  /api/history/:rj          → price history for one work
+ *   GET  /api/sales                → works currently on sale
+ *   GET  /api/export/json          → full price_history JSON download
+ *   GET  /api/export/csv           → full price_history CSV download
+ *   GET  /api/run/status           → job running flags + progress
+ *   POST /api/run/discover         → immediate discovery run
+ *   POST /api/run/fetch            → immediate detail fetch run
+ *   POST /api/run/saleboost        → immediate sale-boost run
+ *   POST /api/run/all              → run all jobs immediately
+ *   POST /api/run/fullscan         → FSR full-collection scan
+ *   POST /api/run/fullscan_sale    → FSR sale-only scan
+ *   GET  /api/log-stream           → SSE real-time log stream
+ *   GET  /api/log                  → last 200 lines of log file
  */
 
 const http   = require('http');
@@ -25,19 +28,41 @@ const url    = require('url');
 const fs     = require('fs');
 const path   = require('path');
 const db     = require('./db');
-const newsDb           = require('./newsDb');
-const { fetchArticleContent } = require('./articleFetcher');
-const log              = require('./logger');
+const log    = require('./logger');
 const config = require('../config');
+const { runDiscovery, runFullScan } = require('./discovery');
+const detailFetcher = require('./detailFetcher');
 
-// ─── API handlers ────────────────────────────────────────────────────────────
+// ─── SSE ────────────────────────────────────────────────────────────────────
 
-// ジョブ実行状態（重複起動防止）
-const _jobRunning = { discover: false, fetch: false, saleboost: false, fullscan: false, fullscan_sale: false, all: false };
+const _sseClients = new Set();
 
-/** POST /api/run/:job  → 即時実行トリガー */
-// 直近のジョブ結果を保持
+function _sseSend(event, data) {
+  const msg = `event: ${event}\ndata: ${typeof data === 'string' ? data : JSON.stringify(data)}\n\n`;
+  for (const res of _sseClients) {
+    try { res.write(msg); } catch { _sseClients.delete(res); }
+  }
+}
+
+// logger の warn/error を SSE にも流す
+setTimeout(() => {
+  log.warn  = (...a) => { log._origWarn?.(...a);  _sseSend('warn',  a.join(' ')); };
+  log.error = (...a) => { log._origError?.(...a); _sseSend('error', a.join(' ')); };
+}, 0);
+
+// ─── 進捗状態 ────────────────────────────────────────────────────────────────
+
+const _jobRunning = {
+  discover: false, fetch: false, saleboost: false,
+  fullscan: false, fullscan_sale: false, all: false,
+};
 const _lastResult = {};
+const _progress = {
+  job: null, page: 0, totalPages: null, found: 0,
+  site: null, startedAt: null, done: false,
+};
+
+// ─── ジョブ実行 ──────────────────────────────────────────────────────────────
 
 async function handleRun(job, res) {
   if (_jobRunning[job]) {
@@ -46,52 +71,49 @@ async function handleRun(job, res) {
   _jobRunning[job] = true;
   _lastResult[job] = null;
 
-  // レスポンスをすぐ返してからバックグラウンドで実行
   _json(res, { ok: true, message: `${job} started` });
 
   try {
     if (job === 'discover') {
-      Object.assign(_progress, { job, page: 0, found: 0, site: 'maniax', startedAt: Math.floor(Date.now()/1000), done: false });
+      Object.assign(_progress, { job, page: 0, found: 0, site: 'maniax', startedAt: Math.floor(Date.now() / 1000), done: false });
       const r = await runDiscovery();
       _lastResult[job] = { ok: true, discovered: r?.discovered ?? 0, finishedAt: Date.now() };
       _sseSend('log', `discovery完了 — 新規: ${r?.discovered ?? 0}件`);
+
     } else if (job === 'fetch') {
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now()/1000), done: false });
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const r = await detailFetcher.runDetailFetch(300);
       _lastResult[job] = { ok: true, ...r, finishedAt: Date.now() };
       _sseSend(r?.priceChanges > 0 ? 'change' : 'log',
         `価格更新完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`);
+
     } else if (job === 'saleboost') {
       const circles = db.getCirclesOnSale();
       db.transaction(() => {
-        for (const { maker_id } of circles) {
-          db.boostCircleWorks(maker_id, 100, 7200);
-        }
+        for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
       });
       db.syncCircleWorksCounts();
       log.info('[api] saleboost done, circles:', circles.length);
+
     } else if (job === 'all') {
       await runDiscovery();
       await detailFetcher.runDetailFetch(300);
       const circles = db.getCirclesOnSale();
       db.transaction(() => {
-        for (const { maker_id } of circles) {
-          db.boostCircleWorks(maker_id, 100, 7200);
-        }
+        for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
       });
+
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now()/1000), done: false });
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await runFullScan({
         sale,
         maxPages: 0,
         onProgress: ({ site, page, found: pageFound, total }) => {
           Object.assign(_progress, { site, page, found: total, totalPages: null });
-          _fullScanProgress = { site, page, found: pageFound, total, sale };
         },
       });
       Object.assign(_progress, { done: true });
-      _fullScanProgress = { done: true, ...result };
       log.info('[api] fullScan done', result);
     }
   } catch (err) {
@@ -103,66 +125,26 @@ async function handleRun(job, res) {
   }
 }
 
-// ─── SSE ブロードキャスト ────────────────────────────────────────────────────
-const _sseClients = new Set();
+// ─── API ハンドラ ─────────────────────────────────────────────────────────────
 
-function _sseSend(event, data) {
-  const msg = `event: ${event}
-data: ${typeof data === 'string' ? data : JSON.stringify(data)}
-
-`;
-  for (const res of _sseClients) {
-    try { res.write(msg); } catch { _sseClients.delete(res); }
-  }
-}
-
-// logger の warn/error を SSE にも流す
-const _origWarn  = log.warn.bind(log);
-const _origError = log.error.bind(log);
-// monkey-patch（起動後に有効になる）
-setTimeout(() => {
-  const origInfo  = log.info.bind(log);
-  log.warn  = (...a) => { _origWarn(...a);  _sseSend('warn',  a.join(' ')); };
-  log.error = (...a) => { _origError(...a); _sseSend('error', a.join(' ')); };
-}, 0);
-
-// 進捗状態（全ジョブ共通）
-const _progress = {
-  job:        null,   // 実行中のジョブ名
-  page:       0,      // 現在ページ
-  totalPages: null,   // 推定総ページ数 (null=不明)
-  found:      0,      // 累計発見RJ数
-  site:       null,   // 現在のサイト
-  startedAt:  null,   // 開始Unix秒
-  done:       false,
-};
-let _fullScanProgress = null; // 後方互換
-
-/** GET /api/run/status → 各ジョブ実行中フラグ + 詳細進捗 */
 function handleRunStatus() {
   const elapsed = _progress.startedAt
-    ? Math.floor(Date.now() / 1000) - _progress.startedAt
-    : 0;
+    ? Math.floor(Date.now() / 1000) - _progress.startedAt : 0;
   return {
-    discover:      _jobRunning.discover,
-    fetch:         _jobRunning.fetch,
-    saleboost:     _jobRunning.saleboost,
-    all:           _jobRunning.all ?? false,
-    fullscan:      _jobRunning.fullscan ?? false,
-    fullscan_sale: _jobRunning.fullscan_sale ?? false,
-    progress:      { ..._progress, elapsed },
-    lastResult:    _lastResult,
-    recentErrors:  log.getRecentErrors().slice(-10),
-    sseClients:    _sseClients.size,
+    ..._jobRunning,
+    progress:     { ..._progress, elapsed },
+    lastResult:   _lastResult,
+    recentErrors: log.getRecentErrors?.().slice(-10) ?? [],
+    sseClients:   _sseClients.size,
   };
 }
 
-function handleStats() {
-  return db.getStats();
-}
+function handleStats()         { return db.getStats(); }
+function handleSales()         { return db.getSaleWorks(200); }
+function handleExportJson()    { return db.exportAllHistory(); }
 
 function handleWorks(query) {
-  const page   = Math.max(1, parseInt(query.page  ?? '1', 10));
+  const page   = Math.max(1, parseInt(query.page ?? '1', 10));
   const q      = (query.q ?? '').trim();
   const sort   = query.sort ?? 'priority';
   const onSale = query.onSale === '1';
@@ -170,124 +152,108 @@ function handleWorks(query) {
 }
 
 function handleHistory(rjCode) {
-  const history = db.getPriceHistory(rjCode);
-  const work    = db.getWorkByRj(rjCode);
-  return { work: work ?? null, history };
-}
-
-function handleSales() {
-  return db.getSaleWorks(200);
-}
-
-function handleExportJson() {
-  return db.exportAllHistory();
+  return { work: db.getWorkByRj(rjCode) ?? null, history: db.getPriceHistory(rjCode) };
 }
 
 function handleExportCsv() {
   const data   = db.exportAllHistory();
   const header = 'rj_code,title,circle,price,sale_price,discount_rate,point,checked_at\n';
-  const rows   = data.map(r =>
-    [
-      r.rj_code,
-      _csvEscape(r.title),
-      _csvEscape(r.circle),
-      r.price         ?? '',
-      r.sale_price    ?? '',
-      r.discount_rate ?? '',
-      r.point         ?? '',
-      r.checked_at ? new Date(r.checked_at * 1000).toISOString() : '',
-    ].join(',')
-  );
+  const rows   = data.map(r => [
+    r.rj_code,
+    _csvEscape(r.title),
+    _csvEscape(r.circle),
+    r.price         ?? '',
+    r.sale_price    ?? '',
+    r.discount_rate ?? '',
+    r.point         ?? '',
+    r.checked_at ? new Date(r.checked_at * 1000).toISOString() : '',
+  ].join(','));
   return header + rows.join('\n');
 }
 
+// ─── HTTP サーバー ────────────────────────────────────────────────────────────
 
-// ─── News API handlers ───────────────────────────────────────────────────────
+function createServer() {
+  const server = http.createServer(async (req, res) => {
+    const parsed   = url.parse(req.url ?? '/', true);
+    const pathname = parsed.pathname ?? '/';
+    const query    = parsed.query ?? {};
 
-function handleNewsArticles(query) {
-  const page     = Math.max(1, parseInt(query.page ?? '1', 10));
-  const limit    = Math.min(50, parseInt(query.limit ?? '30', 10));
-  const category = query.category || null;
-  const lang     = query.lang || null;
-  const q        = (query.q ?? '').trim() || null;
-  const sourceId = query.source || null;
-  return newsDb.getArticles({ category, lang, page, limit, q, sourceId });
-}
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
-function handleNewsStats() {
-  return newsDb.getNewsStats();
-}
+    log.debug('[api]', req.method, pathname);
 
-
-      // 株価クオート（Yahoo Finance非公式）
-      if (pathname === '/api/quote') {
-        const ticker = query.ticker || '';
-        if (!ticker) return _json(res, { error: 'ticker required' });
-        try {
-          const data = await _fetchYahooQuote(ticker);
-          return _json(res, data);
-        } catch(e) {
-          return _json(res, { ticker, error: e.message, price: 0, change: 0, changePercent: 0 });
-        }
+    try {
+      if (pathname === '/' || pathname === '/index.html') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(DASHBOARD_HTML);
+        return;
       }
 
-      // 過去チャート（Yahoo Finance非公式）
-      if (pathname === '/api/chart') {
-        const ticker   = query.ticker   || '';
-        const range    = query.range    || '1mo';
-        const interval = query.interval || '1d';
-        if (!ticker) return _json(res, { error: 'ticker required' });
-        try {
-          const data = await _fetchYahooChart(ticker, range, interval);
-          return _json(res, data);
-        } catch(e) {
-          return _json(res, { ticker, error: e.message, points: [] });
-        }
+      if (pathname === '/api/stats')  return _json(res, handleStats());
+      if (pathname === '/api/works')  return _json(res, handleWorks(query));
+      if (pathname === '/api/sales')  return _json(res, handleSales());
+
+      const histMatch = pathname.match(/^\/api\/history\/(.+)$/);
+      if (histMatch) return _json(res, handleHistory(histMatch[1].toUpperCase()));
+
+      if (pathname === '/api/run/status') return _json(res, handleRunStatus());
+
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale)$/);
+      if (runMatch) {
+        if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
+        handleRun(runMatch[1], res);
+        return;
       }
 
-            if (pathname === '/api/prefs') {
-        if (req.method === 'POST') {
-          let body = '';
-          req.on('data', chunk => { body += chunk; });
-          req.on('end', () => {
-            try {
-              const incoming = JSON.parse(body);
-              const current  = _loadPrefs();
-              const merged   = { ...current, ...incoming };
-              _savePrefs(merged);
-              _json(res, { ok: true, prefs: merged });
-            } catch(e) { _json(res, { ok: false, error: e.message }); }
-          });
-          return;
-        }
-        return _json(res, _loadPrefs());
+      if (pathname === '/api/log-stream') {
+        res.writeHead(200, {
+          'Content-Type':      'text/event-stream; charset=utf-8',
+          'Cache-Control':     'no-cache',
+          'Connection':        'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+        res.write('retry: 3000\n\n');
+        res.write('event: log\ndata: SSE connected\n\n');
+        _sseClients.add(res);
+        req.on('close', () => _sseClients.delete(res));
+        return;
       }
 
-      // 記事本文取得（フェッチ＆翻訳も兼ねる）
-      const contentMatch = pathname.match(/^\/api\/news\/([^/]+)\/content$/);
-      if (contentMatch) {
-        const articleId = decodeURIComponent(contentMatch[1]);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8',
-                             'Access-Control-Allow-Origin': '*' });
+      if (pathname === '/api/log') {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
         try {
-          const result = await fetchArticleContent(articleId);
-          res.end(JSON.stringify(result));
-        } catch(e) {
-          res.end(JSON.stringify({ error: e.message }));
+          const content = fs.readFileSync(log.getLogPath(), 'utf8');
+          res.end(content.split('\n').slice(-200).join('\n'));
+        } catch (e) {
+          res.end('(ログファイルなし: ' + e.message + ')');
         }
         return;
       }
 
-      if (pathname === '/api/news') {
-        return _json(res, handleNewsArticles(query));
+      if (pathname === '/api/export/json') {
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Content-Disposition': 'attachment; filename="dlsite-history.json"',
+        });
+        res.end(JSON.stringify(handleExportJson(), null, 2));
+        return;
       }
 
-      if (pathname === '/api/news/stats') {
-        return _json(res, handleNewsStats());
+      if (pathname === '/api/export/csv') {
+        res.writeHead(200, {
+          'Content-Type': 'text/csv; charset=utf-8-sig',
+          'Content-Disposition': 'attachment; filename="dlsite-history.csv"',
+        });
+        res.end('\uFEFF' + handleExportCsv());
+        return;
       }
 
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
+
     } catch (err) {
       log.error('[api] error', pathname, err.message);
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -299,28 +265,19 @@ function handleNewsStats() {
 }
 
 function start() {
-  const port = config.ui.port;
-  const host = config.ui.host;
-  // ニュースDBを初期化（非同期、エラーは無視）
-  newsDb.init().catch(err => log.warn('[api] newsDb init failed', err.message));
+  const { port, host } = config.ui;
   const server = createServer();
-
   server.listen(port, host, () => {
     log.info(`[api] dashboard → http://${host}:${port}`);
   });
-
   server.on('error', err => {
-    if (err.code === 'EADDRINUSE') {
-      log.error(`[api] port ${port} in use – UI disabled`);
-    } else {
-      log.error('[api] server error', err.message);
-    }
+    if (err.code === 'EADDRINUSE') log.error(`[api] port ${port} in use – UI disabled`);
+    else log.error('[api] server error', err.message);
   });
-
   return server;
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ─── ヘルパー ─────────────────────────────────────────────────────────────────
 
 function _json(res, data) {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -331,13 +288,22 @@ function _csvEscape(v) {
   if (v == null) return '';
   const s = String(v);
   return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"`
-    : s;
+    ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-// ─── embedded dashboard HTML ──────────────────────────────────────────────────
+module.exports = { start, createServer };
+
+// ─── ダッシュボード HTML ───────────────────────────────────────────────────────
 
 const DASHBOARD_HTML = /* html */`<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DLsite Price Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -844,487 +810,6 @@ body {
 .works-list::-webkit-scrollbar-thumb { background:linear-gradient(to right,#ccc,#d8d8d8); border:1px solid #aaa; }
 .works-list::-webkit-scrollbar-button { height:16px; background:#f0f0f0; border:1px solid #ccc; display:block; }
 
-/* ── ニュースページ ── */
-.news-filters {
-  display:flex;gap:6px;align-items:center;padding:4px 8px;
-  background:#f8f8f8;border-bottom:1px solid #ccc;flex-shrink:0;flex-wrap:wrap;
-}
-.news-filters label {font-size:11px;color:#555;}
-.news-filters select,.news-filters input {
-  height:20px;border:1px solid #aaa;border-radius:1px;
-  padding:0 4px;font-family:inherit;font-size:11px;background:#fff;
-}
-.news-filters input {width:180px;}
-.news-list {flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:4px;}
-.news-card {
-  background:#fff;border:1px solid #ddd;border-radius:3px;padding:8px 10px;
-  cursor:pointer;transition:border-color .15s,background .15s;
-}
-.news-card:hover {background:#f0f7ff;border-color:#0078d7;}
-.news-card-head {display:flex;align-items:center;gap:6px;margin-bottom:3px;}
-.news-badge {
-  font-size:9px;font-weight:bold;padding:1px 5px;border-radius:2px;
-  background:#0078d7;color:#fff;white-space:nowrap;flex-shrink:0;
-}
-.news-badge.tech    {background:#006633;}
-.news-badge.culture {background:#660066;}
-.news-badge.game    {background:#cc4400;}
-.news-badge.anime   {background:#994400;}
-.news-badge.business{background:#004499;}
-.news-badge.entertainment{background:#880044;}
-.news-badge.music   {background:#443300;}
-.news-badge.science {background:#004444;}
-.news-source {font-size:10px;color:#888;}
-.news-date   {font-size:10px;color:#aaa;margin-left:auto;}
-.news-title-ja {font-size:13px;font-weight:bold;color:#111;line-height:1.3;margin-bottom:2px;}
-.news-title-en {font-size:11px;color:#666;line-height:1.3;}
-.news-desc  {font-size:11px;color:#555;line-height:1.4;margin-top:3px;
-             display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.news-pager {display:flex;align-items:center;gap:4px;padding:3px 8px;
-             background:#f0f0f0;border-top:1px solid #ccc;flex-shrink:0;}
-.news-pager-btn {
-  padding:1px 8px;background:linear-gradient(to bottom,#fff,#e0e0e0);
-  border:1px solid #aaa;border-radius:2px;cursor:default;font-size:11px;
-}
-.news-pager-btn:hover {background:linear-gradient(to bottom,#e5f1fb,#c8ddf0);border-color:#0078d7;}
-.news-pager-info {font-size:11px;color:#555;flex:1;text-align:center;}
-.news-stats-bar {
-  display:flex;gap:8px;padding:3px 8px;background:#f0f0f0;
-  border-bottom:1px solid #ccc;font-size:11px;color:#555;flex-shrink:0;flex-wrap:wrap;
-}
-.news-stat-item {display:flex;gap:3px;align-items:center;}
-.news-stat-num  {font-weight:bold;color:#0055aa;}
-
-
-/* ── リーダービュー ── */
-.reader-overlay {
-  position:fixed;inset:0;z-index:9999;
-  background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
-}
-.reader-panel {
-  background:#fafafa;width:min(860px,94vw);height:90vh;
-  border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.35);
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.reader-header {
-  display:flex;align-items:center;gap:8px;padding:8px 12px;
-  background:#1e1e2e;color:#fff;flex-shrink:0;
-}
-.reader-header-title {
-  flex:1;font-size:13px;font-weight:bold;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.reader-controls { display:flex;gap:6px;align-items:center;flex-shrink:0; }
-.reader-btn {
-  padding:2px 10px;border:1px solid rgba(255,255,255,.3);border-radius:3px;
-  background:rgba(255,255,255,.1);color:#fff;font-size:11px;cursor:default;
-  font-family:inherit;
-}
-.reader-btn:hover { background:rgba(255,255,255,.25); }
-.reader-btn.active { background:#0078d7;border-color:#0078d7; }
-.reader-lang-toggle {
-  display:flex;border:1px solid rgba(255,255,255,.3);border-radius:3px;overflow:hidden;
-}
-.reader-lang-toggle button {
-  padding:2px 8px;background:transparent;border:none;color:rgba(255,255,255,.6);
-  font-size:11px;cursor:default;font-family:inherit;
-}
-.reader-lang-toggle button.active { background:#0078d7;color:#fff; }
-.reader-source-bar {
-  display:flex;gap:8px;align-items:center;padding:5px 14px;
-  background:#f0f0f0;border-bottom:1px solid #ddd;font-size:11px;color:#666;flex-shrink:0;
-}
-.reader-source-bar a { color:#0055cc;text-decoration:none; }
-.reader-source-bar a:hover { text-decoration:underline; }
-.reader-body {
-  flex:1;overflow-y:auto;padding:24px 40px 40px;
-  font-size:15px;line-height:1.85;color:#222;background:#fafafa;
-}
-.reader-body.dark { background:#1a1a2e;color:#e0e0e0; }
-.reader-body.sepia { background:#f5ead0;color:#3b2e1a; }
-.reader-top-image {
-  width:100%;max-height:300px;object-fit:cover;border-radius:4px;margin-bottom:20px;
-}
-.reader-title { font-size:22px;font-weight:bold;margin-bottom:6px;line-height:1.3; }
-.reader-title-sub { font-size:14px;color:#888;margin-bottom:20px; }
-.reader-content { white-space:pre-wrap;word-break:break-word; }
-.reader-loading {
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:200px;gap:12px;color:#888;font-size:13px;
-}
-.reader-spinner {
-  width:32px;height:32px;border:3px solid #ddd;border-top-color:#0078d7;
-  border-radius:50%;animation:spin .8s linear infinite;
-}
-.reader-error { padding:30px;text-align:center;color:#c00;font-size:13px; }
-.news-card-has-content::after {
-  content:'📄';font-size:10px;margin-left:4px;opacity:.6;
-}
-
-/* ── 設定パネル ── */
-.settings-overlay {
-  position:fixed;inset:0;z-index:10000;
-  background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;
-}
-.settings-panel {
-  background:#fff;width:420px;border-radius:6px;
-  box-shadow:0 8px 32px rgba(0,0,0,.3);overflow:hidden;
-}
-.settings-header {
-  display:flex;align-items:center;padding:10px 14px;
-  background:#1e1e2e;color:#fff;font-size:13px;font-weight:bold;
-}
-.settings-header span { flex:1; }
-.settings-header button {
-  background:transparent;border:none;color:#fff;font-size:16px;cursor:default;padding:0 4px;
-}
-.settings-body { padding:16px 18px;display:flex;flex-direction:column;gap:14px; }
-.settings-section { display:flex;flex-direction:column;gap:6px; }
-.settings-section label {
-  font-size:11px;font-weight:bold;color:#555;text-transform:uppercase;letter-spacing:.5px;
-}
-.settings-row {
-  display:flex;align-items:center;gap:8px;font-size:12px;color:#333;
-}
-.settings-row span { min-width:130px;color:#555; }
-.settings-row select {
-  flex:1;height:24px;border:1px solid #bbb;border-radius:2px;
-  padding:0 4px;font-family:inherit;font-size:12px;background:#fff;
-}
-.settings-footer {
-  padding:10px 18px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:6px;
-}
-.settings-save-btn {
-  padding:4px 18px;background:#0078d7;color:#fff;border:none;
-  border-radius:3px;font-size:12px;font-family:inherit;cursor:default;
-}
-.settings-save-btn:hover { background:#005ea2; }
-.settings-cancel-btn {
-  padding:4px 14px;background:#f0f0f0;color:#333;
-  border:1px solid #bbb;border-radius:3px;font-size:12px;font-family:inherit;cursor:default;
-}
-
-/* ══════════════════════════════════════════════════════
-   豪華アニメーション CSS
-   ══════════════════════════════════════════════════════ */
-
-/* ── キーフレーム定義 ── */
-@keyframes fadeInUp {
-  from { opacity:0; transform:translateY(14px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes fadeInDown {
-  from { opacity:0; transform:translateY(-14px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes fadeInLeft {
-  from { opacity:0; transform:translateX(-18px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-@keyframes fadeInScale {
-  from { opacity:0; transform:scale(.92); }
-  to   { opacity:1; transform:scale(1); }
-}
-@keyframes slideInRight {
-  from { opacity:0; transform:translateX(30px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-@keyframes popIn {
-  0%   { opacity:0; transform:scale(.7); }
-  70%  { transform:scale(1.06); }
-  100% { opacity:1; transform:scale(1); }
-}
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
-}
-@keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,120,215,.35); }
-  50%       { box-shadow: 0 0 0 6px rgba(0,120,215,0); }
-}
-@keyframes ripple {
-  to { transform: scale(4); opacity: 0; }
-}
-@keyframes countUp {
-  from { opacity:0; transform:translateY(6px) scale(.9); }
-  to   { opacity:1; transform:translateY(0) scale(1); }
-}
-@keyframes badgePop {
-  0%   { transform:scale(0) rotate(-10deg); }
-  60%  { transform:scale(1.2) rotate(3deg); }
-  100% { transform:scale(1) rotate(0deg); }
-}
-@keyframes spinnerArc {
-  0%   { stroke-dashoffset: 200; }
-  100% { stroke-dashoffset: -200; }
-}
-@keyframes waveBar {
-  0%,100% { transform:scaleY(.4); }
-  50%      { transform:scaleY(1); }
-}
-@keyframes floatUp {
-  0%   { opacity:1; transform:translateY(0) scale(1); }
-  100% { opacity:0; transform:translateY(-40px) scale(.6); }
-}
-
-/* ── ツールバーボタン ── */
-.tb-btn {
-  position: relative;
-  overflow: hidden;
-  transition: background .18s, border-color .18s, color .18s,
-              box-shadow .18s, transform .12s;
-}
-.tb-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(0,120,215,.22);
-}
-.tb-btn:active {
-  transform: translateY(0) scale(.96);
-  box-shadow: none;
-}
-/* リップルエフェクト */
-.tb-btn .ripple-el {
-  position:absolute;border-radius:50%;
-  background:rgba(0,120,215,.25);
-  width:12px;height:12px;margin:-6px;
-  pointer-events:none;
-  animation: ripple .5s ease-out forwards;
-}
-
-/* ── タブ切り替え時のスライドアニメ ── */
-.main-area {
-  animation: fadeInScale .22s ease both;
-}
-.news-list {
-  transition: opacity .18s;
-}
-.news-list.loading {
-  opacity: 0;
-}
-
-/* ── ニュースカード ── */
-.news-card {
-  transition: background .15s, border-color .18s,
-              transform .18s cubic-bezier(.34,1.56,.64,1),
-              box-shadow .18s;
-  will-change: transform;
-}
-.news-card:hover {
-  transform: translateY(-2px) scale(1.005);
-  box-shadow: 0 6px 20px rgba(0,0,0,.1);
-  border-color: #0078d7;
-  background: #f0f7ff;
-}
-.news-card:active {
-  transform: scale(.99);
-  box-shadow: 0 2px 6px rgba(0,0,0,.08);
-}
-/* カード入場アニメ（stagger） */
-.news-card {
-  opacity: 0;
-  animation: fadeInUp .3s ease both;
-}
-.news-card:nth-child(1)  { animation-delay: .00s }
-.news-card:nth-child(2)  { animation-delay: .03s }
-.news-card:nth-child(3)  { animation-delay: .06s }
-.news-card:nth-child(4)  { animation-delay: .09s }
-.news-card:nth-child(5)  { animation-delay: .12s }
-.news-card:nth-child(6)  { animation-delay: .15s }
-.news-card:nth-child(7)  { animation-delay: .18s }
-.news-card:nth-child(8)  { animation-delay: .20s }
-.news-card:nth-child(9)  { animation-delay: .22s }
-.news-card:nth-child(10) { animation-delay: .24s }
-.news-card:nth-child(n+11) { animation-delay: .26s }
-
-/* ── ニュースバッジ ── */
-.news-badge {
-  animation: badgePop .35s cubic-bezier(.34,1.56,.64,1) both;
-  transition: transform .15s, filter .15s;
-}
-.news-card:hover .news-badge {
-  transform: scale(1.08);
-  filter: brightness(1.12);
-}
-
-/* ── スケルトン ローディング ── */
-.skeleton {
-  background: linear-gradient(90deg, #eee 25%, #f8f8f8 50%, #eee 75%);
-  background-size: 400px 100%;
-  animation: shimmer 1.4s infinite linear;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-/* ── リーダーパネル ── */
-.reader-panel {
-  animation: popIn .28s cubic-bezier(.34,1.56,.64,1) both;
-}
-.reader-overlay {
-  animation: none;
-  transition: background .2s;
-}
-.reader-body {
-  transition: background .3s, color .3s, font-size .15s;
-}
-.reader-content {
-  animation: fadeInUp .4s ease both;
-}
-.reader-top-image {
-  animation: fadeInScale .5s ease both;
-  transition: transform .3s;
-}
-.reader-top-image:hover {
-  transform: scale(1.01);
-}
-
-/* ── 設定パネル ── */
-.settings-panel {
-  animation: popIn .25s cubic-bezier(.34,1.56,.64,1) both;
-}
-.settings-row select {
-  transition: border-color .15s, box-shadow .15s;
-}
-.settings-row select:focus {
-  border-color: #0078d7;
-  box-shadow: 0 0 0 3px rgba(0,120,215,.18);
-  outline: none;
-}
-.settings-save-btn {
-  transition: background .15s, transform .12s, box-shadow .15s;
-}
-.settings-save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,120,215,.3);
-}
-.settings-save-btn:active { transform:scale(.97); }
-
-/* ── 株価カード ── */
-.stock-card {
-  transition: transform .2s cubic-bezier(.34,1.56,.64,1),
-              box-shadow .2s, border-color .2s;
-}
-.stock-card:hover {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
-}
-.stock-price {
-  transition: color .4s, opacity .3s;
-}
-/* 株価更新フラッシュ */
-.stock-price.flash-up {
-  animation: flashGreen .6s ease;
-}
-.stock-price.flash-down {
-  animation: flashRed .6s ease;
-}
-@keyframes flashGreen {
-  0%   { background:#00cc6620; }
-  100% { background:transparent; }
-}
-@keyframes flashRed {
-  0%   { background:#cc000020; }
-  100% { background:transparent; }
-}
-
-/* ── プログレスバー ── */
-.progress-fill {
-  background: linear-gradient(90deg, #0055cc, #00aaff, #0055cc);
-  background-size: 200% 100%;
-  animation: gradientShift 2s ease infinite;
-  transition: width .5s cubic-bezier(.4,0,.2,1);
-}
-.progress-fill.indeterminate {
-  animation: slide 1.2s ease-in-out infinite,
-             gradientShift 2s ease infinite;
-}
-
-/* ── ページャーボタン ── */
-.news-pager-btn {
-  transition: background .15s, transform .12s, box-shadow .12s;
-  cursor: default;
-}
-.news-pager-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(0,120,215,.2);
-}
-.news-pager-btn:active { transform: scale(.94); }
-
-/* ── フィルターバー input/select ── */
-.filterbar input:focus, .news-filters input:focus {
-  border-color: #0078d7;
-  box-shadow: 0 0 0 3px rgba(0,120,215,.15);
-  transition: border-color .15s, box-shadow .15s;
-}
-.news-filters select {
-  transition: border-color .15s;
-}
-.news-filters select:focus {
-  border-color: #0078d7;
-  outline: none;
-}
-
-/* ── ステータスバー カウンター ── */
-.status-num-anim {
-  display: inline-block;
-  animation: countUp .4s cubic-bezier(.34,1.56,.64,1) both;
-}
-
-/* ── work-row ── */
-.work-row {
-  transition: background .1s;
-}
-.work-row.selected {
-  animation: fadeInLeft .15s ease both;
-}
-
-/* ── モーダル ── */
-.modal-box {
-  animation: popIn .22s cubic-bezier(.34,1.56,.64,1) both;
-}
-
-/* ── ローディングスピナー（リーダー） ── */
-.reader-spinner {
-  border: none;
-  width: 36px; height: 36px;
-}
-.reader-spinner::after {
-  content: '';
-  display: block;
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  border-top-color: #0078d7;
-  border-right-color: #0055aa;
-  animation: spin .7s cubic-bezier(.4,0,.2,1) infinite;
-}
-
-/* ── ニュース統計バー ── */
-.news-stat-num {
-  transition: color .3s;
-  display: inline-block;
-  animation: countUp .5s ease both;
-}
-
-/* ── スクロールバー ── */
-.news-list::-webkit-scrollbar,
-.reader-body::-webkit-scrollbar,
-.works-list::-webkit-scrollbar { width:6px; }
-.news-list::-webkit-scrollbar-track,
-.reader-body::-webkit-scrollbar-track,
-.works-list::-webkit-scrollbar-track { background:#f0f0f0; }
-.news-list::-webkit-scrollbar-thumb,
-.reader-body::-webkit-scrollbar-thumb,
-.works-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #0078d7, #0055aa);
-  border-radius: 3px;
-  transition: background .2s;
-}
-.news-list::-webkit-scrollbar-thumb:hover,
 .reader-body::-webkit-scrollbar-thumb:hover { background:#0055aa; }
 
 /* ── ページ読み込み時のフェードイン ── */
@@ -1338,7 +823,9 @@ body {
   animation: fadeInDown .2s ease both;
 }
 </style>
+</style>
 </head>
+<body>
 <body>
 
 <!-- ツールバー -->
@@ -1392,16 +879,6 @@ body {
     全セール収集
   </button>
   <div class="tb-sep"></div>
-  <div class="tb-sep" id="newsSep"></div>
-  <button class="tb-btn" onclick="setMainTab('news')" id="tbNews" title="ニュース">
-    <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="12" rx="1" fill="none" stroke="#0078d7" stroke-width="1.3"/><path d="M3 6h10M3 9h7M3 12h5" stroke="#0078d7" stroke-width="1.2" stroke-linecap="round"/></svg>
-    ニュース
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="openSettings()" id="tbSettings" title="設定">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
-    設定
-  </button>
   <button class="tb-btn" onclick="showLog()" title="ログを確認">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
     ログ確認
@@ -1507,58 +984,6 @@ body {
 </div>
 
 
-  <!-- ニュースページ -->
-  <div class="main-area" id="newsArea" style="display:none;flex-direction:column;">
-    <div class="news-stats-bar" id="newsStatsBar">読み込み中...</div>
-    <div class="news-filters">
-      <label>カテゴリ:</label>
-      <select id="newsCatSel" onchange="loadNews(1)">
-        <option value="">全て</option>
-        <option value="culture">🌐 カルチャー</option>
-        <option value="tech">💻 テック・AI</option>
-        <option value="business">📈 ビジネス</option>
-        <option value="game">🎮 ゲーム</option>
-        <option value="anime">🎌 アニメ・漫画</option>
-        <option value="entertainment">🎬 エンタメ</option>
-        <option value="music">🎵 音楽</option>
-        <option value="science">🔬 科学</option>
-      </select>
-      <label>言語:</label>
-      <select id="newsLangSel" onchange="loadNews(1)">
-        <option value="">全て</option>
-        <option value="en">English</option>
-        <option value="ja">日本語</option>
-      </select>
-      <label>検索:</label>
-      <input type="text" id="newsSearch" placeholder="タイトル検索..." oninput="_newsSearchDebounce()">
-      <button class="tb-btn" style="height:20px;padding:0 8px;font-size:11px" onclick="_newsWebSearch()" title="選択中の検索エンジンで検索">🔍 Web検索</button>
-    </div>
-    <div class="news-list" id="newsList">読み込み中...</div>
-    <div class="news-pager" id="newsPager"></div>
-  </div>
-
-  <!-- リーダービュー オーバーレイ -->
-  <div class="reader-overlay" id="readerOverlay" style="display:none" onclick="closeReader(event)">
-    <div class="reader-panel" onclick="event.stopPropagation()">
-      <div class="reader-header">
-        <div class="reader-header-title" id="readerHeaderTitle">記事を読み込み中...</div>
-        <div class="reader-controls">
-          <div class="reader-lang-toggle" id="readerLangToggle">
-            <button id="readerBtnJa" class="active" onclick="readerSetLang('ja')">日本語</button>
-            <button id="readerBtnOrig" onclick="readerSetLang('orig')">原文</button>
-          </div>
-          <button class="reader-btn" id="readerBtnSepia" onclick="readerCycleTheme()">テーマ</button>
-          <button class="reader-btn" onclick="readerFontSize(-1)">A-</button>
-          <button class="reader-btn" onclick="readerFontSize(+1)">A+</button>
-          <button class="reader-btn" onclick="closeReader()">✕</button>
-        </div>
-      </div>
-      <div class="reader-source-bar" id="readerSourceBar"></div>
-      <div class="reader-body" id="readerBody">
-        <div class="reader-loading"><div class="reader-spinner"></div>読み込み中...</div>
-      </div>
-    </div>
-  </div>
 
 <!-- ステータスバー -->
 <div class="statusbar">
@@ -2112,269 +1537,11 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ── ニュース ────────────────────────────────────────────────────────────────
-let _newsPage = 1, _newsSearchTimer = null;
-
-function _newsSearchDebounce() {
-  clearTimeout(_newsSearchTimer);
-  _newsSearchTimer = setTimeout(() => loadNews(1), 300);
-}
-
-async function loadNews(page = 1) {
-  _newsPage = page;
-  const cat  = document.getElementById('newsCatSel')?.value || '';
-  const lang = document.getElementById('newsLangSel')?.value || '';
-  const q    = document.getElementById('newsSearch')?.value || '';
-  const params = new URLSearchParams({ page, limit: 30 });
-  if (cat)  params.set('category', cat);
-  if (lang) params.set('lang', lang);
-  if (q)    params.set('q', q);
-
-  const data = await api('/api/news?' + params);
-  const el = document.getElementById('newsList');
-  if (!data || !data.articles) {
-    el.innerHTML = '<div style="padding:20px;color:#888;text-align:center">取得失敗</div>';
-    return;
-  }
-
-  if (!data.articles.length) {
-    el.innerHTML = '<div style="padding:20px;color:#888;text-align:center">記事が見つかりません</div>';
-    document.getElementById('newsPager').innerHTML = '';
-    return;
-  }
-
-  _currentNewsData = data.articles;
-  el.innerHTML = data.articles.map(a => newsCardHTML(a)).join('');
-
-  // pager
-  const pager = document.getElementById('newsPager');
-  if (data.pages <= 1) {
-    pager.innerHTML = '<span class="news-pager-info">' + data.total + ' 件</span>';
-  } else {
-    pager.innerHTML =
-      '<div class="news-pager-btn" onclick="loadNews(' + Math.max(1, page-1) + ')">◀</div>' +
-      '<span class="news-pager-info">' + page + ' / ' + data.pages + ' (' + data.total + ' 件)</span>' +
-      '<div class="news-pager-btn" onclick="loadNews(' + Math.min(data.pages, page+1) + ')">▶</div>';
-  }
-}
-
-function newsCardHTML(a) {
-  const catMap = {
-    culture: '🌐 カルチャー', tech: '💻 テック', business: '📈 ビジネス',
-    game: '🎮 ゲーム', anime: '🎌 アニメ', entertainment: '🎬 エンタメ',
-    music: '🎵 音楽', science: '🔬 科学',
-  };
-  const dateStr = a.pub_date ? new Date(a.pub_date * 1000).toLocaleDateString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  const titleDisplay = a.title_ja || a.title;
-  const showOrig = a.title_ja && a.title_ja !== a.title;
-  return '<div class="news-card" onclick="window.open('' + esc(a.url) + '','_blank')">' +
-    '<div class="news-card-head">' +
-    '<span class="news-badge ' + esc(a.category) + '">' + esc(catMap[a.category] || a.category) + '</span>' +
-    '<span class="news-source">' + esc(a.source_name) + '</span>' +
-    '<span class="news-date">' + esc(dateStr) + '</span>' +
-    '</div>' +
-    '<div class="news-title-ja">' + esc(titleDisplay) + '</div>' +
-    (showOrig ? '<div class="news-title-en">' + esc(a.title) + '</div>' : '') +
-    (a.desc_ja || a.description ? '<div class="news-desc">' + esc(a.desc_ja || a.description) + '</div>' : '') +
-    '</div>';
-}
-
-async function loadNewsStats() {
-  const data = await api('/api/news/stats');
-  const el = document.getElementById('newsStatsBar');
-  if (!data || !el) return;
-  const total = data.total || 0;
-  const cats = {};
-  (data.byCategory || []).forEach(r => {
-    cats[r.category] = (cats[r.category] || 0) + (r.n || 0);
-  });
-  el.innerHTML = '<span class="news-stat-item">合計: <b class="news-stat-num">' + total + '</b> 記事</span>' +
-    Object.entries(cats).slice(0, 5).map(([c, n]) =>
-      '<span class="news-stat-item">' + esc(c) + ': <b class="news-stat-num">' + n + '</b></span>'
-    ).join('');
-}
-
-// ── メインタブ切り替え（DLsite ↔ ニュース） ──────────────────────────────────
-
-// ── リーダービュー ──────────────────────────────────────────────────────────
-let _readerArticle = null;
-let _readerContent = null;
-let _readerLang    = 'ja';
-let _readerTheme   = 'light';
-let _readerFontSize = 15;
-const _READER_THEMES = ['light', 'sepia', 'dark'];
-
-async function openReader(articleId, articleData) {
-  _readerArticle = articleData;
-  _readerContent = null;
-
-  const overlay = document.getElementById('readerOverlay');
-  const body    = document.getElementById('readerBody');
-  const hTitle  = document.getElementById('readerHeaderTitle');
-  const srcBar  = document.getElementById('readerSourceBar');
-
-  overlay.style.display = 'flex';
-  body.innerHTML = '<div class="reader-loading"><div class="reader-spinner"></div>記事を取得・翻訳中...</div>';
-  hTitle.textContent = articleData.title_ja || articleData.title;
-
-  const titleForSearch = articleData.title_ja || articleData.title;
-  srcBar.innerHTML =
-    '<span>' + esc(articleData.source_name) + '</span>' +
-    '<span>•</span>' +
-    '<a href="' + esc(articleData.url) + '" target="_blank">元記事を開く ↗</a>' +
-    '<span>•</span>' +
-    '<a href="#" onclick="searchArticle(' + JSON.stringify(titleForSearch) + ');return false">🔍 検索で調べる</a>' +
-    (articleData.pub_date ? '<span>• ' + new Date(articleData.pub_date * 1000).toLocaleDateString('ja-JP') + '</span>' : '');
-
-  // 本文取得
-  try {
-    const data = await fetch('/api/news/' + encodeURIComponent(articleId) + '/content').then(r => r.json());
-    if (data.error) throw new Error(data.error);
-    _readerContent = data;
-    _renderReaderBody();
-  } catch(e) {
-    body.innerHTML = '<div class="reader-error">取得失敗: ' + esc(e.message) + '<br><br><a href="' + esc(articleData.url) + '" target="_blank">元サイトで読む ↗</a></div>';
-  }
-}
-
-function _renderReaderBody() {
-  if (!_readerContent) return;
-  const body   = document.getElementById('readerBody');
-  const a      = _readerArticle;
-  const c      = _readerContent;
-
-  // テーマ
-  body.className = 'reader-body' + (_readerTheme !== 'light' ? ' ' + _readerTheme : '');
-  body.style.fontSize = _readerFontSize + 'px';
-
-  const title    = _readerLang === 'ja' ? (a.title_ja || a.title) : a.title;
-  const titleSub = _readerLang === 'ja' && a.title_ja ? a.title : '';
-  const text     = _readerLang === 'ja' ? (c.content_ja || c.content || '翻訳できませんでした') : (c.content || '');
-
-  let html = '';
-  if (c.top_image) {
-    html += '<img class="reader-top-image" src="' + esc(c.top_image) + '" onerror="this.style.display=\'none\'" loading="lazy">';
-  }
-  html += '<div class="reader-title">' + esc(title) + '</div>';
-  if (titleSub) html += '<div class="reader-title-sub">' + esc(titleSub) + '</div>';
-  html += '<div class="reader-content">' + esc(text) + '</div>';
-
-  body.innerHTML = html;
-
-  // 言語トグルボタン状態更新
-  document.getElementById('readerBtnJa').classList.toggle('active', _readerLang === 'ja');
-  document.getElementById('readerBtnOrig').classList.toggle('active', _readerLang === 'orig');
-}
-
-function readerSetLang(lang) {
-  _readerLang = lang;
-  _renderReaderBody();
-}
-
-function readerCycleTheme() {
-  const idx = _READER_THEMES.indexOf(_readerTheme);
-  _readerTheme = _READER_THEMES[(idx + 1) % _READER_THEMES.length];
-  _renderReaderBody();
-}
-
-function readerFontSize(delta) {
-  _readerFontSize = Math.max(12, Math.min(24, _readerFontSize + delta));
-  _renderReaderBody();
-}
-
-function closeReader(event) {
-  if (event && event.target !== document.getElementById('readerOverlay')) return;
-  document.getElementById('readerOverlay').style.display = 'none';
-  _readerArticle = null;
-  _readerContent = null;
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('readerOverlay').style.display = 'none';
-});
-
-
-// ── 設定 ────────────────────────────────────────────────────────────────────
-let _prefs = {
-  searchEngine:     'google',
-  searchEngineNews: 'google',
-  readerTheme:      'light',
-  readerFontSize:   15,
-};
-
-// 検索エンジンURL定義
-const SEARCH_ENGINES = {
-  google:     q => 'https://www.google.com/search?q=' + encodeURIComponent(q),
-  bing:       q => 'https://www.bing.com/search?q=' + encodeURIComponent(q),
-  duckduckgo: q => 'https://duckduckgo.com/?q=' + encodeURIComponent(q),
-  brave:      q => 'https://search.brave.com/search?q=' + encodeURIComponent(q),
-  yahoo_jp:   q => 'https://search.yahoo.co.jp/search?p=' + encodeURIComponent(q),
-  startpage:  q => 'https://www.startpage.com/search?q=' + encodeURIComponent(q),
-  ecosia:     q => 'https://www.ecosia.org/search?q=' + encodeURIComponent(q),
-};
-
-function _searchUrl(query, type = 'searchEngine') {
-  const engine = _prefs[type] || 'google';
-  const fn = SEARCH_ENGINES[engine] || SEARCH_ENGINES.google;
-  return fn(query);
-}
-
-async function _loadPrefs() {
-  try {
-    const data = await api('/api/prefs');
-    if (data) _prefs = { ..._prefs, ...data };
-    // リーダーのデフォルト値に反映
-    _readerTheme    = _prefs.readerTheme    || 'light';
-    _readerFontSize = parseInt(_prefs.readerFontSize) || 15;
-  } catch(_) {}
-}
-
-function openSettings() {
-  document.getElementById('prefSearchEngine').value     = _prefs.searchEngine     || 'google';
-  document.getElementById('prefSearchEngineNews').value = _prefs.searchEngineNews || 'google';
-  document.getElementById('prefReaderTheme').value      = _prefs.readerTheme      || 'light';
-  document.getElementById('prefReaderFontSize').value   = String(_prefs.readerFontSize || 15);
-  document.getElementById('settingsOverlay').style.display = 'flex';
-}
-
-function closeSettings() {
-  document.getElementById('settingsOverlay').style.display = 'none';
-}
-
-async function saveSettings() {
-  _prefs.searchEngine     = document.getElementById('prefSearchEngine').value;
-  _prefs.searchEngineNews = document.getElementById('prefSearchEngineNews').value;
-  _prefs.readerTheme      = document.getElementById('prefReaderTheme').value;
-  _prefs.readerFontSize   = parseInt(document.getElementById('prefReaderFontSize').value);
-
-  await fetch('/api/prefs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(_prefs),
-  });
-
-  // 即時反映
-  _readerTheme    = _prefs.readerTheme;
-  _readerFontSize = _prefs.readerFontSize;
-
-  closeSettings();
-}
-
-// 外部検索を開く（記事タイトルをデフォルト検索エンジンで）
-function searchArticle(title) {
-  window.open(_searchUrl(title, 'searchEngineNews'), '_blank');
-}
-
-function _newsWebSearch() {
-  const q = (document.getElementById('newsSearch')?.value || '').trim();
-  if (!q) return;
-  window.open(_searchUrl(q, 'searchEngine'), '_blank');
-}
 
 
 // ── リップルエフェクト（ツールバーボタン） ──────────────────────────────────
 document.addEventListener('mousedown', e => {
-  const btn = e.target.closest('.tb-btn, .news-pager-btn, .reader-btn, .settings-save-btn');
+  const btn = e.target.closest('.tb-btn');
   if (!btn) return;
   const rect = btn.getBoundingClientRect();
   const el = document.createElement('span');
@@ -2384,52 +1551,6 @@ document.addEventListener('mousedown', e => {
   btn.appendChild(el);
   el.addEventListener('animationend', () => el.remove());
 });
-
-// ── ニュースリスト ローディングフェード ────────────────────────────────────
-const _origLoadNews = typeof loadNews === 'function' ? loadNews : null;
-if (_origLoadNews) {
-  window.loadNews = async function(page) {
-    const list = document.getElementById('newsList');
-    if (list) list.classList.add('loading');
-    await _origLoadNews(page);
-    if (list) {
-      list.classList.remove('loading');
-      // stagger再計算のためDOMを軽くトリガー
-      list.querySelectorAll('.news-card').forEach((el, i) => {
-        el.style.animationDelay = Math.min(i * 0.03, 0.26) + 's';
-      });
-    }
-  };
-}
-
-// ── 株価更新時のフラッシュ ──────────────────────────────────────────────────
-const _origRenderStockGrid = typeof _renderStockGrid === 'function' ? _renderStockGrid : null;
-const _prevPrices = {};
-if (_origRenderStockGrid) {
-  window._renderStockGrid = function() {
-    _origRenderStockGrid();
-    // 更新後に価格変化をチェックしてフラッシュ
-    setTimeout(() => {
-      Object.entries(_stocks || {}).forEach(([ticker, s]) => {
-        if (!s?.data) return;
-        const price = s.data.price;
-        const prev  = _prevPrices[ticker];
-        _prevPrices[ticker] = price;
-        if (prev == null) return;
-        const el = document.querySelector(`[data-ticker="${ticker}"] .stock-price`);
-        if (!el) return;
-        el.classList.remove('flash-up', 'flash-down');
-        void el.offsetWidth; // reflow
-        if (price > prev)      el.classList.add('flash-up');
-        else if (price < prev) el.classList.add('flash-down');
-      });
-    }, 50);
-  };
-}
-
 </script>
 </body>
 </html>`;
-
-
-module.exports = { start, createServer };
