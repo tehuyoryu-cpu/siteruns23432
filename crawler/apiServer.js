@@ -360,20 +360,28 @@ async function _runDiagnostics() {
   }
 
   // テスト2: Product Info API
-  const knownRjs = db.open().exec('SELECT rj_code FROM works LIMIT 3')[0]?.values ?? [];
+  let knownRjs = [];
+  try {
+    const rows = db.searchWorks({ q: '', sort: 'priority', page: 1, limit: 3 });
+    knownRjs = (rows.works ?? []).map(w => w.rj_code).filter(Boolean);
+  } catch (e) {
+    log.warn('[diag] failed to get sample works:', e.message);
+  }
+
   if (knownRjs.length) {
-    const codes = knownRjs.map(r => r[0]);
-    const apiUrl = `https://www.dlsite.com/maniax/product/info/ajax?${codes.map(c => `product_id=${c}`).join('&')}&cdn_cache_min=1`;
+    const codes  = knownRjs;
+    const params = codes.map(c => 'product_id=' + encodeURIComponent(c)).join('&');
+    const apiUrl = 'https://www.dlsite.com/maniax/product/info/ajax?' + params + '&cdn_cache_min=1';
     try {
       const t0  = Date.now();
       const res = await fetchWithRetry(apiUrl);
       const ms  = Date.now() - t0;
-      const body = await res.json();
+      const body = await res.json().catch(() => ({}));
       result.tests.push({
         name: 'Product Info API',
         url: apiUrl,
         status: res.status,
-        ok: res.ok,
+        ok: res.ok && Object.keys(body).length > 0,
         ms,
         returnedKeys: Object.keys(body).length,
         testedCodes: codes,

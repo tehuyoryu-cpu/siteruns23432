@@ -223,7 +223,7 @@ function createWindow() {
     title:     'DLsite Price Tracker',
     backgroundColor: '#f0f2f5',
     show:            false,
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration:  false,
       contextIsolation: true,
