@@ -68,6 +68,21 @@ html {
   color: #000;
   height: 24px;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.ripple-el {
+  position: absolute;
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.18);
+  pointer-events: none;
+  animation: ripple-anim .4s ease-out forwards;
+}
+@keyframes ripple-anim {
+  from { transform: scale(1); opacity: 1; }
+  to   { transform: scale(14); opacity: 0; }
 }
 .tb-btn:hover  { background:#e5f1fb; border-color:#0078d7; }
 .tb-btn:active { background:#cce4f7; border-color:#005499; }
