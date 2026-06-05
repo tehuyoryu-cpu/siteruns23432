@@ -33,6 +33,7 @@
       "main.js",
       "config.js",
       "crawler/**",
+      "server/**",
       "node_modules/**",
       "!node_modules/electron/**",
       "!node_modules/electron-builder/**"
@@ -41,6 +42,10 @@
       {
         "from": "node_modules/sql.js/dist/sql-wasm.wasm",
         "to": "sql-wasm.wasm"
+      },
+      {
+        "from": "server/public",
+        "to": "public"
       }
     ],
     "win": {
