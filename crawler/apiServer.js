@@ -392,6 +392,9 @@ module.exports = { start, createServer };
 
 // ─── ダッシュボード HTML ───────────────────────────────────────────────────────
 
+
+// ─── ダッシュボード HTML ───────────────────────────────────────────────────────
+
 const DASHBOARD_HTML = /* html */`<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -400,15 +403,6 @@ const DASHBOARD_HTML = /* html */`<!DOCTYPE html>
 <title>DLsite Price Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DLsite Price Tracker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
 
 body {
   font-family: "Meiryo","Segoe UI","MS UI Gothic",sans-serif;
@@ -907,7 +901,7 @@ body {
 .works-list::-webkit-scrollbar-thumb { background:linear-gradient(to right,#ccc,#d8d8d8); border:1px solid #aaa; }
 .works-list::-webkit-scrollbar-button { height:16px; background:#f0f0f0; border:1px solid #ccc; display:block; }
 
-.reader-body::-webkit-scrollbar-thumb:hover { background:#0055aa; }
+/* ── ニュースページ ── */
 
 /* ── ページ読み込み時のフェードイン ── */
 body {
@@ -920,25 +914,8 @@ body {
   animation: fadeInDown .2s ease both;
 }
 </style>
-</style>
 </head>
 <body>
-<body>
-
-<!-- ツールバー -->
-<div class="toolbar">
-  <button class="tb-btn" onclick="loadWorks(1)" title="更新">
-    <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5H10" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    更新
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="setTab('all')" id="tbAll" title="全作品">
-    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="1" y="9" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="9" width="6" height="6" fill="#0078d7" rx="1"/></svg>
-    全作品
-  </button>
-  <button class="tb-btn" onclick="setTab('sale')" id="tbSale" title="セール中のみ表示">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
-    セール中
   </button>
   <div class="tb-sep"></div>
   <button class="tb-btn" onclick="exportData('csv')" title="CSVで保存">
