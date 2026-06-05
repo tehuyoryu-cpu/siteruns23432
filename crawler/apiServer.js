@@ -916,14 +916,6 @@ body {
 </style>
 </head>
 <body>
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="exportData('csv')" title="CSVで保存">
-    <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><path d="M4 9h8M4 11h6" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
-    CSVで保存
-  </button>
-  <button class="tb-btn" onclick="exportData('json')" title="JSONで保存">
-    <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><text x="8" y="12" text-anchor="middle" fill="#cc6600" font-size="6" font-family="monospace" font-weight="bold">{}</text></svg>
     JSONで保存
   </button>
   <div class="tb-sep"></div>
@@ -1084,6 +1076,7 @@ body {
   <div class="sb-panel" id="sbStatus">準備完了</div>
 </div>
 
+<script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 let _page = 1, _tab = 'all', _selRj = null;
@@ -1494,31 +1487,31 @@ async function showDiag() {
     const r = await fetch('/api/diagnostics');
     const d = await r.json();
     let out = '';
-    out += `診断時刻: ${d.timestamp}\n`;
-    out += `実行環境: ${d.isElectron ? 'Electron (electron.net.fetch)' : 'Node.js (globalThis.fetch)'}\n`;
-    out += `DBパス:   ${d.dbPath}\n`;
-    out += `ログパス: ${d.logPath}\n`;
-    out += `\n── DB統計 ──\n`;
-    out += `  追跡作品数: ${d.dbStats?.totalWorks ?? 0}\n`;
-    out += `  セール中:   ${d.dbStats?.onSale ?? 0}\n`;
-    out += `  確認待ち:   ${d.dbStats?.dueNow ?? 0}\n`;
-    out += `  価格記録:   ${d.dbStats?.priceChanges ?? 0}\n`;
-    out += `\n── 接続テスト ──\n`;
+    out += \`診断時刻: \${d.timestamp}\n\`;
+    out += \`実行環境: \${d.isElectron ? 'Electron (electron.net.fetch)' : 'Node.js (globalThis.fetch)'}\n\`;
+    out += \`DBパス:   \${d.dbPath}\n\`;
+    out += \`ログパス: \${d.logPath}\n\`;
+    out += \`\n── DB統計 ──\n\`;
+    out += \`  追跡作品数: \${d.dbStats?.totalWorks ?? 0}\n\`;
+    out += \`  セール中:   \${d.dbStats?.onSale ?? 0}\n\`;
+    out += \`  確認待ち:   \${d.dbStats?.dueNow ?? 0}\n\`;
+    out += \`  価格記録:   \${d.dbStats?.priceChanges ?? 0}\n\`;
+    out += \`\n── 接続テスト ──\n\`;
     for (const t of d.tests) {
       const icon = t.ok === true ? '✅' : t.ok === false ? '❌' : '⚠️';
-      out += `\n${icon} ${t.name}\n`;
-      if (t.url)      out += `  URL:    ${t.url}\n`;
-      if (t.status)   out += `  HTTP:   ${t.status}\n`;
-      if (t.ms)       out += `  応答:   ${t.ms}ms\n`;
-      if (t.htmlLen)  out += `  HTML:   ${t.htmlLen.toLocaleString()} bytes\n`;
-      if (t.parsed != null) out += `  RJ取得: ${t.parsed}件\n`;
-      if (t.sample?.length) out += `  サンプル: ${t.sample.join(', ')}\n`;
-      if (t.cfBlock)  out += `  ⚠ Cloudflare ブロック検出\n`;
-      if (t.ageCheck) out += `  ⚠ 年齢確認ページ検出\n`;
-      if (t.returnedKeys != null) out += `  APIキー数: ${t.returnedKeys}件\n`;
-      if (t.testedCodes) out += `  テスト対象: ${t.testedCodes.join(', ')}\n`;
-      if (t.error)    out += `  エラー: ${t.error}\n`;
-      if (t.note)     out += `  メモ: ${t.note}\n`;
+      out += \`\n\${icon} \${t.name}\n\`;
+      if (t.url)      out += \`  URL:    \${t.url}\n\`;
+      if (t.status)   out += \`  HTTP:   \${t.status}\n\`;
+      if (t.ms)       out += \`  応答:   \${t.ms}ms\n\`;
+      if (t.htmlLen)  out += \`  HTML:   \${t.htmlLen.toLocaleString()} bytes\n\`;
+      if (t.parsed != null) out += \`  RJ取得: \${t.parsed}件\n\`;
+      if (t.sample?.length) out += \`  サンプル: \${t.sample.join(', ')}\n\`;
+      if (t.cfBlock)  out += \`  ⚠ Cloudflare ブロック検出\n\`;
+      if (t.ageCheck) out += \`  ⚠ 年齢確認ページ検出\n\`;
+      if (t.returnedKeys != null) out += \`  APIキー数: \${t.returnedKeys}件\n\`;
+      if (t.testedCodes) out += \`  テスト対象: \${t.testedCodes.join(', ')}\n\`;
+      if (t.error)    out += \`  エラー: \${t.error}\n\`;
+      if (t.note)     out += \`  メモ: \${t.note}\n\`;
     }
     body.textContent = out;
   } catch (e) {
@@ -1660,8 +1653,8 @@ function updateProgressBar(p, job) {
     const pct = total > 0 ? Math.min(99, Math.round(processed / total * 100)) : 0;
     fill.classList.remove('indeterminate');
     fill.style.width = (pct || 2) + '%';
-    const changes = _spChanges > 0 ? ` 変動:${_spChanges}件` : '';
-    label.textContent = `${processed}/${total}件${changes} ${elapsed}`;
+    const changes = _spChanges > 0 ? \` 変動:\${_spChanges}件\` : '';
+    label.textContent = \`\${processed}/\${total}件\${changes} \${elapsed}\`;
   } else {
     fill.classList.add('indeterminate');
     label.textContent = (_JOB_LABELS[job] ?? job) + '中... ' + elapsed;
