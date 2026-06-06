@@ -13,9 +13,24 @@ const log     = require('./logger');
 
 function parseProductInfo(rjCode, body) {
   try {
-    const d = body[rjCode];
+    // APIレスポンスのキーが大文字小文字・ゼロ埋め違いの場合に対応
+    const d = body[rjCode]
+      ?? body[rjCode.toLowerCase()]
+      ?? (() => {
+        const upper = rjCode.toUpperCase();
+        // ゼロ埋めなし版も試す (RJ01234567 → RJ1234567)
+        const nopad = upper.replace(/^RJ0+/, 'RJ');
+        for (const k of Object.keys(body)) {
+          if (k.toUpperCase() === upper || k.toUpperCase().replace(/^RJ0+/, 'RJ') === nopad) {
+            return body[k];
+          }
+        }
+        return undefined;
+      })();
+
     if (!d) {
-      log.warn('[parser] key not found', rjCode, Object.keys(body).slice(0,3));
+      log.warn('[parser] key not found', rjCode,
+        'available:', Object.keys(body).slice(0, 5).join(', '));
       return null;
     }
 

@@ -174,8 +174,7 @@ function _upsert(items, siteId, knownRjs) {
 }
 
 function _loadKnown() {
-  const rows = db.open().exec('SELECT rj_code FROM works')[0]?.values ?? [];
-  return new Set(rows.map(r => r[0]));
+  return db.getAllRjCodes();
 }
 
 module.exports = { runDiscovery, runFullScan };

@@ -94,10 +94,17 @@ async function _processBatch(works, site) {
     return result;
   }
 
+  // APIレスポンスのキーを大文字に正規化してキーミスマッチを防ぐ
+  const normalizedBody = {};
+  for (const [k, v] of Object.entries(body)) {
+    normalizedBody[k.toUpperCase()] = v;
+  }
+
   db.transaction(() => {
     for (const w of works) {
       try {
-        const changed = _store(w.rj_code, body);
+        const rj      = w.rj_code.toUpperCase();
+        const changed  = _store(rj, normalizedBody);
         result.priceChanges += changed ? 1 : 0;
         result.processed++;
       } catch (e) {
