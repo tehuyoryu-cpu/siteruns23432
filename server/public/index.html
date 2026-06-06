@@ -109,13 +109,27 @@ html {
   padding:6px 12px; display:flex; align-items:center; gap:8px;
   font-weight:bold; font-size:13px; border-radius:2px 2px 0 0;
 }
-.modal-close { margin-left:auto; cursor:pointer; font-size:16px; opacity:.8; }
+.modal-copy-btn {
+  margin-left: auto;
+  background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 2px;
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 7px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.modal-copy-btn:hover { background: rgba(255,255,255,.35); }
+.modal-close { margin-left: 8px; cursor:pointer; font-size:16px; opacity:.8; }
 .modal-close:hover { opacity:1; }
 .modal-body {
   flex:1; overflow:auto; padding:8px 12px;
   font-family:"Courier New",monospace; font-size:11px;
   white-space:pre; line-height:1.5; color:#333;
   background:#f8f8ff;
+  user-select: text;
+  cursor: text;
 }
 .log-error { color:#cc0000; }
 .log-warn  { color:#cc6600; }
@@ -657,6 +671,7 @@ body {
   <div class="modal-box">
     <div class="modal-header">
       📋 ログ — dlsite-tracker.log
+      <button class="modal-copy-btn" onclick="copyModalText('logBody')" title="コピー">📄 コピー</button>
       <span class="modal-close" onclick="closeLog()">✕</span>
     </div>
     <div class="modal-body" id="logBody">読み込み中...</div>
@@ -706,9 +721,10 @@ body {
   <div class="modal-box" style="max-width:680px">
     <div class="modal-header">
       🔍 巡回診断
+      <button class="modal-copy-btn" onclick="copyModalText('diagBody')" title="コピー">📄 コピー</button>
       <span class="modal-close" onclick="closeDiag()">✕</span>
     </div>
-    <div class="modal-body" id="diagBody" style="font-family:monospace;font-size:12px;white-space:pre-wrap">実行中...</div>
+    <div class="modal-body" id="diagBody" style="font-family:monospace;font-size:12px;white-space:pre-wrap;user-select:text;cursor:text">実行中...</div>
   </div>
 </div>
 
@@ -1340,6 +1356,23 @@ async function showDiag() {
 }
 
 function closeDiag() { document.getElementById('diagModal').classList.remove('open'); }
+
+function copyModalText(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = el.closest('.modal-box').querySelector('.modal-copy-btn');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✅ コピー済み'; setTimeout(() => btn.textContent = orig, 1500); }
+  }).catch(() => {
+    // fallback: select all
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+}
 
 
 

@@ -508,21 +508,26 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
   }
 
   // latest_price ã WITHå¥ã§äºåéè¨ã ã³ãªã¬ã¼ããµãã¯ã¨ãªãæé¤
-  const baseSql = `
+  const cte = `
     WITH latest_price AS (
-      SELECT rj_code,
-             MAX(id) AS max_id
+      SELECT rj_code, MAX(id) AS max_id
       FROM price_history GROUP BY rj_code
     )
+  `;
+  const joins = `
     FROM works w
     LEFT JOIN latest_price lp ON lp.rj_code = w.rj_code
     LEFT JOIN price_history ph ON ph.id = lp.max_id
     WHERE 1=1 ${where}
   `;
 
-  const total  = (_get(`SELECT COUNT(*) AS n ${baseSql}`, params) ?? { n: 0 }).n;
-  const works  = _all(
-    `SELECT w.*, ph.price, ph.sale_price, ph.discount_rate, ph.checked_at AS ph_checked_at ${baseSql}ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+  const total = (_get(
+    `${cte} SELECT COUNT(*) AS n ${joins}`,
+    params
+  ) ?? { n: 0 }).n;
+
+  const works = _all(
+    `${cte} SELECT w.*, ph.price, ph.sale_price, ph.discount_rate, ph.checked_at AS ph_checked_at ${joins} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
 
