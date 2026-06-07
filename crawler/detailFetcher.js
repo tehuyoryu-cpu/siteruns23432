@@ -104,9 +104,21 @@ async function _processBatch(works, site) {
     for (const w of works) {
       try {
         const rj      = w.rj_code.toUpperCase();
-        const changed  = _store(rj, normalizedBody);
-        result.priceChanges += changed ? 1 : 0;
-        result.processed++;
+        const found   = rj in normalizedBody;
+        if (!found) {
+          log.warn('[detail] key not in API response', rj,
+            'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
+          db.recordFetchError(rj);
+          result.errors++;
+          continue;
+        }
+        const changed = _store(rj, normalizedBody);
+        if (changed === false && !normalizedBody[rj]) {
+          result.errors++;
+        } else {
+          result.priceChanges += changed ? 1 : 0;
+          result.processed++;
+        }
       } catch (e) {
         log.error('[detail] store error', w.rj_code, e.message);
         db.recordFetchError(w.rj_code);

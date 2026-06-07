@@ -70,9 +70,13 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
       grandTotal += added;
 
       if (onProgress) onProgress({ site, page, found: added, total: siteTotal });
-      log.info('[discovery] fullScan', { site, page, found: added, total: siteTotal });
+      log.info('[discovery] fullScan', { site, page, parsed: items.length, added, total: siteTotal });
 
-      if (items.length < 50) break;   // 最終ページ（100件未満）
+      // FSRは per_page=100 なので100件未満なら最終ページ
+      if (items.length < 100) {
+        log.info('[discovery] fullScan end', { site, page, reason: 'last page' });
+        break;
+      }
 
       page++;
       await sleep(RL);

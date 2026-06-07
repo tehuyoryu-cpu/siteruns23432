@@ -609,6 +609,10 @@ body {
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
     ログ確認
   </button>
+  <button class="tb-btn" onclick="showErrorLog()" title="エラーログ" id="tbErrLog">
+    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M8 4.5v4" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="#cc0000"/></svg>
+    エラーログ
+  </button>
   <button class="tb-btn" onclick="showDiag()" title="巡回テスト・診断">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 5v3.5l2.5 1.5" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
     診断
@@ -675,6 +679,18 @@ body {
       <span class="modal-close" onclick="closeLog()">✕</span>
     </div>
     <div class="modal-body" id="logBody">読み込み中...</div>
+  </div>
+</div>
+
+<!-- エラーログモーダル -->
+<div class="modal-overlay" id="errLogModal" onclick="if(event.target===this)closeErrLog()">
+  <div class="modal-box">
+    <div class="modal-header" style="background:linear-gradient(to bottom,#aa0000,#cc2200)">
+      ⚠️ エラーログ — dlsite-error.log
+      <button class="modal-copy-btn" onclick="copyModalText('errLogBody')" title="コピー">📄 コピー</button>
+      <span class="modal-close" onclick="closeErrLog()">✕</span>
+    </div>
+    <div class="modal-body" id="errLogBody" style="color:#330000;background:#fff8f8">読み込み中...</div>
   </div>
 </div>
 
@@ -1149,6 +1165,19 @@ async function showLog() {
   } catch(e) { body.textContent = 'エラー: ' + e.message; }
 }
 function closeLog() { document.getElementById('logModal').classList.remove('open'); }
+
+async function showErrorLog() {
+  document.getElementById('errLogModal').classList.add('open');
+  const body = document.getElementById('errLogBody');
+  body.textContent = '読み込み中...';
+  try {
+    const r    = await fetch('/api/errorlog');
+    const text = await r.text();
+    body.textContent = text.trim() || '（エラーログなし — 問題は見つかっていません）';
+    body.scrollTop = body.scrollHeight;
+  } catch (e) { body.textContent = '取得失敗: ' + e.message; }
+}
+function closeErrLog() { document.getElementById('errLogModal').classList.remove('open'); }
 
 // ── ジョブ完了後の結果表示 ──────────────────────────────────────────────────
 function _showJobResult(job, status) {

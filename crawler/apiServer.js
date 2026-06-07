@@ -254,6 +254,17 @@ function createServer() {
         return;
       }
 
+      if (pathname === '/api/errorlog') {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        try {
+          const content = fs.readFileSync(log.getErrorLogPath(), 'utf8');
+          res.end(content.split('\n').slice(-300).join('\n'));
+        } catch (e) {
+          res.end('(エラーログなし: ' + e.message + ')');
+        }
+        return;
+      }
+
       if (pathname === '/api/export/json') {
         res.writeHead(200, {
           'Content-Type': 'application/json',

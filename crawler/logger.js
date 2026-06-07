@@ -2,28 +2,30 @@
 
 /**
  * crawler/logger.js
- * ログをstdout/stderr + ファイル（dlsite-tracker.log）に同時出力。
- * exeでもログが確認できる。
+ * ログを stdout/stderr + 2ファイルに出力:
+ *   dlsite-tracker.log  – 全ログ（info以上）
+ *   dlsite-error.log    – WARN/ERROR のみ
  */
 
 const fs   = require('fs');
 const path = require('path');
 
-const LEVELS   = { debug: 0, info: 1, warn: 2, error: 3 };
+const LEVELS    = { debug: 0, info: 1, warn: 2, error: 3 };
 const MIN_LEVEL = LEVELS[(process.env.LOG_LEVEL || 'info').toLowerCase()] ?? 1;
 
-// ログファイルパス: electron-main が DLSITE_DATA_DIR を設定済み
-const LOG_DIR  = process.env.DLSITE_DATA_DIR
+const LOG_DIR    = process.env.DLSITE_DATA_DIR
   || process.env.PORTABLE_EXECUTABLE_DIR
   || process.cwd();
-const LOG_PATH = path.join(LOG_DIR, 'dlsite-tracker.log');
+const LOG_PATH   = path.join(LOG_DIR, 'dlsite-tracker.log');
+const ERROR_PATH = path.join(LOG_DIR, 'dlsite-error.log');
 
-// 直近の warn/error を最大50件保持（UIに表示するため）
+// 直近エラーをUI用に保持
 const _recentErrors = [];
-const MAX_ERRORS = 50;
+const MAX_ERRORS = 100;
 
-// ファイルストリーム（遅延初期化）
-let _stream = null;
+// ストリーム遅延初期化
+let _stream = null, _errStream = null;
+
 function _getStream() {
   if (_stream) return _stream;
   try {
@@ -33,31 +35,37 @@ function _getStream() {
   return _stream;
 }
 
+function _getErrStream() {
+  if (_errStream) return _errStream;
+  try {
+    _errStream = fs.createWriteStream(ERROR_PATH, { flags: 'a' });
+    _errStream.on('error', () => { _errStream = null; });
+  } catch {}
+  return _errStream;
+}
+
 function _log(level, ...args) {
   if ((LEVELS[level] ?? 0) < MIN_LEVEL) return;
 
   const ts  = new Date().toISOString();
   const msg = args.map(a =>
-    a instanceof Error    ? a.message :
+    a instanceof Error    ? `${a.message}\n${a.stack ?? ''}` :
     typeof a === 'object' ? JSON.stringify(a) :
     String(a)
   ).join(' ');
 
   const line = `${ts} [${level.toUpperCase().padEnd(5)}] ${msg}\n`;
 
-  // stdout/stderr
-  if (level === 'error' || level === 'warn') {
-    process.stderr.write(line);
-  } else {
-    process.stdout.write(line);
-  }
+  // stdout / stderr
+  (level === 'error' || level === 'warn' ? process.stderr : process.stdout).write(line);
 
-  // ファイル
+  // 全ログファイル
   try { _getStream()?.write(line); } catch {}
 
-  // 直近エラー記録
+  // エラー専用ファイル（WARN以上のみ）
   if (level === 'warn' || level === 'error') {
-    _recentErrors.push({ ts, level, msg });
+    try { _getErrStream()?.write(line); } catch {}
+    _recentErrors.push({ ts, level, msg: msg.slice(0, 300) });
     if (_recentErrors.length > MAX_ERRORS) _recentErrors.shift();
   }
 }
@@ -68,5 +76,6 @@ module.exports = {
   warn:  (...a) => _log('warn',  ...a),
   error: (...a) => _log('error', ...a),
   getRecentErrors: () => [..._recentErrors],
-  getLogPath: () => LOG_PATH,
+  getLogPath:      () => LOG_PATH,
+  getErrorLogPath: () => ERROR_PATH,
 };
