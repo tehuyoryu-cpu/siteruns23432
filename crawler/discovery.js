@@ -22,13 +22,10 @@ async function runDiscovery() {
   const knownRjs = _loadKnown();
   const results  = {};
 
-  // maniax のみ: 新着・ランキング・セール を並列取得
-  const [n, r, s] = await Promise.all([
-    _collectPages('new',      knownRjs),
-    _collectPages('ranking',  knownRjs),
-    _collectPages('sale',     knownRjs),
-  ]);
-  results.new = n; results.ranking = r; results.sale = s;
+  // 直列で実行してレートリミット超過を防ぐ
+  results.new     = await _collectPages('new',     knownRjs);
+  results.ranking = await _collectPages('ranking', knownRjs);
+  results.sale    = await _collectPages('sale',    knownRjs);
 
   // 既知サークルの新作確認（直列・上限20）
   results.circle = await _collectCircles(knownRjs);

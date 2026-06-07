@@ -53,7 +53,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
 // 単体fetch（--rj オプション / テスト用）
 async function fetchAndStore(rjCode, siteId = 'maniax') {
   const body = await _apiFetch([{ rj_code: rjCode }], siteId);
-  if (!body) { db.recordFetchError(rjCode); return false; }
+  if (!body) { db.transaction(() => db.recordFetchError(rjCode)); return false; }
   let changed = false;
   db.transaction(() => { changed = _store(rjCode, body); });
   return changed;
@@ -88,8 +88,10 @@ async function _processBatch(works, site) {
   }
 
   if (!body) {
-    // 1件でも失敗
-    for (const w of works) db.recordFetchError(w.rj_code);
+    // 1件でも失敗 — transaction でまとめて保存
+    db.transaction(() => {
+      for (const w of works) db.recordFetchError(w.rj_code);
+    });
     result.errors += works.length;
     return result;
   }
@@ -113,7 +115,8 @@ async function _processBatch(works, site) {
           continue;
         }
         const changed = _store(rj, normalizedBody);
-        if (changed === false && !normalizedBody[rj]) {
+        if (changed === null) {
+          // _store が null を返す = parseProductInfo 失敗
           result.errors++;
         } else {
           result.priceChanges += changed ? 1 : 0;
@@ -153,7 +156,7 @@ function _store(rjCode, body) {
   const parsed = parser.parseProductInfo(rjCode, body);
   if (!parsed) {
     db.recordFetchError(rjCode);
-    return false;
+    return null;   // null = parse failure (distinct from false = price unchanged)
   }
 
   const { work, price } = parsed;

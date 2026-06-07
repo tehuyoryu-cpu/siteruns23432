@@ -187,8 +187,13 @@ function _run(sql, params = []) {
 
 /** è¤æ°ã® _run ãã²ã¨ã¾ã¨ãã«ãã¦æå¾ã«1åã ãä¿å­ã */
 function transaction(fn) {
-  fn();
-  _save();
+  try {
+    fn();
+    _save();
+  } catch (err) {
+    log.error('[db] transaction error, changes NOT saved:', err.message);
+    throw err;
+  }
 }
 
 /**
@@ -237,13 +242,13 @@ function upsertWork(w) {
        release_date, dl_count, first_seen)
     VALUES (?,?,?,?,?,?,?,?,?)
     ON CONFLICT(rj_code) DO UPDATE SET
-      title        = excluded.title,
-      circle       = excluded.circle,
-      maker_id     = excluded.maker_id,
-      work_type    = excluded.work_type,
-      site_id      = excluded.site_id,
-      release_date = excluded.release_date,
-      dl_count     = COALESCE(excluded.dl_count, works.dl_count)
+      title        = COALESCE(excluded.title,        works.title),
+      circle       = COALESCE(excluded.circle,       works.circle),
+      maker_id     = COALESCE(excluded.maker_id,     works.maker_id),
+      work_type    = COALESCE(excluded.work_type,    works.work_type),
+      site_id      = COALESCE(excluded.site_id,      works.site_id),
+      release_date = COALESCE(excluded.release_date, works.release_date),
+      dl_count     = COALESCE(excluded.dl_count,     works.dl_count)
   `, [
     w.rj_code, w.title, w.circle, w.maker_id, w.work_type,
     w.site_id, w.release_date, w.dl_count ?? 0, unixNow(),
@@ -559,11 +564,6 @@ function unixNow() {
   return Math.floor(Date.now() / 1000);
 }
 
-/** ã»ã¼ã«ä¸­ãµã¼ã¯ã«ä¸è¦§ãè¿ãï¼schedulerç¨ï¼ */
-function getCirclesOnSale() {
-  return _all('SELECT maker_id FROM circles WHERE on_sale = 1');
-}
-
 /** å¨RJã³ã¼ããSetã§è¿ãï¼discoveryé«éç§åç¨ï¼ */
 function getAllRjCodes() {
   return new Set(_all('SELECT rj_code FROM works').map(r => r.rj_code));
@@ -590,7 +590,6 @@ module.exports = {
   getCirclesOnSale,
   markCircleOnSale,
   getCircle,
-  getCirclesOnSale,
   getStats,
   backup,
   transaction,
