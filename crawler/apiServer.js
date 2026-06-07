@@ -265,6 +265,20 @@ function createServer() {
         return;
       }
 
+      // 進捗パネルなどクライアント側エラーをサーバーのエラーログに記録
+      if (pathname === '/api/client-error' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => { body += c; });
+        req.on('end', () => {
+          try {
+            const { message, source } = JSON.parse(body);
+            log.error(`[client:${source ?? 'ui'}]`, message);
+          } catch {}
+          res.writeHead(204); res.end();
+        });
+        return;
+      }
+
       if (pathname === '/api/export/json') {
         res.writeHead(200, {
           'Content-Type': 'application/json',

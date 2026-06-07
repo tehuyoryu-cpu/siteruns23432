@@ -1110,6 +1110,14 @@ function _spLog(msg, type) {
   div.textContent = '[' + ts + '] ' + msg;
   el.prepend(div);
   while (el.children.length > SCAN_LOG_MAX) el.removeChild(el.lastChild);
+  // エラー/警告はサーバーのエラーログにも記録
+  if (type === 'err' || type === 'warn') {
+    fetch('/api/client-error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, source: 'scan-panel' }),
+    }).catch(() => {});
+  }
 }
 
 function _spShow(show) {

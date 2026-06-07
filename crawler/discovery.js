@@ -54,7 +54,10 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
     while (true) {
       if (maxPages > 0 && page > maxPages) break;
 
-      const url   = baseUrl.replace('{page}', page);
+      // page=1はURLに/page/1を含まないDLsiteの仕様に対応
+      const url   = page === 1
+        ? baseUrl.replace(/\/page\/\{page\}/, '')
+        : baseUrl.replace('{page}', String(page));
       const items = await _fetchWithPrice(url);
 
       if (!items.length) {
@@ -90,9 +93,11 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
 
 async function _collectPages(type, knownRjs) {
   const urlFor = (site, page) => {
-    if (type === 'new')     return `${BASE}/${site}/new/=/per_page/100/page/${page}.html`;
-    if (type === 'ranking') return `${BASE}/${site}/ranking/=/term/week/per_page/100/page/${page}.html`;
-    if (type === 'sale')    return `${BASE}/${site}/campaign/=/per_page/100/page/${page}.html`;
+    // DLsiteはpage=1のとき /page/1 を含まない
+    const pagePart = page === 1 ? '' : `/page/${page}`;
+    if (type === 'new')     return `${BASE}/${site}/new/=/per_page/100${pagePart}.html`;
+    if (type === 'ranking') return `${BASE}/${site}/ranking/=/term/week/per_page/100${pagePart}.html`;
+    if (type === 'sale')    return `${BASE}/${site}/campaign/=/per_page/100${pagePart}.html`;
   };
 
   const maxPages = {
@@ -153,16 +158,21 @@ function _upsert(items, siteId, knownRjs) {
   db.transaction(() => {
     for (const item of newItems) {
       db.upsertWork({
-        rj_code: item.rjCode, title: null, circle: null,
-        maker_id: null, work_type: null, site_id: siteId,
-        release_date: null, dl_count: 0,
+        rj_code:      item.rjCode,
+        title:        item.title        ?? null,
+        circle:       item.circle       ?? null,
+        maker_id:     item.makerId      ?? null,
+        work_type:    item.workType     ?? null,
+        site_id:      siteId,
+        release_date: item.releaseDate  ?? null,
+        dl_count:     0,
       });
       knownRjs.add(item.rjCode);
 
       if (item.price !== null) {
         db.savePriceIfChanged(item.rjCode, {
           price:         item.price,
-          sale_price:    item.salePrice ?? null,
+          sale_price:    item.salePrice    ?? null,
           discount_rate: item.discountRate ?? null,
           point:         null,
           is_on_sale:    item.isOnSale ? 1 : 0,

@@ -96,17 +96,22 @@ async function _processBatch(works, site) {
     return result;
   }
 
-  // APIレスポンスのキーを大文字に正規化してキーミスマッチを防ぐ
+  // APIレスポンスのキーを正規化: 大文字版 + ゼロ埋めなし版の両方をインデックス
   const normalizedBody = {};
   for (const [k, v] of Object.entries(body)) {
-    normalizedBody[k.toUpperCase()] = v;
+    const upper  = k.toUpperCase();
+    const nopad  = upper.replace(/^RJ0+/, 'RJ');
+    normalizedBody[upper] = v;
+    if (nopad !== upper) normalizedBody[nopad] = v;  // 例: RJ01234567 → RJ1234567 も登録
   }
 
   db.transaction(() => {
     for (const w of works) {
       try {
         const rj      = w.rj_code.toUpperCase();
-        const found   = rj in normalizedBody;
+        const rjNopad = rj.replace(/^RJ0+/, 'RJ');
+        const found   = rj in normalizedBody || rjNopad in normalizedBody;
+        const lookupKey = (rj in normalizedBody) ? rj : rjNopad;
         if (!found) {
           log.warn('[detail] key not in API response', rj,
             'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
@@ -114,7 +119,7 @@ async function _processBatch(works, site) {
           result.errors++;
           continue;
         }
-        const changed = _store(rj, normalizedBody);
+        const changed = _store(lookupKey, normalizedBody);
         if (changed === null) {
           // _store が null を返す = parseProductInfo 失敗
           result.errors++;

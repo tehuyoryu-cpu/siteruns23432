@@ -87,28 +87,69 @@ function parseWorkListWithPrice(html) {
       const rj = _rj($(el).attr('data-product_id'));
       if (!rj || found.has(rj)) return;
 
-      const price    = _jpyText($(el).attr('data-price'))
-                    ?? _jpyText($('.work_price', el).first().text());
-      const salePr   = _jpyText($(el).attr('data-sale_price'))
-                    ?? _jpyText($('.work_price_sale, .work_price.type_sale', el).first().text());
+      const $el = $(el);
 
-      found.set(rj, _priceObj(rj, price, salePr));
+      // 価格
+      const price  = _jpyText($el.attr('data-price'))
+                  ?? _jpyText($('.work_price', el).first().text());
+      const salePr = _jpyText($el.attr('data-sale_price'))
+                  ?? _jpyText($('.work_price_sale, .work_price.type_sale', el).first().text());
+
+      // タイトル
+      const title = _str(
+        $el.attr('data-title') ??
+        $el.attr('data-work_name') ??
+        ($('.work_name a, .dl_title a, dt.work_name a', el).first().text() || null) ??
+        ($('a[title]', el).first().attr('title') || null)
+      );
+
+      // サークル / メーカー
+      const circle = _str(
+        $el.attr('data-maker') ??
+        $('.maker_name a, .circle_name a, .brand_name a', el).first().text()
+      );
+      const makerId = _str(
+        $el.attr('data-maker_id') ??
+        (() => {
+          const href = $('.maker_name a, .circle_name a', el).first().attr('href') ?? '';
+          const m = href.match(/maker_id\/([^\/]+)/);
+          return m ? m[1] : null;
+        })()
+      );
+
+      // 作品種別 (audio / game / manga / etc.)
+      const workType = _str(
+        $el.attr('data-work_type') ??
+        $el.find('.work_type, .icon_work_type').first().attr('data-value') ??
+        $el.find('[class*="type_"]').first().attr('class')?.match(/type_(\w+)/)?.[1]
+      );
+
+      // 発売日
+      const releaseDate = _str(
+        $el.attr('data-regist_date') ??
+        $el.attr('data-sales_date') ??
+        $('.work_date, .date_text', el).first().text()
+      );
+
+      found.set(rj, { ..._priceObj(rj, price, salePr), title, circle, makerId, workType, releaseDate });
     });
 
     // ── 方法2: href に /product_id/RJ ──
     $('a[href*="/product_id/RJ"]').each((_, el) => {
       const rj = _rj($(el).attr('href'));
       if (rj && !found.has(rj)) {
-        found.set(rj, _priceObj(rj, null, null));
+        found.set(rj, { ..._priceObj(rj, null, null), title: null, circle: null, makerId: null, workType: null, releaseDate: null });
       }
     });
 
-    // ── 方法3: テキスト全体から RJ コードを正規表現スキャン ──
+    // ── 方法3: テキスト全体から RJ コードを正規表現スキャン（価格なし）──
     const raw  = $.html();
     const hits = raw.match(/\bRJ\d{6,8}\b/gi) ?? [];
     for (const h of hits) {
       const rj = h.toUpperCase();
-      if (!found.has(rj)) found.set(rj, _priceObj(rj, null, null));
+      if (!found.has(rj)) {
+        found.set(rj, { ..._priceObj(rj, null, null), title: null, circle: null, makerId: null, workType: null, releaseDate: null });
+      }
     }
 
     const result = [...found.values()];
