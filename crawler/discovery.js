@@ -123,7 +123,8 @@ async function _collectCircles(knownRjs) {
   let count = 0;
   for (const mid of makerIds) {
     for (const site of config.dlsite.sites) {
-      const url   = `${BASE}/${site}/circle/works/=/maker_id/${mid}/order/release_d.html`;
+      // FSRエンドポイントを使う（/circle/works/ より信頼性が高い）
+      const url   = `${BASE}/${site}/fsr/=/maker_id/${mid}/order/release/per_page/30/show_type/1`;
       const items = await _fetchWithPrice(url);
       count += _upsert(items, site, knownRjs);
       await sleep(RL);

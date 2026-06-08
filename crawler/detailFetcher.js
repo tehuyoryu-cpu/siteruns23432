@@ -12,7 +12,7 @@ const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
 
 const BASE  = config.dlsite.baseUrl;
-const BATCH = config.fetch.batchSize ?? 50;
+const BATCH = Math.min(config.fetch.batchSize ?? 20, 20);  // DLsite API の安全上限
 
 // ─── public ──────────────────────────────────────────────────────────────────
 
@@ -108,20 +108,25 @@ async function _processBatch(works, site) {
   db.transaction(() => {
     for (const w of works) {
       try {
-        const rj      = w.rj_code.toUpperCase();
+        const dbKey   = w.rj_code;                          // DB に登録されているキー（これのみDB操作に使う）
+        const rj      = dbKey.toUpperCase();
         const rjNopad = rj.replace(/^RJ0+/, 'RJ');
         const found   = rj in normalizedBody || rjNopad in normalizedBody;
-        const lookupKey = (rj in normalizedBody) ? rj : rjNopad;
+
         if (!found) {
           log.warn('[detail] key not in API response', rj,
             'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
-          db.recordFetchError(rj);
+          db.recordFetchError(dbKey);
           result.errors++;
           continue;
         }
-        const changed = _store(lookupKey, normalizedBody);
+
+        // データ抽出用キーはnopadでも可、ただしDB操作は必ず dbKey を使う
+        const dataKey     = (rj in normalizedBody) ? rj : rjNopad;
+        const singleBody  = { [dbKey]: normalizedBody[dataKey] };  // DB キーで包み直す
+        const changed     = _store(dbKey, singleBody);
+
         if (changed === null) {
-          // _store が null を返す = parseProductInfo 失敗
           result.errors++;
         } else {
           result.priceChanges += changed ? 1 : 0;
@@ -141,7 +146,8 @@ async function _processBatch(works, site) {
 // ─── API fetch ────────────────────────────────────────────────────────────────
 
 async function _apiFetch(works, site) {
-  const params = works.map(w => `product_id=${w.rj_code}`).join('&');
+  // DLsite API は product_id[] 形式（配列）を要求する
+  const params = works.map(w => `product_id%5B%5D=${encodeURIComponent(w.rj_code)}`).join('&');
   const url    = `${BASE}/${site}/product/info/ajax?${params}&cdn_cache_min=1`;
   try {
     const res = await fetchWithRetry(url, {
@@ -155,7 +161,8 @@ async function _apiFetch(works, site) {
     const body = await res.json();
     const returnedKeys = Object.keys(body).length;
     if (returnedKeys === 0) {
-      log.warn('[detail] API returned empty object', site, `requested ${works.length}件`);
+      log.warn('[detail] API returned empty object', site, `requested ${works.length}件`,
+        'sample:', works.slice(0,2).map(w=>w.rj_code).join(','));
       return null;
     }
     if (returnedKeys < works.length * 0.5) {
