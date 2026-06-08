@@ -17,17 +17,24 @@ const {
 } = require('electron');
 
 // ─── data dir ────────────────────────────────────────────────────────────────
-// portableビルドでは PORTABLE_EXECUTABLE_DIR が設定されるが、
-// app.getPath('exe') の親ディレクトリが最も確実。
-// db.js / logger.js が require される前に設定する。
+// PORTABLE_EXECUTABLE_DIR がTEMPディレクトリを指す場合があるため検証してから使用する。
+// TEMPなら app.getPath('userData') にフォールバックする。
 {
   const path = require('path');
-  const exeDir = path.dirname(app.getPath('exe'));
-  // 開発時（electron . で起動）は CWD を使う
-  process.env.DLSITE_DATA_DIR = process.env.NODE_ENV === 'development'
-    ? process.cwd()
-    : exeDir;
-  console.log('[main] data dir:', process.env.DLSITE_DATA_DIR);
+  const os   = require('os');
+
+  const tmpDir = os.tmpdir().toLowerCase().replace(/\\/g, '/');
+  const isTemp = p => !p || p.toLowerCase().replace(/\\/g, '/').startsWith(tmpDir);
+
+  const portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
+  const dataDir =
+    (process.env.NODE_ENV === 'development'
+      ? process.cwd()
+      : (!isTemp(portableDir) ? portableDir : null)
+    ) ?? app.getPath('userData');
+
+  process.env.DLSITE_DATA_DIR = dataDir;
+  console.log('[main] data dir:', dataDir, portableDir ? `(PORTABLE_EXECUTABLE_DIR: ${portableDir})` : '');
 }
 
 // ─── backend ──────────────────────────────────────────────────────────────────
@@ -141,8 +148,11 @@ async function startBackend() {
 
 // ─── IPC: renderer → main ──────────────────────────────────────────────────
 
-// 重複実行防止
+// 重複実行防止（schedulerと共有）
 const _running = {};
+
+// scheduler.js が参照できるよう global に公開
+global._crawlerRunning = _running;
 
 function _bindIpc() {
   // ステータス取得
@@ -277,9 +287,14 @@ function _buildAppMenu() {
       submenu: [
         {
           label: 'データベースの場所を開く',
-          click: () => shell.showItemInFolder(
-            require('path').resolve(require('./config').db.path)
-          ),
+          click: () => {
+            const p = require('path');
+            const dbPath = p.resolve(
+              process.env.DLSITE_DATA_DIR || app.getPath('userData'),
+              require('./config').db.path
+            );
+            shell.showItemInFolder(dbPath);
+          },
         },
         { type: 'separator' },
         { label: '終了', accelerator: 'Alt+F4', click: () => { app.isQuiting = true; app.quit(); } },

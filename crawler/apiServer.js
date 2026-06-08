@@ -154,9 +154,8 @@ function handleRunStatus() {
 
 function handleStats() {
   const stats = db.getStats();
-  // DBパスをUIに伝える（場所確認用）
   stats.dbPath = require('path').resolve(
-    process.env.DLSITE_DATA_DIR || process.env.PORTABLE_EXECUTABLE_DIR || process.cwd(),
+    process.env.DLSITE_DATA_DIR || process.cwd(),
     require('../config').db.path
   );
   return stats;

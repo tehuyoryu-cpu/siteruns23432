@@ -28,7 +28,11 @@ const _running = {
 
 function _startDiscoveryJob() {
   cron.schedule(config.cron.discovery, async () => {
-    if (_running.discovery) { log.warn('[scheduler] discovery still running, skip'); return; }
+    const shared = global._crawlerRunning ?? {};
+    if (_running.discovery || shared.discover) {
+      log.warn('[scheduler] discovery still running (scheduler or UI), skip');
+      return;
+    }
     _running.discovery = true;
     try   { await runDiscovery(); }
     catch (err) { log.error('[scheduler] discovery error', err.message); }

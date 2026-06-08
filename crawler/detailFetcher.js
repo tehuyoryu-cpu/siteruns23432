@@ -147,10 +147,24 @@ async function _apiFetch(works, site) {
     const res = await fetchWithRetry(url, {
       headers: { Accept: 'application/json, */*' },
     });
-    if (!res.ok) { log.warn('[detail] API', res.status, `(${works.length}件)`); return null; }
-    return await res.json();
+    if (!res.ok) {
+      log.error('[detail] API HTTP error', res.status, site, `${works.length}件`,
+        works.slice(0,3).map(w=>w.rj_code).join(','));
+      return null;
+    }
+    const body = await res.json();
+    const returnedKeys = Object.keys(body).length;
+    if (returnedKeys === 0) {
+      log.warn('[detail] API returned empty object', site, `requested ${works.length}件`);
+      return null;
+    }
+    if (returnedKeys < works.length * 0.5) {
+      log.warn('[detail] API returned partial data', site,
+        `got ${returnedKeys} / requested ${works.length}`);
+    }
+    return body;
   } catch (e) {
-    log.error('[detail] API error', e.message, `(${works.length}件)`);
+    log.error('[detail] API fetch error', e.message, site, `${works.length}件`);
     return null;
   }
 }
