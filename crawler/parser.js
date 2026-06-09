@@ -34,13 +34,43 @@ function parseProductInfo(rjCode, body) {
       return null;
     }
 
-    const price      = _int(d.price_work ?? d.price ?? d.price_with_tax);
-    const isOnSale   = !!(d.is_sale || d.discount_rate);
-    const salePrice  = isOnSale
-      ? _int(d.price_without_tax_sale ?? d.price_sale ?? d.discount_price)
-      : null;
-    let disc = _int(d.discount_rate ?? d.rate);
-    if (disc === null && price && salePrice) {
+    const priceWork = _int(d.price_work);              // 通常価格（DLsite APIの主フィールド）
+    const priceCur  = _int(d.price);                   // 現在価格（セール中は値引き後）
+    const discRate  = _int(d.discount_rate ?? d.rate); // 割引率 (%)
+    // is_sale は "1" (文字列) / 1 (数値) の両方が返る
+    const isOnSale  = d.is_sale == 1 || (discRate != null && discRate > 0);
+
+    let price, salePrice, disc = discRate;
+
+    if (isOnSale) {
+      if (priceWork && priceCur && priceCur < priceWork) {
+        // price_work=通常価格, price=セール価格（両フィールドあり、price<price_work）
+        price     = priceWork;
+        salePrice = priceCur;
+      } else if (priceWork && priceCur && priceCur > priceWork) {
+        // price_work=セール価格, price=通常価格（両フィールドあり、price>price_work）
+        price     = priceCur;
+        salePrice = priceWork;
+      } else if (priceWork && discRate) {
+        // price_work のみ → DLsite API では通常 price_work がセール後の表示価格
+        // 通常価格を逆算: sale / (1 - disc/100)
+        salePrice = priceWork;
+        price     = Math.round(priceWork * 100 / (100 - discRate));
+      } else if (priceCur && discRate) {
+        // price のみ → price がセール後価格、通常価格を逆算
+        salePrice = priceCur;
+        price     = Math.round(priceCur * 100 / (100 - discRate));
+      } else {
+        price     = priceWork ?? priceCur;
+        salePrice = null;
+      }
+    } else {
+      price     = priceWork ?? priceCur;
+      salePrice = null;
+    }
+
+    // 割引率が未設定なら price/salePrice から計算
+    if (!disc && price && salePrice) {
       disc = Math.round((1 - salePrice / price) * 100);
     }
 
