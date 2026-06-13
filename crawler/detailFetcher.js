@@ -181,6 +181,10 @@ async function _apiFetch(works, site) {
 function _store(rjCode, body) {
   const parsed = parser.parseProductInfo(rjCode, body);
   if (!parsed) {
+    // 生データをエラーログに出力して原因を特定できるようにする
+    const raw = body[rjCode] ?? body[rjCode.toUpperCase()];
+    log.error('[detail] parseProductInfo failed', rjCode,
+      raw ? `fields: ${Object.keys(raw).join(',')}` : 'key not found in body');
     db.recordFetchError(rjCode);
     return null;   // null = parse failure (distinct from false = price unchanged)
   }

@@ -49,29 +49,44 @@ function parseProductInfo(rjCode, body) {
         salePrice = priceCur;
       } else if (priceWork && priceCur && priceCur > priceWork) {
         // price_work=セール価格, price=通常価格（両フィールドあり、price>price_work）
-        price     = priceCur;
+        price     = priceCurr;
         salePrice = priceWork;
-      } else if (priceWork && discRate) {
-        // price_work のみ → DLsite API では通常 price_work がセール後の表示価格
-        // 通常価格を逆算: sale / (1 - disc/100)
+      } else if (priceWork && discRate && discRate < 100) {
+        // price_work のみ + discount_rate あり（price_work はセール後表示価格）
+        // ゼロ除算を避ける: discRate < 100 チェック済み
         salePrice = priceWork;
         price     = Math.round(priceWork * 100 / (100 - discRate));
-      } else if (priceCur && discRate) {
-        // price のみ → price がセール後価格、通常価格を逆算
+      } else if (priceCur && discRate && discRate < 100) {
         salePrice = priceCur;
         price     = Math.round(priceCur * 100 / (100 - discRate));
       } else {
-        price     = priceWork ?? priceCur;
+        // ポイント還元セール等（価格変動なし）
+        price     = priceWork ?? priceCur ?? 0;
         salePrice = null;
       }
     } else {
-      price     = priceWork ?? priceCur;
+      price     = priceWork ?? priceCur ?? 0;
       salePrice = null;
     }
 
     // 割引率が未設定なら price/salePrice から計算
     if (!disc && price && salePrice) {
       disc = Math.round((1 - salePrice / price) * 100);
+    }
+
+    // ポイント（dl_point / point_rate / rate_free など複数フィールド名が存在）
+    const point = _int(d.point ?? d.dl_point ?? d.point_rate ?? d.dl_point_rate ?? d.rate_review);
+
+    // is_on_sale の区別: discount あり vs ポイント還元のみ
+    // discount_rate > 0 なら価格割引セール、そうでなければポイントキャンペーン
+    const isPriceDiscount = !!(discRate && discRate > 0);
+    const isPointCampaign = isOnSale && !isPriceDiscount;
+
+    // 未使用フィールドをデバッグログに出力（開発/調査用）
+    if (isOnSale && !isPriceDiscount) {
+      log.debug('[parser] point campaign (no price discount)', rjCode,
+        { is_sale: d.is_sale, discount_rate: d.discount_rate, point_rate: d.point_rate,
+          dl_point: d.dl_point, price_work: d.price_work, price: d.price });
     }
 
     return {
@@ -87,10 +102,11 @@ function parseProductInfo(rjCode, body) {
       },
       price: {
         price,
-        sale_price:    salePrice,
-        point:         _int(d.point ?? d.dl_point),
-        discount_rate: disc,
-        is_on_sale:    isOnSale ? 1 : 0,
+        sale_price:     salePrice,
+        point,
+        discount_rate:  disc,
+        is_on_sale:     isOnSale ? 1 : 0,
+        is_point_only:  isPointCampaign ? 1 : 0,
       },
     };
   } catch (e) {

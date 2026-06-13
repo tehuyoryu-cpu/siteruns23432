@@ -116,6 +116,8 @@ function _applySchema() {
       sale_price    INTEGER,
       point         INTEGER,
       discount_rate INTEGER,
+      is_on_sale    INTEGER DEFAULT 0,
+      is_point_only INTEGER DEFAULT 0,
       checked_at    INTEGER NOT NULL,
       FOREIGN KEY (rj_code) REFERENCES works(rj_code)
     );
@@ -354,20 +356,24 @@ function savePriceIfChanged(rjCode, priceData) {
     last.price         !== (priceData.price         ?? null) ||
     last.sale_price    !== (priceData.sale_price    ?? null) ||
     last.discount_rate !== (priceData.discount_rate ?? null) ||
-    last.point         !== (priceData.point         ?? null);
+    last.point         !== (priceData.point         ?? null) ||
+    last.is_on_sale    !== (priceData.is_on_sale    ?? 0)    ||
+    last.is_point_only !== (priceData.is_point_only ?? 0);
 
   if (!changed) return false;
 
   _run(`
     INSERT INTO price_history
-      (rj_code, price, sale_price, point, discount_rate, checked_at)
-    VALUES (?,?,?,?,?,?)
+      (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
+    VALUES (?,?,?,?,?,?,?,?)
   `, [
     rjCode,
     priceData.price         ?? null,
     priceData.sale_price    ?? null,
     priceData.point         ?? null,
     priceData.discount_rate ?? null,
+    priceData.is_on_sale    ?? 0,
+    priceData.is_point_only ?? 0,
     unixNow(),
   ]);
 
