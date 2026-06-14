@@ -65,10 +65,17 @@ const _progress = {
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
 
 async function handleRun(job, res) {
-  if (_jobRunning[job]) {
+  // schedulerと共有フラグを確認（schedulerが実行中なら HTTP API からも起動しない）
+  if (!global._crawlerRunning) global._crawlerRunning = {};
+  const shared     = global._crawlerRunning;
+  const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery' };
+  const sharedKey  = sharedKeys[job];
+
+  if (_jobRunning[job] || (sharedKey && shared[sharedKey])) {
     return _json(res, { ok: false, message: `${job} is already running` });
   }
   _jobRunning[job] = true;
+  if (sharedKey) shared[sharedKey] = true;
   _lastResult[job] = null;
 
   _json(res, { ok: true, message: `${job} started` });
@@ -134,6 +141,8 @@ async function handleRun(job, res) {
     _lastResult[job] = { ok: false, error: err.message, finishedAt: Date.now() };
   } finally {
     _jobRunning[job] = false;
+    const sk = sharedKeys[job];
+    if (sk && global._crawlerRunning) global._crawlerRunning[sk] = false;
     _progress.done = true;
   }
 }

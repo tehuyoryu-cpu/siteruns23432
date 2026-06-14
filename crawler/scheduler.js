@@ -18,25 +18,18 @@ const log    = require('./logger');
 const { runDiscovery }   = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
 
-const _running = {
-  discovery: false,
-  detail:    false,
-  saleBoost: false,
-};
-
 // ─── discovery job ───────────────────────────────────────────────────────────
 
 function _startDiscoveryJob() {
   cron.schedule(config.cron.discovery, async () => {
-    const shared = global._crawlerRunning ?? {};
-    if (_running.discovery || shared.discover) {
-      log.warn('[scheduler] discovery still running (scheduler or UI), skip');
-      return;
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.discovery) {
+      log.warn('[scheduler] discovery still running, skip'); return;
     }
-    _running.discovery = true;
+    global._crawlerRunning.discovery = true;
     try   { await runDiscovery(); }
     catch (err) { log.error('[scheduler] discovery error', err.message); }
-    finally     { _running.discovery = false; }
+    finally     { if (global._crawlerRunning) global._crawlerRunning.discovery = false; }
   });
   log.info('[scheduler] discovery job scheduled', config.cron.discovery);
 }
@@ -45,11 +38,14 @@ function _startDiscoveryJob() {
 
 function _startDetailJob() {
   cron.schedule(config.cron.detail, async () => {
-    if (_running.detail) { log.warn('[scheduler] detail still running, skip'); return; }
-    _running.detail = true;
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.detail) {
+      log.warn('[scheduler] detail still running, skip'); return;
+    }
+    global._crawlerRunning.detail = true;
     try   { await runDetailFetch(30); }
     catch (err) { log.error('[scheduler] detail error', err.message); }
-    finally     { _running.detail = false; }
+    finally     { if (global._crawlerRunning) global._crawlerRunning.detail = false; }
   });
   log.info('[scheduler] detail job scheduled', config.cron.detail);
 }
@@ -58,8 +54,9 @@ function _startDetailJob() {
 
 function _startSaleBoostJob() {
   cron.schedule(config.cron.saleBoost, () => {
-    if (_running.saleBoost) return;
-    _running.saleBoost = true;
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.saleBoost) return;
+    global._crawlerRunning.saleBoost = true;
     try {
       const onSaleCircles = db.getCirclesOnSale();
       db.transaction(() => {
@@ -77,7 +74,7 @@ function _startSaleBoostJob() {
     } catch (err) {
       log.error('[scheduler] saleBoost error', err.message);
     } finally {
-      _running.saleBoost = false;
+      if (global._crawlerRunning) global._crawlerRunning.saleBoost = false;
     }
   });
   log.info('[scheduler] saleBoost job scheduled', config.cron.saleBoost);
@@ -107,16 +104,19 @@ async function start() {
 
   log.info('[scheduler] running initial passes on startup');
 
-  _running.discovery = true;
+  if (!global._crawlerRunning) global._crawlerRunning = {};
+
+  global._crawlerRunning.discovery = true;
   runDiscovery()
     .catch(err => log.error('[scheduler] initial discovery error', err.message))
-    .finally(() => { _running.discovery = false; });
+    .finally(() => { if (global._crawlerRunning) global._crawlerRunning.discovery = false; });
 
   setTimeout(() => {
-    _running.detail = true;
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    global._crawlerRunning.detail = true;
     runDetailFetch(50)
       .catch(err => log.error('[scheduler] initial detail error', err.message))
-      .finally(() => { _running.detail = false; });
+      .finally(() => { if (global._crawlerRunning) global._crawlerRunning.detail = false; });
   }, 5000);
 }
 

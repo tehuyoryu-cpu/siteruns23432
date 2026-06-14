@@ -49,7 +49,7 @@ function parseProductInfo(rjCode, body) {
         salePrice = priceCur;
       } else if (priceWork && priceCur && priceCur > priceWork) {
         // price_work=セール価格, price=通常価格（両フィールドあり、price>price_work）
-        price     = priceCurr;
+        price     = priceCur;
         salePrice = priceWork;
       } else if (priceWork && discRate && discRate < 100) {
         // price_work のみ + discount_rate あり（price_work はセール後表示価格）
@@ -68,6 +68,9 @@ function parseProductInfo(rjCode, body) {
       price     = priceWork ?? priceCur ?? 0;
       salePrice = null;
     }
+
+    // 最終安全チェック: price が null/undefined のときは 0 にする（APIが価格を返さなかった場合）
+    if (price == null) price = 0;
 
     // 割引率が未設定なら price/salePrice から計算
     if (!disc && price && salePrice) {
