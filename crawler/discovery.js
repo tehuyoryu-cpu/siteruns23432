@@ -18,21 +18,22 @@ const RL   = config.fetch.rateLimit;
 
 async function runDiscovery() {
   log.info('[discovery] start');
-
-  const knownRjs = _loadKnown();
-  const results  = {};
-
-  // 直列で実行してレートリミット超過を防ぐ
-  results.new     = await _collectPages('new',     knownRjs);
-  results.ranking = await _collectPages('ranking', knownRjs);
-  results.sale    = await _collectPages('sale',    knownRjs);
-
-  // 既知サークルの新作確認（直列・上限20）
-  results.circle = await _collectCircles(knownRjs);
-
-  const total = Object.values(results).reduce((a, b) => a + b, 0);
-  log.info('[discovery] done', { total, ...results });
-  return { discovered: total, sources: results };
+  try {
+    const knownRjs = _loadKnown();
+    log.debug('[discovery] known RJs:', knownRjs.size);
+    const results  = {};
+    results.new     = await _collectPages('new',     knownRjs);
+    results.ranking = await _collectPages('ranking', knownRjs);
+    results.sale    = await _collectPages('sale',    knownRjs);
+    results.circle  = await _collectCircles(knownRjs);
+    const total = Object.values(results).reduce((a, b) => a + b, 0);
+    log.info('[discovery] done', { total, ...results });
+    return { discovered: total, sources: results };
+  } catch (err) {
+    log.error('[discovery] CRASH', err.message,
+      err.stack?.split('\n').slice(1, 3).join(' | '));
+    throw err;
+  }
 }
 
 // ─── 全収集 (FSR) ────────────────────────────────────────────────────────────
@@ -153,7 +154,7 @@ async function _fetchWithPrice(url) {
 // ─── DB書き込み ──────────────────────────────────────────────────────────────
 
 function _upsert(items, siteId, knownRjs) {
-  const newItems = items.filter(i => !knownRjs.has(i.rjCode));
+  const newItems = items.filter(i => i.rjCode && !knownRjs.has(i.rjCode));
   if (!newItems.length) return 0;
 
   db.transaction(() => {

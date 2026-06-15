@@ -149,10 +149,21 @@ async function startBackend() {
 // ─── IPC: renderer → main ──────────────────────────────────────────────────
 
 // 重複実行防止（schedulerと共有）
+// キー: state名（scheduler/apiServerと統一） ← job名ではない
 const _running = {};
 
-// scheduler.js が参照できるよう global に公開
+// scheduler.js / apiServer.js が参照できるよう global に公開
 global._crawlerRunning = _running;
+
+// job名 → state名 マッピング（apiServer.js の sharedKeys と一致させる）
+const _JOB_TO_STATE = {
+  discover:     'discovery',
+  fetch:        'detail',
+  saleboost:    'saleBoost',
+  fullscan:     'fullscan',
+  fullscan_sale:'fullscan_sale',
+  all:          'discovery',
+};
 
 function _bindIpc() {
   // ステータス取得
@@ -166,8 +177,9 @@ function _bindIpc() {
 
   // 各ジョブ実行
   ipcMain.handle('crawler:run', async (_, job) => {
-    if (_running[job]) return { ok: false, message: `${job} is already running` };
-    _running[job] = true;
+    const sk = _JOB_TO_STATE[job] ?? job;
+    if (_running[sk]) return { ok: false, message: `${job} is already running` };
+    _running[sk] = true;
 
     // レスポンスをすぐ返してバックグラウンドで実行
     setImmediate(async () => {
@@ -176,7 +188,7 @@ function _bindIpc() {
       } catch (err) {
         console.error('[electron] job error', job, err.message);
       } finally {
-        _running[job] = false;
+        _running[sk] = false;
         // 完了をウィンドウに通知
         if (_win && !_win.isDestroyed()) {
           _win.webContents.send('crawler:done', { job, stats: db.getStats() });
@@ -268,14 +280,15 @@ function _buildAppMenu() {
     label,
     accelerator: accel,
     click: async () => {
-      if (_running[job]) {
+      const sk = _JOB_TO_STATE[job] ?? job;
+      if (_running[sk]) {
         dialog.showMessageBox(_win, { message: `${label} は実行中です`, type: 'info' });
         return;
       }
-      _running[job] = true;
+      _running[sk] = true;
       _win?.webContents.send('crawler:started', { job });
       try { await _execJob(job); } finally {
-        _running[job] = false;
+        _running[sk] = false;
         _win?.webContents.send('crawler:done', { job, stats: db.getStats() });
       }
     },
@@ -361,13 +374,14 @@ function createTray() {
 }
 
 async function _execJobSafe(job) {
-  if (_running[job]) return;
-  _running[job] = true;
+  const sk = _JOB_TO_STATE[job] ?? job;
+  if (_running[sk]) return;
+  _running[sk] = true;
   _win?.webContents.send('crawler:started', { job });
   try { await _execJob(job); } catch (err) {
     console.error('[electron] tray job error', job, err.message);
   } finally {
-    _running[job] = false;
+    _running[sk] = false;
     _win?.webContents.send('crawler:done', { job, stats: db?.getStats() });
   }
 }
