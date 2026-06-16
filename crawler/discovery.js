@@ -120,11 +120,15 @@ async function _collectPages(type, knownRjs) {
 }
 
 async function _collectCircles(knownRjs) {
-  const makerIds = db.getAllMakerIds().slice(0, 20);
+  // セール中サークルを優先、残りは全サークルから上位20件
+  const onSaleIds = db.getCirclesOnSale().map(r => r.maker_id);
+  const allIds    = db.getAllMakerIds();
+  // 重複を除いてセール中優先、最大20件
+  const toCheck   = [...new Set([...onSaleIds, ...allIds])].slice(0, 30);
+
   let count = 0;
-  for (const mid of makerIds) {
+  for (const mid of toCheck) {
     for (const site of config.dlsite.sites) {
-      // FSRエンドポイントを使う（/circle/works/ より信頼性が高い）
       const url   = `${BASE}/${site}/fsr/=/maker_id/${mid}/order/release/per_page/30/show_type/1`;
       const items = await _fetchWithPrice(url);
       count += _upsert(items, site, knownRjs);

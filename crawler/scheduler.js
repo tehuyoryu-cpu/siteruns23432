@@ -43,7 +43,13 @@ function _startDetailJob() {
       log.warn('[scheduler] detail still running, skip'); return;
     }
     global._crawlerRunning.detail = true;
-    try   { await runDetailFetch(30); }
+    try   {
+      await runDetailFetch(30, {
+        onProgress: ({ processed, priceChanges, total }) => {
+          if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
+        },
+      });
+    }
     catch (err) { log.error('[scheduler] detail error', err.message); }
     finally     { if (global._crawlerRunning) global._crawlerRunning.detail = false; }
   });
@@ -114,7 +120,11 @@ async function start() {
   setTimeout(() => {
     if (!global._crawlerRunning) global._crawlerRunning = {};
     global._crawlerRunning.detail = true;
-    runDetailFetch(50)
+    runDetailFetch(50, {
+      onProgress: ({ processed, priceChanges, total }) => {
+        if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
+      },
+    })
       .catch(err => log.error('[scheduler] initial detail error', err.message))
       .finally(() => { if (global._crawlerRunning) global._crawlerRunning.detail = false; });
   }, 5000);

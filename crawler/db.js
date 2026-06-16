@@ -189,11 +189,14 @@ function _run(sql, params = []) {
 
 /** è¤æ°ã® _run ãã²ã¨ã¾ã¨ãã«ãã¦æå¾ã«1åã ãä¿å­ã */
 function transaction(fn) {
+  _db.run('BEGIN');
   try {
     fn();
+    _db.run('COMMIT');
     _save();
   } catch (err) {
-    log.error('[db] transaction error, changes NOT saved:', err.message);
+    try { _db.run('ROLLBACK'); } catch (_) {}
+    log.error('[db] transaction rolled back:', err.message);
     throw err;
   }
 }
@@ -214,16 +217,6 @@ function runInTransaction(fn) {
   _save();   // â 1åã ã
 }
 
-/**
- * ãã©ã³ã¶ã¯ã·ã§ã³åç¨: ä¿å­ãªãã§å®è¡ã
- * runInTransaction() ã®ã³ã¼ã«ããã¯åã§ã®ã¿ä½¿ãã
- */
-function _runNoSave(sql, params = []) {
-  const stmt = _db.prepare(sql);
-  stmt.bind(params);
-  stmt.step();
-  stmt.free();
-}
 
 /** Persist the in-memory DB to disk. Called after every mutation. */
 function _save() {
@@ -319,7 +312,7 @@ function getAllMakerIds() {
 function boostCircleWorks(makerId, priority, checkInterval) {
   _run(`
     UPDATE works
-    SET priority = ?, check_interval = ?, is_on_sale = 1
+    SET priority = ?, check_interval = ?
     WHERE maker_id = ?
   `, [priority, checkInterval, makerId]);
 }
@@ -328,8 +321,8 @@ function boostCircleWorks(makerId, priority, checkInterval) {
 function resetCircleWorksPriority(makerId, priority, checkInterval) {
   _run(`
     UPDATE works
-    SET priority = ?, check_interval = ?, is_on_sale = 0
-    WHERE maker_id = ? AND is_on_sale = 1
+    SET priority = ?, check_interval = ?
+    WHERE maker_id = ?
   `, [priority, checkInterval, makerId]);
 }
 
@@ -502,7 +495,7 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
 
   const sortMap = {
     priority: 'w.priority DESC, w.last_checked DESC',
-    discount: 'ph.discount_rate DESC',
+    discount: 'COALESCE(ph.discount_rate, 0) DESC',
     price:    'ph.price ASC',
     checked:  'w.last_checked DESC',
     release:  'w.release_date DESC',
@@ -551,15 +544,15 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
 function getSaleWorks(limit = 200) {
   return _all(`
     WITH latest_ph AS (
-      SELECT rj_code, price, sale_price, discount_rate, point, checked_at
+      SELECT rj_code, price, sale_price, discount_rate, point, is_point_only, checked_at
       FROM price_history WHERE id IN (SELECT MAX(id) FROM price_history GROUP BY rj_code)
     )
     SELECT w.rj_code, w.title, w.circle, w.maker_id,
-           ph.price, ph.sale_price, ph.discount_rate, ph.checked_at
+           ph.price, ph.sale_price, ph.discount_rate, ph.is_point_only, ph.checked_at
     FROM works w
     JOIN latest_ph ph ON ph.rj_code = w.rj_code
-    WHERE w.is_on_sale = 1 AND ph.discount_rate IS NOT NULL
-    ORDER BY ph.discount_rate DESC
+    WHERE w.is_on_sale = 1
+    ORDER BY COALESCE(ph.discount_rate, 0) DESC, ph.price ASC
     LIMIT ?
   `, [limit]);
 }
@@ -577,7 +570,6 @@ function getAllRjCodes() {
 
 module.exports = {
   init,
-  open,
   close,
   runInTransaction,
   upsertWork,

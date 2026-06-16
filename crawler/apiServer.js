@@ -44,10 +44,24 @@ function _sseSend(event, data) {
   }
 }
 
-// logger の warn/error を SSE にも流す
+// logger の warn/error/info(crawler) を SSE にも流す
 setTimeout(() => {
-  log.warn  = (...a) => { log._origWarn?.(...a);  _sseSend('warn',  a.join(' ')); };
-  log.error = (...a) => { log._origError?.(...a); _sseSend('error', a.join(' ')); };
+  const _origInfo  = log.info.bind(log);
+  const _origWarn  = log.warn.bind(log);
+  const _origError = log.error.bind(log);
+  log.info = (...a) => {
+    _origInfo(...a);
+    const msg = a.join(' ');
+    // crawlerのinfoのみSSEに流す（API/DB等の頻繁なログは除外）
+    if (/\[(discovery|detail|scheduler|electron)\]/.test(msg)) {
+      _sseSend('log', msg);
+    }
+  };
+  log.warn  = (...a) => { _origWarn(...a);  _sseSend('warn',  a.join(' ')); };
+  log.error = (...a) => { _origError(...a); _sseSend('error', a.join(' ')); };
+  // apiServer から SSE 送信関数をグローバルに公開
+  // （electron-main._execJob・scheduler がオンデマンドで使用）
+  global._sseSend = _sseSend;
 }, 0);
 
 // ─── 進捗状態 ────────────────────────────────────────────────────────────────
@@ -161,12 +175,14 @@ function handleRunStatus() {
   };
 }
 
+const _dbPath = require('path').resolve(
+  process.env.DLSITE_DATA_DIR || process.cwd(),
+  require('../config').db.path
+);
+
 function handleStats() {
   const stats = db.getStats();
-  stats.dbPath = require('path').resolve(
-    process.env.DLSITE_DATA_DIR || process.cwd(),
-    require('../config').db.path
-  );
+  stats.dbPath = _dbPath;
   return stats;
 }
 function handleSales()         { return db.getSaleWorks(200); }

@@ -203,10 +203,13 @@ function _bindIpc() {
 async function _execJob(job) {
   const log = require('./crawler/logger');
   log.info('[electron] job start', job);
+  const onProgress = ({ processed, priceChanges, total }) => {
+    global._sseSend?.('progress', { processed, priceChanges, total });
+  };
   if (job === 'discover') {
     await discovery.runDiscovery();
   } else if (job === 'fetch') {
-    await detailFetcher.runDetailFetch(300);
+    await detailFetcher.runDetailFetch(300, { onProgress });
   } else if (job === 'saleboost') {
     const circles = db.getCirclesOnSale();
     db.transaction(() => {
@@ -217,7 +220,7 @@ async function _execJob(job) {
     db.syncCircleWorksCounts();
   } else if (job === 'all') {
     await discovery.runDiscovery();
-    await detailFetcher.runDetailFetch(300);
+    await detailFetcher.runDetailFetch(300, { onProgress });
     const circles = db.getCirclesOnSale();
     db.transaction(() => {
       for (const { maker_id } of circles) {
@@ -225,9 +228,17 @@ async function _execJob(job) {
       }
     });
   } else if (job === 'fullscan') {
-    await discovery.runFullScan({ sale: false, maxPages: 0 });
+    await discovery.runFullScan({ sale: false, maxPages: 0,
+      onProgress: ({ site, page, found }) => {
+        global._sseSend?.('progress', { site, page, found });
+      }
+    });
   } else if (job === 'fullscan_sale') {
-    await discovery.runFullScan({ sale: true, maxPages: 0 });
+    await discovery.runFullScan({ sale: true, maxPages: 0,
+      onProgress: ({ site, page, found }) => {
+        global._sseSend?.('progress', { site, page, found });
+      }
+    });
   }
 }
 
