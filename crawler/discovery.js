@@ -120,11 +120,8 @@ async function _collectPages(type, knownRjs) {
 }
 
 async function _collectCircles(knownRjs) {
-  // セール中サークルを優先、残りは全サークルから上位20件
-  const onSaleIds = db.getCirclesOnSale().map(r => r.maker_id);
-  const allIds    = db.getAllMakerIds();
-  // 重複を除いてセール中優先、最大20件
-  const toCheck   = [...new Set([...onSaleIds, ...allIds])].slice(0, 30);
+  // セール中を優先し、最も長くチェックされていないサークルをローテーション
+  const toCheck = db.getCirclesForDiscovery(30);
 
   let count = 0;
   for (const mid of toCheck) {

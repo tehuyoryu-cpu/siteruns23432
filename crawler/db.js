@@ -309,6 +309,25 @@ function getAllMakerIds() {
   ).map(r => r.maker_id);
 }
 
+/**
+ * サークル巡回用: セール中を優先、残りは最近チェックされていないサークルを選ぶ
+ * → 全サークルをローテーションする
+ */
+function getCirclesForDiscovery(limit = 30) {
+  const rows = _all(`
+    SELECT w.maker_id,
+           MAX(c.on_sale)       AS on_sale,
+           MIN(w.last_checked)  AS earliest_checked
+    FROM works w
+    LEFT JOIN circles c ON c.maker_id = w.maker_id
+    WHERE w.maker_id IS NOT NULL
+    GROUP BY w.maker_id
+    ORDER BY on_sale DESC, earliest_checked ASC
+    LIMIT ?
+  `, [limit]);
+  return rows.map(r => r.maker_id);
+}
+
 function boostCircleWorks(makerId, priority, checkInterval) {
   _run(`
     UPDATE works
@@ -578,6 +597,7 @@ module.exports = {
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,
+  getCirclesForDiscovery,
   boostCircleWorks,
   resetCircleWorksPriority,
   getLatestPrice,
