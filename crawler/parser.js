@@ -191,9 +191,13 @@ function parseWorkListWithPrice(html) {
       }
     });
 
-    // ── 方法3: テキスト全体から RJ コードを正規表現スキャン（価格なし）──
-    const raw  = $.html();
-    const hits = raw.match(/\bRJ\d{6,8}\b/gi) ?? [];
+    // ── 方法3: メインコンテンツ領域のみ RJ コードをスキャン（サイドバー除外）──
+    // サイドバー・レコメンド等ノイズを減らすため、コンテンツ本体に絞る
+    const mainContent =
+      $('ul.work_1col_item, .search_result_img_box_inner, #search_result_list, .work_list_main, .work_1col, main, #main').html()
+      || $.html();  // 特定できない場合は全体にフォールバック
+
+    const hits = mainContent.match(/\bRJ\d{6,8}\b/gi) ?? [];
     for (const h of hits) {
       const rj = h.toUpperCase();
       if (!found.has(rj)) {

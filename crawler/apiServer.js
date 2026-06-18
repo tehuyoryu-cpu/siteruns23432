@@ -296,7 +296,12 @@ function createServer() {
         req.on('end', () => {
           try {
             const { message, source } = JSON.parse(body);
-            log.error(`[client:${source ?? 'ui'}]`, message);
+            // SSE経由ではなくファイルに直接書き込む（フィードバックループ防止）
+            const line = `${new Date().toISOString()} [ERROR] [client:${source ?? 'ui'}] ${String(message).slice(0, 300)}\n`;
+            const errPath = log.getErrorLogPath();
+            if (errPath) {
+              require('fs').appendFile(errPath, line, () => {});
+            }
           } catch {}
           res.writeHead(204); res.end();
         });
@@ -372,43 +377,46 @@ function _csvEscape(v) {
 async function _runDiagnostics() {
   const { fetchWithRetry } = require('./queue');
   const parser = require('./parser');
+  const pathM  = require('path');
+
+  const dbPath  = _dbPath;
+  const backDir = pathM.resolve(pathM.dirname(dbPath), 'backups');
+
   const result = {
-    timestamp: new Date().toISOString(),
-    dbStats: db.getStats(),
-    dbPath: require('path').resolve(
-      process.env.DLSITE_DATA_DIR || process.cwd(),
-      require('../config').db.path
-    ),
-    logPath: log.getLogPath(),
+    timestamp:  new Date().toISOString(),
+    dbStats:    db.getStats(),
+    dbPath,
+    backupDir:  backDir,
+    logPath:    log.getLogPath(),
+    errorLogPath: log.getErrorLogPath?.() ?? null,
     isElectron: process.type === 'browser',
     tests: [],
   };
 
-  // テスト1: DLsite新着ページ取得
-  const testUrl = 'https://www.dlsite.com/maniax/new/=/per_page/30/page/1.html';
+  // テスト1: DLsite新着ページ取得（page=1はURLに /page/1 を含まない）
+  const testUrl = 'https://www.dlsite.com/maniax/new/=/per_page/30.html';
   try {
-    const t0  = Date.now();
-    const res = await fetchWithRetry(testUrl);
-    const ms  = Date.now() - t0;
+    const t0   = Date.now();
+    const res  = await fetchWithRetry(testUrl);
+    const ms   = Date.now() - t0;
     const html = await res.text();
     const items = parser.parseWorkListWithPrice(html);
     result.tests.push({
-      name: '新着ページ取得',
-      url: testUrl,
-      status: res.status,
-      ok: res.ok,
+      name:     '新着ページ取得',
+      url:      testUrl,
+      status:   res.status,
+      ok:       res.ok && items.length > 0,
       ms,
-      parsed: items.length,
-      htmlLen: html.length,
-      sample: items.slice(0, 3).map(i => i.rjCode),
-      cfBlock: html.includes('cf-browser-verification') || html.includes('Checking your browser'),
+      parsed:   items.length,
+      htmlLen:  html.length,
+      cfBlock:  html.includes('cf-browser-verification') || html.includes('Checking your browser'),
       ageCheck: html.includes('adultcheck') || html.includes('agecheck'),
     });
   } catch (e) {
     result.tests.push({ name: '新着ページ取得', url: testUrl, ok: false, error: e.message });
   }
 
-  // テスト2: Product Info API
+  // テスト2: Product Info API（product_id[] 形式）
   let knownRjs = [];
   try {
     const rows = db.searchWorks({ q: '', sort: 'priority', page: 1, limit: 3 });
@@ -418,22 +426,21 @@ async function _runDiagnostics() {
   }
 
   if (knownRjs.length) {
-    const codes  = knownRjs;
-    const params = codes.map(c => 'product_id=' + encodeURIComponent(c)).join('&');
+    const params = knownRjs.map(c => 'product_id%5B%5D=' + encodeURIComponent(c)).join('&');
     const apiUrl = 'https://www.dlsite.com/maniax/product/info/ajax?' + params + '&cdn_cache_min=1';
     try {
-      const t0  = Date.now();
-      const res = await fetchWithRetry(apiUrl);
-      const ms  = Date.now() - t0;
+      const t0   = Date.now();
+      const res  = await fetchWithRetry(apiUrl);
+      const ms   = Date.now() - t0;
       const body = await res.json().catch(() => ({}));
       result.tests.push({
-        name: 'Product Info API',
-        url: apiUrl,
-        status: res.status,
-        ok: res.ok && Object.keys(body).length > 0,
+        name:         'Product Info API',
+        url:          apiUrl,
+        status:       res.status,
+        ok:           res.ok && Object.keys(body).length > 0,
         ms,
         returnedKeys: Object.keys(body).length,
-        testedCodes: codes,
+        testedCodes:  knownRjs,
       });
     } catch (e) {
       result.tests.push({ name: 'Product Info API', url: apiUrl, ok: false, error: e.message });

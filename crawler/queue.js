@@ -70,8 +70,13 @@ async function fetchWithRetry(url, opts = {}) {
       clearTimeout(tid);
 
       if (res.status === 429 || res.status === 503) {
-        log.warn(`[fetch] ${res.status} throttle`, url);
+        const retryAfter = parseInt(res.headers.get('Retry-After') ?? '0', 10);
+        const wait = retryAfter > 0
+          ? retryAfter * 1000
+          : baseDelay * 2 ** (i);
+        log.warn(`[fetch] ${res.status} throttle – wait ${wait}ms`, url);
         last = new Error(`HTTP ${res.status}`);
+        await sleep(wait);
         continue;
       }
       if (!res.ok) log.warn(`[fetch] ${res.status}`, url);

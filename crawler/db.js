@@ -440,6 +440,7 @@ function getStats() {
     totalWorks:    _get('SELECT COUNT(*) AS n FROM works').n,
     onSale:        _get('SELECT COUNT(*) AS n FROM works WHERE is_on_sale = 1').n,
     priceChanges:  _get('SELECT COUNT(*) AS n FROM price_history').n,
+    totalCircles:  _get('SELECT COUNT(*) AS n FROM circles').n,
     circlesOnSale: _get('SELECT COUNT(*) AS n FROM circles WHERE on_sale = 1').n,
     dueNow: _get(
       'SELECT COUNT(*) AS n FROM works WHERE (last_checked + check_interval) <= ?',
