@@ -70,11 +70,6 @@ async function init() {
 }
 
 /** Returns the live sql.js Database. Throws if init() was not awaited. */
-function open() {
-  if (!_db) throw new Error('[db] not initialised â await db.init() first');
-  return _db;
-}
-
 function close() {
   if (_db) {
     _save();
@@ -550,7 +545,7 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
   ) ?? { n: 0 }).n;
 
   const works = _all(
-    `${cte} SELECT w.*, ph.price, ph.sale_price, ph.discount_rate, ph.checked_at AS ph_checked_at ${joins} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+    `${cte} SELECT w.*, ph.price, ph.sale_price, ph.discount_rate, ph.is_point_only, ph.checked_at AS ph_checked_at ${joins} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
 

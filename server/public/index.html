@@ -288,7 +288,8 @@ html {
   color:#fff; background:#cc0000; border-radius:2px; margin:1px 3px; padding:0 2px;
   line-height:16px;
 }
-.disc.none { background:transparent; color:transparent; }
+.disc.none  { background:transparent; color:transparent; }
+.disc.point { background:#0055aa; }  /* ポイント還元セール */
 
 /* ページネーション */
 .pager {
@@ -860,14 +861,21 @@ async function loadWorks(page = 1) {
 }
 
 function rowHTML(w) {
-  const price   = w.price != null ? '¥' + w.price.toLocaleString() : '–';
-  const disc    = w.discount_rate != null ? '-' + w.discount_rate + '%' : '';
-  const discCls = disc ? 'disc' : 'disc none';
+  const eff = w.sale_price ?? w.price;
+  const priceStr = eff != null ? '¥' + eff.toLocaleString() : '–';
+  let disc = '', discCls = 'disc none';
+  if (w.discount_rate != null) {
+    disc    = '-' + w.discount_rate + '%';
+    discCls = 'disc';
+  } else if (w.is_on_sale) {
+    disc    = 'P';
+    discCls = 'disc point';
+  }
   return '<div class="work-row" data-rj="' + w.rj_code + '" onclick="selectWork(this,\'' + w.rj_code + '\')">'
     + '<div class="work-cell rj">' + esc(w.rj_code) + '</div>'
     + '<div class="work-cell">' + esc(w.title || '–') + '</div>'
-    + '<div class="work-cell price">' + price + '</div>'
-    + '<div class="work-cell ' + discCls + '">' + esc(disc) + '</div>'
+    + '<div class="work-cell price">' + priceStr + '</div>'
+    + '<div class="work-cell ' + discCls + '">' + disc + '</div>'
     + '</div>';
 }
 
@@ -902,11 +910,14 @@ function renderDetail(work, history, rj) {
   const priceStr = latest?.price != null ? '¥' + latest.price.toLocaleString() : '–';
   const saleStr  = latest?.sale_price != null ? '¥' + latest.sale_price.toLocaleString() : '';
   const disc     = latest?.discount_rate != null ? '-' + latest.discount_rate + '%' : '';
+  const onSaleBadge = isOnSale
+    ? '<span style="margin-left:8px;background:#cc0000;color:#fff;font-size:10px;padding:1px 6px;border-radius:2px;vertical-align:middle">' + (disc || 'POINT') + ' SALE</span>'
+    : '';
 
   const headerHtml =
     '<div class="detail-header">' +
     '<div class="detail-rj">' + esc(rj) + ' / ' + esc(work?.work_type||'') + ' / ' + esc(work?.release_date||'') + '</div>' +
-    '<div class="detail-title">' + esc(title) + '</div>' +
+    '<div class="detail-title">' + esc(title) + onSaleBadge + '</div>' +
     '<div class="detail-sub">' + esc(circle) + '</div>' +
     '<div class="detail-prices">' +
       '<div><div class="dp-label">定価</div><div class="dp-value">' + priceStr + '</div></div>' +
@@ -967,11 +978,16 @@ function histTableHTML(history) {
     const disc    = h.discount_rate != null ? h.discount_rate + '%' : '–';
 
     let chg = '', chgCls = '';
-    if (prev && h.price != null && prev.price != null) {
-      const d = h.price - prev.price;
-      if (d < 0) { chg = '▼' + Math.abs(d).toLocaleString(); chgCls = 'td-drop'; }
-      else if (d > 0) { chg = '▲' + d.toLocaleString(); chgCls = 'td-rise'; }
-      else chg = '–';
+    if (prev) {
+      // 実際の支払額（セール価格 or 定価）で変動を比較
+      const cur  = h.sale_price    ?? h.price;
+      const pre  = prev.sale_price ?? prev.price;
+      if (cur != null && pre != null) {
+        const d = cur - pre;
+        if (d < 0) { chg = '▼' + Math.abs(d).toLocaleString(); chgCls = 'td-drop'; }
+        else if (d > 0) { chg = '▲' + d.toLocaleString(); chgCls = 'td-rise'; }
+        else chg = '–';
+      }
     }
 
     return '<tr>'
@@ -988,6 +1004,7 @@ function histTableHTML(history) {
 
 // ── Charts ─────────────────────────────────────────────────────────────────
 function renderCharts(history) {
+  if (!history || !history.length) return;  // 履歴なしはスキップ
   const labels = history.map(h => {
     if (!h.checked_at) return '';
     const d = new Date(h.checked_at * 1000);
@@ -1110,8 +1127,8 @@ function _spLog(msg, type) {
   div.textContent = '[' + ts + '] ' + msg;
   el.prepend(div);
   while (el.children.length > SCAN_LOG_MAX) el.removeChild(el.lastChild);
-  // エラー/警告はサーバーのエラーログにも記録
-  if (type === 'err' || type === 'warn') {
+  // エラー/警告はサーバーのエラーログにも記録（SSE接続エラー自体は除外してループ防止）
+  if ((type === 'err' || type === 'warn') && !msg.includes('接続が切れました')) {
     fetch('/api/client-error', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1124,6 +1141,8 @@ function _spShow(show) {
   document.getElementById('scanPanel')?.classList.toggle('active', show);
 }
 
+let _sseReconnectTimer = null;
+
 function _spStartSSE() {
   if (_sseConn) { _sseConn.close(); _sseConn = null; }
   if (typeof EventSource === 'undefined') { _spStartPolling(); return; }
@@ -1133,8 +1152,12 @@ function _spStartSSE() {
   _sseConn.addEventListener('warn',   e => _spLog(e.data, 'warn'));
   _sseConn.addEventListener('error',  e => _spLog(e.data, 'err'));
   _sseConn.onerror = () => {
-    _spLog('接続が切れました。再接続中...', 'warn');
-    setTimeout(() => { if (_sseConn) _spStartSSE(); }, 5000);
+    // サーバーへのPOSTはしない（ループ防止）。タイマーを1つだけ設定して5秒後に再接続
+    if (_sseReconnectTimer) return;
+    _sseReconnectTimer = setTimeout(() => {
+      _sseReconnectTimer = null;
+      _spStartSSE();
+    }, 5000);
   };
 }
 
