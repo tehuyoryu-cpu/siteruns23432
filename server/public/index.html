@@ -1124,15 +1124,16 @@ function _spLog(msg, type) {
                 .map(n => String(n).padStart(2,'0')).join(':');
   const div = document.createElement('div');
   div.className = 'scan-log-item' + (type ? ' ' + type : '');
-  div.textContent = '[' + ts + '] ' + msg;
+  div.textContent = '[' + ts + '] ' + msgStr;
   el.prepend(div);
   while (el.children.length > SCAN_LOG_MAX) el.removeChild(el.lastChild);
   // エラー/警告はサーバーのエラーログにも記録（SSE接続エラー自体は除外してループ防止）
-  if ((type === 'err' || type === 'warn') && !msg.includes('接続が切れました')) {
+  const msgStr = (msg == null) ? '' : String(msg);
+  if ((type === 'err' || type === 'warn') && msgStr && !msgStr.includes('接続が切れました')) {
     fetch('/api/client-error', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, source: 'scan-panel' }),
+      body: JSON.stringify({ message: msgStr, source: 'scan-panel' }),
     }).catch(() => {});
   }
 }
@@ -1150,7 +1151,7 @@ function _spStartSSE() {
   _sseConn.addEventListener('log',    e => _spLog(e.data));
   _sseConn.addEventListener('change', e => { _spChanges++; _spLog(e.data, 'change'); _spUpdate(); });
   _sseConn.addEventListener('warn',   e => _spLog(e.data, 'warn'));
-  _sseConn.addEventListener('error',  e => _spLog(e.data, 'err'));
+  _sseConn.addEventListener('error',  e => { if (e.data) _spLog(e.data, 'err'); });
   _sseConn.onerror = () => {
     // サーバーへのPOSTはしない（ループ防止）。タイマーを1つだけ設定して5秒後に再接続
     if (_sseReconnectTimer) return;

@@ -28,9 +28,14 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   const result = { processed: 0, priceChanges: 0, errors: 0, total };
 
   // サイト別グループ
+  // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
+  // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
+  const VALID_SITES = new Set(['maniax', 'girls', 'home', 'bl', 'pro']);
   const bySite = {};
   for (const w of due) {
-    const s = w.site_id ?? 'maniax';
+    const raw = w.site_id ?? 'maniax';
+    const s   = VALID_SITES.has(raw) ? raw : 'maniax';
+    if (s !== raw) log.warn('[detail] unknown site_id fallback:', raw, '->', s, w.rj_code);
     (bySite[s] ??= []).push(w);
   }
 
