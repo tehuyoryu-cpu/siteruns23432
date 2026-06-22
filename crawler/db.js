@@ -133,6 +133,8 @@ function _applySchema() {
   // æ¢å­DBã¸ã®å®å¨ãªã«ã©ã è¿½å  (IF NOT EXISTS ã¯ä½¿ããªãã®ã§try/catch)
   const migrations = [
     'ALTER TABLE works ADD COLUMN consecutive_errors INTEGER DEFAULT 0',
+    'ALTER TABLE price_history ADD COLUMN is_on_sale    INTEGER DEFAULT 0',
+    'ALTER TABLE price_history ADD COLUMN is_point_only INTEGER DEFAULT 0',
   ];
   for (const sql of migrations) {
     try { _db.run(sql); log.info('[db] migrated:', sql.slice(0, 60)); }
