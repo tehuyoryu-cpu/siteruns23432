@@ -1246,7 +1246,11 @@ const _JOB_LABELS = {
 
 async function runJob(job) {
   const btn = document.getElementById('btn' + job.charAt(0).toUpperCase() + job.slice(1));
-  if (!btn || btn.classList.contains('running')) return;
+  if (!btn) return;
+  if (btn.classList.contains('running')) {
+    setStatus('⚠ ' + (_JOB_LABELS[job] ?? job) + ' は現在実行中です');
+    return;
+  }
 
   btn.classList.add('running');
   btn.title = '実行中...';
@@ -1282,6 +1286,9 @@ async function _waitJobDone(job, btn) {
     _spTotal   = status?.dueNow ?? 0;
     _spScanned = 0; _spChanges = 0;
     _spUpdate();
+    if (_spTotal === 0 && job === 'fetch') {
+      _spLog('更新対象なし（全作品が最新です）');
+    }
     _spShow(true);
     _spStartSSE();
     _spLog((_JOB_LABELS[job] ?? job) + ' 開始...');
