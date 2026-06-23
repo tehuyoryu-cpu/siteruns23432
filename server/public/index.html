@@ -1148,6 +1148,14 @@ function _spStartSSE() {
   if (_sseConn) { _sseConn.close(); _sseConn = null; }
   if (typeof EventSource === 'undefined') { _spStartPolling(); return; }
   _sseConn = new EventSource('/api/log-stream');
+  _sseConn.addEventListener('progress', e => {
+    try {
+      const p = JSON.parse(e.data);
+      if (p.processed != null) _spScanned = p.processed;
+      if (p.total     != null) _spTotal   = p.total;
+      _spUpdate();
+    } catch {}
+  });
   _sseConn.addEventListener('log',    e => _spLog(e.data));
   _sseConn.addEventListener('change', e => { _spChanges++; _spLog(e.data, 'change'); _spUpdate(); });
   _sseConn.addEventListener('warn',   e => _spLog(e.data, 'warn'));
@@ -1341,7 +1349,7 @@ function updateProgressBar(p, job) {
   } else if (job === 'fetch') {
     fill.classList.remove('indeterminate');
     // due worksに対する進捗（近似値）
-    const pct = p.found ? Math.min(99, Math.round(p.found / 3)) : 30;
+    const pct = (p.found && p.total) ? Math.min(99, Math.round(p.found / p.total * 100)) : (p.found ? 10 : 0);
     fill.style.width = pct + '%';
     label.textContent = (p.found || 0) + '件更新 ' + elapsed;
   } else {
