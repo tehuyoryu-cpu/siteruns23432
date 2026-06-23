@@ -77,18 +77,18 @@ async function _processBatch(works, site) {
   const result = { processed: 0, priceChanges: 0, errors: 0 };
   let body = await _apiFetch(works, site);
 
-  // 失敗→10件分割→失敗→1件ずつ
+  // 失敗→バイナリ分割（半分ずつ）→1件まで再帰して個別エラー記録
+  // SUB=10 固定にすると works.length < SUB の場合に無限ループするため halving を使う
   if (!body && works.length > 1) {
     log.warn('[detail] batch fail, splitting', works.length);
-    const SUB = 10;
-    for (let i = 0; i < works.length; i += SUB) {
-      const sub = works.slice(i, i + SUB);
-      const r   = await _processBatch(sub, site);
-      result.processed    += r.processed;
-      result.priceChanges += r.priceChanges;
-      result.errors       += r.errors;
-      if (i + SUB < works.length) await sleep(config.fetch.rateLimit);
-    }
+    const mid = Math.ceil(works.length / 2);
+    const [r1, r2] = await Promise.all([
+      _processBatch(works.slice(0, mid),  site),
+      _processBatch(works.slice(mid),     site),
+    ]);
+    result.processed    += r1.processed    + r2.processed;
+    result.priceChanges += r1.priceChanges + r2.priceChanges;
+    result.errors       += r1.errors       + r2.errors;
     return result;
   }
 
