@@ -140,6 +140,19 @@ function _applySchema() {
     try { _db.run(sql); log.info('[db] migrated:', sql.slice(0, 60)); }
     catch (_) { /* already exists */ }
   }
+
+  // データマイグレーション: 旧バージョンが書き込んだ無効な site_id を maniax に統一
+  // 'aix'/'appx' は廃止済みの DLsite サブドメイン。RJ コードは maniax API で取得可能。
+  {
+    const VALID = ['maniax', 'girls', 'home', 'bl', 'pro'];
+    const ph    = VALID.map(() => '?').join(',');
+    const stmt  = _db.prepare(`UPDATE works SET site_id = 'maniax' WHERE site_id NOT IN (${ph})`);
+    stmt.bind(VALID);
+    stmt.step();
+    stmt.free();
+    const changed = _db.getRowsModified();
+    if (changed > 0) log.info('[db] fixed invalid site_id -> maniax:', changed, '件');
+  }
 }
 
 // âââ low-level query helpers âââââââââââââââââââââââââââââââââââââââââââââââââ
