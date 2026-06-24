@@ -17,38 +17,47 @@ const BATCH = Math.min(config.fetch.batchSize ?? 20, 20);  // DLsite API の安�
 // ─── public ──────────────────────────────────────────────────────────────────
 
 async function runDetailFetch(limit = 300, { onProgress } = {}) {
-  const due = db.getDueWorks(limit);
-  if (!due.length) {
-    log.info('[detail] no due works');
-    return { processed: 0, priceChanges: 0, errors: 0, total: 0 };
-  }
-
-  const total = due.length;
-  log.info('[detail] due:', total);
-  const result = { processed: 0, priceChanges: 0, errors: 0, total };
+  // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
+  // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
+  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0 };
 
   // サイト別グループ
   // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
   // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
   const VALID_SITES = new Set(['maniax', 'girls', 'home', 'bl', 'pro']);
-  const bySite = {};
-  for (const w of due) {
-    const raw = w.site_id ?? 'maniax';
-    const s   = VALID_SITES.has(raw) ? raw : 'maniax';
-    if (s !== raw) log.warn('[detail] unknown site_id fallback:', raw, '->', s, w.rj_code);
-    (bySite[s] ??= []).push(w);
-  }
 
-  for (const [site, works] of Object.entries(bySite)) {
-    for (let i = 0; i < works.length; i += BATCH) {
-      const batch = works.slice(i, i + BATCH);
-      const r     = await _processBatch(batch, site);
-      result.processed    += r.processed;
-      result.priceChanges += r.priceChanges;
-      result.errors       += r.errors;
-      onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total });
-      if (i + BATCH < works.length) await sleep(config.fetch.rateLimit);
+  while (true) {
+    const due = db.getDueWorks(limit);
+    if (!due.length) {
+      if (result.total === 0) log.info('[detail] no due works');
+      break;
     }
+
+    result.total += due.length;
+    log.info('[detail] due batch:', due.length, '(total so far:', result.total, ')');
+
+    const bySite = {};
+    for (const w of due) {
+      const raw = w.site_id ?? 'maniax';
+      const s   = VALID_SITES.has(raw) ? raw : 'maniax';
+      if (s !== raw) log.warn('[detail] unknown site_id fallback:', raw, '->', s, w.rj_code);
+      (bySite[s] ??= []).push(w);
+    }
+
+    for (const [site, works] of Object.entries(bySite)) {
+      for (let i = 0; i < works.length; i += BATCH) {
+        const batch = works.slice(i, i + BATCH);
+        const r     = await _processBatch(batch, site);
+        result.processed    += r.processed;
+        result.priceChanges += r.priceChanges;
+        result.errors       += r.errors;
+        onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
+        if (i + BATCH < works.length) await sleep(config.fetch.rateLimit);
+      }
+    }
+
+    // 取得件数が limit 未満なら、これ以上 due な作品は残っていない
+    if (due.length < limit) break;
   }
 
   log.info('[detail] done', result);
