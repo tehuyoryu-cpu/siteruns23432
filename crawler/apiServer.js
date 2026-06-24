@@ -83,6 +83,10 @@ async function handleRun(job, res) {
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
   const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery' };
+  // 'all' は discovery + detail を両方ロック（scheduler との競合防止）
+  if (job === 'all' && shared['detail']) {
+    return _json(res, { ok: false, message: '価格更新が実行中のため全て巡回を開始できません' });
+  }
   const sharedKey  = sharedKeys[job];
 
   if (_jobRunning[job] || (sharedKey && shared[sharedKey])) {
@@ -124,17 +128,24 @@ async function handleRun(job, res) {
       log.info('[api] saleboost done, circles:', circles.length);
 
     } else if (job === 'all') {
-      await runDiscovery();
-      await detailFetcher.runDetailFetch(300, {
+      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      if (global._crawlerRunning) global._crawlerRunning['detail'] = true;
+      const discR = await runDiscovery();
+      _sseSend('log', `RJ収集完了 — 新規: ${discR?.discovered ?? 0}件`);
+      const fetchR = await detailFetcher.runDetailFetch(300, {
         onProgress: ({ processed, priceChanges, total }) => {
           Object.assign(_progress, { found: processed, total });
           _sseSend('progress', { processed, priceChanges, total });
+          if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
         },
       });
+      if (global._crawlerRunning) global._crawlerRunning['detail'] = false;
       const circles = db.getCirclesOnSale();
       db.transaction(() => {
         for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
       });
+      _lastResult[job] = { ok: true, discovered: discR?.discovered ?? 0, ...fetchR, finishedAt: Date.now() };
+      _sseSend('log', `全て巡回完了 — 新規:${discR?.discovered ?? 0}件 価格更新:${fetchR?.processed ?? 0}件 変動:${fetchR?.priceChanges ?? 0}件`);
 
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
@@ -157,6 +168,8 @@ async function handleRun(job, res) {
     _jobRunning[job] = false;
     const sk = sharedKeys[job];
     if (sk && global._crawlerRunning) global._crawlerRunning[sk] = false;
+    // 'all' は discovery + detail の両方をロックするため両方解放
+    if (job === 'all' && global._crawlerRunning) global._crawlerRunning['detail'] = false;
     _progress.done = true;
   }
 }

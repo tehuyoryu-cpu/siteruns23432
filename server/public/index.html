@@ -480,6 +480,19 @@ html {
 .sb-panel:last-child { border-right: none; flex:1; }
 .sb-sale { color: #cc0000; font-weight:bold; }
 
+/* ── ボタン説明バー ── */
+.desc-bar {
+  background: #fffbe6;
+  border-bottom: 1px solid #d4b800;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #665500;
+  min-height: 18px;
+  line-height: 18px;
+  display: none;
+}
+.desc-bar.visible { display: block; }
+
 /* ── 走査進捗パネル（progress.htmlから） ── */
 .scan-panel {
   display: none;
@@ -557,68 +570,71 @@ body {
 
 <!-- ツールバー -->
 <div class="toolbar">
-  <button class="tb-btn" onclick="loadWorks(1)" title="更新">
+  <button class="tb-btn" onclick="loadWorks(1)" title="更新" data-desc="作品リストを最新の状態に更新します">
     <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5H10" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     更新
   </button>
   <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="setTab('all')" id="tbAll" title="全作品">
+  <button class="tb-btn" onclick="setTab('all')" id="tbAll" title="全作品" data-desc="追跡中の全作品を表示します">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="1" y="9" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="9" width="6" height="6" fill="#0078d7" rx="1"/></svg>
     全作品
   </button>
-  <button class="tb-btn" onclick="setTab('sale')" id="tbSale" title="セール中のみ表示">
+  <button class="tb-btn" onclick="setTab('sale')" id="tbSale" title="セール中のみ表示" data-desc="現在セール中の作品だけを絞り込みます">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
     セール中
   </button>
   <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="exportData('csv')" title="CSVで保存">
+  <button class="tb-btn" onclick="exportData('csv')" title="CSVで保存" data-desc="全作品と価格履歴をCSVファイルで書き出します">
     <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><path d="M4 9h8M4 11h6" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
     CSVで保存
   </button>
-  <button class="tb-btn" onclick="exportData('json')" title="JSONで保存">
+  <button class="tb-btn" onclick="exportData('json')" title="JSONで保存" data-desc="全作品と価格履歴をJSONファイルで書き出します">
     <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><text x="8" y="12" text-anchor="middle" fill="#cc6600" font-size="6" font-family="monospace" font-weight="bold">{}</text></svg>
     JSONで保存
   </button>
   <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnDiscover" onclick="runJob('discover')" title="新着/ランキング/セールを巡回してRJ収集">
+  <button class="tb-btn" id="btnDiscover" onclick="runJob('discover')" data-desc="DLsiteの新着・ランキング・セールページを巡回してRJコードを収集します（価格は取得しません）" title="新着/ランキング/セールを巡回してRJ収集">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4v4l3 1.5" stroke="#0078d7" stroke-width="1.3" stroke-linecap="round"/></svg>
     RJ収集
   </button>
-  <button class="tb-btn" id="btnFetch" onclick="runJob('fetch')" title="未取得・期限切れ作品の価格を更新">
+  <button class="tb-btn" id="btnFetch" onclick="runJob('fetch')" data-desc="未取得または期限切れの作品の価格をDLsite APIから取得・更新します" title="未取得・期限切れ作品の価格を更新">
     <svg viewBox="0 0 16 16"><path d="M2 8h12M10 4l4 4-4 4" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
     価格更新
   </button>
-  <button class="tb-btn" id="btnSaleboost" onclick="runJob('saleboost')" title="セール中サークルの優先度を維持">
+  <button class="tb-btn" id="btnSaleboost" onclick="runJob('saleboost')" data-desc="セール中サークルの全作品を優先キューに追加して価格確認を早めます" title="セール中サークルの優先度を維持">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
     セール優先
   </button>
-  <button class="tb-btn" id="btnAll" onclick="runJob('all')" title="全て巡回" style="font-weight:bold">
+  <button class="tb-btn" id="btnAll" onclick="runJob('all')" data-desc="RJ収集 → 価格更新 → セール優先を順番に実行します（通常はこれだけでOK）" title="全て巡回" style="font-weight:bold">
     <svg viewBox="0 0 16 16"><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="#006600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="3.5" fill="#006600"/></svg>
     全て巡回
   </button>
   <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnFullscan" onclick="runJob('fullscan')" title="FSR全ページ走査 — 全作品を網羅収集（時間がかかります）">
+  <button class="tb-btn" id="btnFullscan" onclick="runJob('fullscan')" data-desc="FSR全ページを走査して登録作品を網羅収集します（時間がかかります・初回セットアップ向け）" title="FSR全ページ走査 — 全作品を網羅収集（時間がかかります）">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#660066" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#660066" stroke-width="1.5" stroke-linecap="round"/></svg>
     全収集
   </button>
-  <button class="tb-btn" id="btnFullscan_sale" onclick="runJob('fullscan_sale')" title="セール作品を全ページ走査">
+  <button class="tb-btn" id="btnFullscan_sale" onclick="runJob('fullscan_sale')" data-desc="セール中作品のみFSR全ページ走査します" title="セール作品を全ページ走査">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/></svg>
     全セール収集
   </button>
   <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="showLog()" title="ログを確認">
+  <button class="tb-btn" onclick="showLog()" title="ログを確認" data-desc="直近200行の動作ログを確認します">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
     ログ確認
   </button>
-  <button class="tb-btn" onclick="showErrorLog()" title="エラーログ" id="tbErrLog">
+  <button class="tb-btn" onclick="showErrorLog()" title="エラーログ" id="tbErrLog" data-desc="エラーログを確認します（巡回失敗・APIエラーなど）">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M8 4.5v4" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="#cc0000"/></svg>
     エラーログ
   </button>
-  <button class="tb-btn" onclick="showDiag()" title="巡回テスト・診断">
+  <button class="tb-btn" onclick="showDiag()" title="巡回テスト・診断" data-desc="特定のRJコードを手動で取得してAPIやセッションの動作を確認します">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 5v3.5l2.5 1.5" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
     診断
   </button>
 </div>
+
+<!-- ボタン説明バー -->
+<div class="desc-bar" id="descBar"></div>
 
 <!-- フィルタバー -->
 <div class="filterbar">
@@ -1229,7 +1245,7 @@ function _showJobResult(job, status) {
   }
   if (job === 'discover')    setStatus('RJ収集完了 — 新規: ' + (r.discovered ?? 0) + ' 件');
   else if (job === 'fetch')  setStatus('価格更新完了 — 処理: ' + (r.processed ?? 0) + ' 件 / 変化: ' + (r.priceChanges ?? 0) + ' 件');
-  else if (job === 'all')    setStatus('全て巡回完了');
+  else if (job === 'all')    setStatus('全て巡回完了 — 新規: ' + (r.discovered ?? 0) + '件 / 価格更新: ' + (r.processed ?? 0) + '件 / 変動: ' + (r.priceChanges ?? 0) + '件');
   else if (job?.startsWith('fullscan')) setStatus('全収集完了 — ' + (status.fullScanProgress?.grandTotal ?? 0) + ' 件');
   else setStatus((_JOB_LABELS[job] ?? job) + ' 完了');
 }
@@ -1243,6 +1259,22 @@ const _JOB_LABELS = {
   fullscan:      '全収集',
   fullscan_sale: '全セール収集',
 };
+
+// ── ボタン説明バーの hover 制御 ──
+document.addEventListener('DOMContentLoaded', () => {
+  const bar = document.getElementById('descBar');
+  if (!bar) return;
+  document.querySelectorAll('[data-desc]').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      bar.textContent = el.dataset.desc;
+      bar.classList.add('visible');
+    });
+    el.addEventListener('mouseleave', () => {
+      bar.textContent = '';
+      bar.classList.remove('visible');
+    });
+  });
+});
 
 async function runJob(job) {
   const btn = document.getElementById('btn' + job.charAt(0).toUpperCase() + job.slice(1));
@@ -1353,12 +1385,12 @@ function updateProgressBar(p, job) {
     const page  = p.page ? 'p.' + p.page : '';
     const found = p.found ? p.found + '件' : '';
     label.textContent = [site, page, found, elapsed].filter(Boolean).join(' ');
-  } else if (job === 'fetch') {
+  } else if (job === 'fetch' || job === 'all') {
     fill.classList.remove('indeterminate');
-    // due worksに対する進捗（近似値）
     const pct = (p.found && p.total) ? Math.min(99, Math.round(p.found / p.total * 100)) : (p.found ? 10 : 0);
     fill.style.width = pct + '%';
-    label.textContent = (p.found || 0) + '件更新 ' + elapsed;
+    const phaseLabel = job === 'all' && !p.total ? 'RJ収集中...' : (p.found || 0) + '件更新';
+    label.textContent = phaseLabel + (elapsed ? ' ' + elapsed : '');
   } else {
     fill.classList.add('indeterminate');
     label.textContent = (_JOB_LABELS[job] ?? job) + '中... ' + elapsed;
