@@ -98,6 +98,10 @@ async function handleRun(job, res) {
   }
   _jobRunning[job] = true;
   if (sharedKey) shared[sharedKey] = true;
+  // 'all' は discovery に加えて detail も事前ロック
+  // （Node.jsのタイマー優先順位によりHTTPハンドラより先にschedulerが動く場合があるため、
+  //   レスポンスを返す前にロックを取得しておく必要がある）
+  if (job === 'all') shared['detail'] = true;
   _lastResult[job] = null;
 
   _json(res, { ok: true, message: `${job} started` });
@@ -133,9 +137,8 @@ async function handleRun(job, res) {
 
     } else if (job === 'all') {
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      if (global._crawlerRunning) global._crawlerRunning['detail'] = true;
-
       // 起動時 discovery が走っている場合は完了を待つ（最大2分）、スキップして detail へ進む
+      // ※ detail ロックはHTTPハンドラ実行前に取得済み（scheduler競合防止）
       let discR;
       if (global._crawlerRunning?.discovery) {
         log.info('[api] all: waiting for ongoing discovery to finish...');
