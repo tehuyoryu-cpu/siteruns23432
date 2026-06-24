@@ -1276,22 +1276,32 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-async function runJob(job) {
+// ロック競合（他のジョブが実行中）の場合に自動でリトライする設定
+const AUTO_RETRY_SEC   = 15; // リトライ間隔（秒）
+const MAX_AUTO_RETRY    = 20; // 最大リトライ回数（約5分間）
+
+async function runJob(job, retryCount = 0) {
   const btn = document.getElementById('btn' + job.charAt(0).toUpperCase() + job.slice(1));
   if (!btn) return;
-  if (btn.classList.contains('running')) {
+  if (retryCount === 0 && btn.classList.contains('running')) {
     setStatus('⚠ ' + (_JOB_LABELS[job] ?? job) + ' は現在実行中です');
     return;
   }
 
   btn.classList.add('running');
   btn.title = '実行中...';
-  setStatus(_JOB_LABELS[job] + ' 実行中...');
+  if (retryCount === 0) setStatus(_JOB_LABELS[job] + ' 実行中...');
 
   try {
     const r = await fetch('/api/run/' + job, { method: 'POST' });
     const d = await r.json();
     if (!d.ok) {
+      // 他ジョブとのロック競合なら自動リトライ、それ以外はエラー表示のみ
+      const isBusyLock = /実行中|already running/.test(d.message || '');
+      if (isBusyLock && retryCount < MAX_AUTO_RETRY) {
+        await _autoRetryWithCountdown(job, btn, d.message, retryCount);
+        return;
+      }
       setStatus('⚠ ' + d.message);
       btn.classList.remove('running');
       btn.title = _JOB_LABELS[job];
@@ -1305,6 +1315,17 @@ async function runJob(job) {
     setStatus('エラー: ' + e.message);
     btn.classList.remove('running');
   }
+}
+
+// ロック競合時にカウントダウン表示しつつ自動的に再試行する
+async function _autoRetryWithCountdown(job, btn, message, retryCount) {
+  for (let s = AUTO_RETRY_SEC; s > 0; s--) {
+    setStatus(`⏳ ${message} — ${s}秒後に自動リトライ (${retryCount + 1}/${MAX_AUTO_RETRY})`);
+    await new Promise(r => setTimeout(r, 1000));
+    // 待機中にユーザーが別操作でボタンの running 状態を解除していたら中断
+    if (!btn.classList.contains('running')) return;
+  }
+  runJob(job, retryCount + 1);
 }
 
 async function _waitJobDone(job, btn) {
