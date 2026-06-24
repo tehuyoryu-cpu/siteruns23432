@@ -24,7 +24,8 @@ async function runDiscovery() {
     const results  = {};
     results.new     = await _collectPages('new',     knownRjs);
     results.ranking = await _collectPages('ranking', knownRjs);
-    results.sale    = await _collectPages('sale',    knownRjs);
+    // sale: /campaign/=/per_page/100.html は廃止済み(404)。
+    //       セール作品はFSRのsale URLで runFullScan が対応するため省略。
     results.circle  = await _collectCircles(knownRjs);
     const total = Object.values(results).reduce((a, b) => a + b, 0);
     log.info('[discovery] done', { total, ...results });
