@@ -85,12 +85,16 @@ async function handleRun(job, res) {
   const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery' };
   // 'all' は discovery + detail を両方ロック（scheduler との競合防止）
   if (job === 'all' && shared['detail']) {
-    return _json(res, { ok: false, message: '価格更新が実行中のため全て巡回を開始できません' });
+    return _json(res, { ok: false, message: '価格更新が実行中のため全て巡回を開始できません。完了後にお試しください' });
   }
   const sharedKey  = sharedKeys[job];
 
-  if (_jobRunning[job] || (sharedKey && shared[sharedKey])) {
-    return _json(res, { ok: false, message: `${job} is already running` });
+  if (_jobRunning[job]) {
+    return _json(res, { ok: false, message: (_JOB_LABELS?.[job] ?? job) + ' はすでに実行中です' });
+  }
+  // 'all' 以外で共有ロックが取れない場合はブロック
+  if (job !== 'all' && sharedKey && shared[sharedKey]) {
+    return _json(res, { ok: false, message: '他の巡回処理が実行中です。完了後にお試しください' });
   }
   _jobRunning[job] = true;
   if (sharedKey) shared[sharedKey] = true;
@@ -130,8 +134,27 @@ async function handleRun(job, res) {
     } else if (job === 'all') {
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       if (global._crawlerRunning) global._crawlerRunning['detail'] = true;
-      const discR = await runDiscovery();
-      _sseSend('log', `RJ収集完了 — 新規: ${discR?.discovered ?? 0}件`);
+
+      // 起動時 discovery が走っている場合は完了を待つ（最大2分）、スキップして detail へ進む
+      let discR;
+      if (global._crawlerRunning?.discovery) {
+        log.info('[api] all: waiting for ongoing discovery to finish...');
+        _sseSend('log', 'RJ収集が実行中のため完了を待っています...');
+        const waitStart = Date.now();
+        await new Promise(resolve => {
+          const t = setInterval(() => {
+            if (!global._crawlerRunning?.discovery || Date.now() - waitStart > 120_000) {
+              clearInterval(t); resolve();
+            }
+          }, 1000);
+        });
+        _sseSend('log', 'RJ収集完了 — スキップ済み（起動時に実行済み）');
+        discR = { discovered: 0 };
+      } else {
+        discR = await runDiscovery();
+        _sseSend('log', `RJ収集完了 — 新規: ${discR?.discovered ?? 0}件`);
+      }
+
       const fetchR = await detailFetcher.runDetailFetch(300, {
         onProgress: ({ processed, priceChanges, total }) => {
           Object.assign(_progress, { found: processed, total });
