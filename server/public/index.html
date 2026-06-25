@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DLsite Price Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 
 body {
@@ -601,6 +602,15 @@ body {
     <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><text x="8" y="12" text-anchor="middle" fill="#cc6600" font-size="6" font-family="monospace" font-weight="bold">{}</text></svg>
     JSONで保存
   </button>
+  <button class="tb-btn" onclick="exportXlsx()" title="Excelで保存" data-desc="全作品をExcel形式（.xlsx）で書き出します。同じ形式で読み込みも可能です">
+    <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><text x="8" y="12" text-anchor="middle" fill="#1f7a3c" font-size="7" font-family="sans-serif" font-weight="bold">XL</text></svg>
+    Excelで保存
+  </button>
+  <button class="tb-btn" onclick="importXlsx()" title="Excelから読み込み" data-desc="Excelファイル（.xlsx）からRJコードを読み込んで追跡リストに追加します。rj_code列が必須です">
+    <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><path d="M5 11l3 2 3-2M8 7v6" stroke="#1f7a3c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Excelから読込
+  </button>
+  <input type="file" id="xlsxFileInput" accept=".xlsx,.xls" style="display:none" onchange="onXlsxFileSelected(event)">
   <div class="tb-sep"></div>
   <button class="tb-btn" id="btnDiscover" onclick="runJob('discover')" data-desc="DLsiteの新着・ランキング・セールページを巡回してRJコードを収集します（価格は取得しません）" title="新着/ランキング/セールを巡回してRJ収集">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4v4l3 1.5" stroke="#0078d7" stroke-width="1.3" stroke-linecap="round"/></svg>
@@ -1123,6 +1133,89 @@ function onSearch() {
 }
 
 function exportData(fmt) { window.open('/api/export/' + fmt, '_blank'); }
+
+async function exportXlsx() {
+  setStatus('Excelファイルを生成中...');
+  try {
+    const rows = await api('/api/export/works-json');
+    if (!rows?.length) { setStatus('⚠ エクスポートするデータがありません'); return; }
+
+    // ヘッダー定義（日本語列名）
+    const COLS = {
+      rj_code: 'RJコード', title: 'タイトル', circle: 'サークル',
+      maker_id: 'メーカーID', work_type: '種別', site_id: 'サイト',
+      release_date: '発売日', price: '定価', sale_price: 'セール価格',
+      discount_rate: '割引率(%)', is_on_sale: 'セール中(1=YES)',
+      last_checked_at: '最終確認日時',
+    };
+    const keys = Object.keys(COLS);
+    const header = Object.values(COLS);
+    const data = [header, ...rows.map(r => keys.map(k => r[k] ?? ''))];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    // 列幅設定
+    ws['!cols'] = [14,30,20,12,8,8,12,8,10,10,12,18].map(w => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '作品リスト');
+    XLSX.writeFile(wb, 'dlsite-works.xlsx');
+    setStatus('Excel保存完了 — ' + rows.length + '件');
+  } catch (e) {
+    setStatus('⚠ Excel生成エラー: ' + e.message);
+  }
+}
+
+function importXlsx() {
+  document.getElementById('xlsxFileInput').value = '';
+  document.getElementById('xlsxFileInput').click();
+}
+
+async function onXlsxFileSelected(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  setStatus('Excelファイルを読み込み中...');
+  try {
+    const ab = await file.arrayBuffer();
+    const wb = XLSX.read(ab, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+    // 列名正規化（日本語/英語どちらも対応）
+    const ALIAS = {
+      'RJコード': 'rj_code', 'タイトル': 'title', 'サークル': 'circle',
+      'メーカーID': 'maker_id', '種別': 'work_type', 'サイト': 'site_id',
+      '発売日': 'release_date',
+    };
+    const normalized = rows.map(row => {
+      const out = {};
+      for (const [k, v] of Object.entries(row)) {
+        const key = ALIAS[k] ?? k;
+        out[key] = v;
+      }
+      return out;
+    }).filter(r => r.rj_code);
+
+    if (!normalized.length) {
+      setStatus('⚠ rj_code（またはRJコード）列が見つかりません');
+      return;
+    }
+
+    setStatus(normalized.length + '件を登録中...');
+    const res = await api('/api/import/works', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ works: normalized }),
+    });
+    if (res?.ok) {
+      setStatus('Excel読込完了 — 登録: ' + res.imported + '件' + (res.errors ? ' / スキップ: ' + res.errors + '件' : ''));
+      await loadStats();
+      await loadWorks(1);
+    } else {
+      setStatus('⚠ インポートエラー: ' + (res?.error ?? '不明'));
+    }
+  } catch (e) {
+    setStatus('⚠ ファイル読込エラー: ' + e.message);
+  }
+}
 
 // ── 走査進捗パネル制御 ────────────────────────────────────────────────────────
 let _spScanned = 0, _spTotal = 0, _spChanges = 0;

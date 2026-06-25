@@ -268,6 +268,21 @@ function handleExportCsv() {
   return header + rows.join('\n');
 }
 
+// ─── ユーティリティ ─────────────────────────────────────────────────────────────
+
+/** POST ボディを JSON として読み取る */
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let buf = '';
+    req.on('data', c => { buf += c; });
+    req.on('end', () => {
+      try { resolve(JSON.parse(buf)); }
+      catch (e) { reject(new Error('invalid JSON')); }
+    });
+    req.on('error', reject);
+  });
+}
+
 // ─── HTTP サーバー ────────────────────────────────────────────────────────────
 
 function createServer() {
@@ -375,6 +390,28 @@ function createServer() {
           'Content-Disposition': 'attachment; filename="dlsite-history.csv"',
         });
         res.end('\uFEFF' + handleExportCsv());
+        return;
+      }
+
+      // xlsx インポート用の作品一覧 JSON
+      if (pathname === '/api/export/works-json') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(db.exportWorks()));
+        return;
+      }
+
+      // xlsx インポート
+      if (pathname === '/api/import/works' && req.method === 'POST') {
+        try {
+          const { works } = await readJsonBody(req);
+          if (!Array.isArray(works)) throw new Error('works must be array');
+          const result = db.importWorks(works);
+          log.info('[api] import/works:', result);
+          _json(res, { ok: true, ...result });
+        } catch (e) {
+          log.error('[api] import/works error:', e.message);
+          _json(res, { ok: false, error: e.message });
+        }
         return;
       }
 

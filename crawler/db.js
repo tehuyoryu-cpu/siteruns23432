@@ -536,6 +536,60 @@ function backup() {
 // âââ export (for CSV/JSON API) âââââââââââââââââââââââââââââââââââââââââââââââ
 
 /**
+ * Export works (1 row per work, latest price joined). xlsx インポート用フォーマット。
+ */
+function exportWorks() {
+  return _all(`
+    SELECT
+      w.rj_code, w.title, w.circle, w.maker_id, w.work_type, w.site_id,
+      w.release_date,
+      ph.price, ph.sale_price, ph.discount_rate, ph.point,
+      ph.is_on_sale, ph.is_point_only,
+      datetime(w.last_checked, 'unixepoch', 'localtime') AS last_checked_at
+    FROM works w
+    LEFT JOIN price_history ph
+      ON ph.rj_code = w.rj_code
+      AND ph.checked_at = (
+        SELECT MAX(checked_at) FROM price_history p2 WHERE p2.rj_code = w.rj_code
+      )
+    ORDER BY w.rj_code ASC
+  `);
+}
+
+/**
+ * インポート: 作品行を upsert して即時フェッチキューに入れる。
+ * @param {Array<{rj_code,title,circle,maker_id,work_type,site_id}>} rows
+ * @returns {{ imported: number, errors: number }}
+ */
+function importWorks(rows) {
+  const VALID_SITES = new Set(['maniax', 'girls', 'home', 'bl', 'pro']);
+  let imported = 0, errors = 0;
+  transaction(() => {
+    for (const r of rows) {
+      const rj = String(r.rj_code ?? '').trim().toUpperCase();
+      if (!rj.startsWith('RJ')) { errors++; continue; }
+      try {
+        upsertWork({
+          rj_code:    rj,
+          title:      r.title      ? String(r.title).trim()      : null,
+          circle:     r.circle     ? String(r.circle).trim()     : null,
+          maker_id:   r.maker_id   ? String(r.maker_id).trim()   : null,
+          work_type:  r.work_type  ? String(r.work_type).trim()  : null,
+          site_id:    VALID_SITES.has(r.site_id) ? r.site_id : 'maniax',
+          release_date: r.release_date ? String(r.release_date) : null,
+        });
+        // 即時フェッチキューに追加（check_interval=0 → 次の detail 実行で取得）
+        _run(`UPDATE works SET check_interval = 0, last_checked = 0 WHERE rj_code = ? AND last_checked > 0`,
+          [rj]);
+        imported++;
+      } catch (e) { errors++; }
+    }
+  });
+  _save();
+  return { imported, errors };
+}
+
+/**
  * Export all price_history rows joined with work metadata.
  * Returns an array of plain objects.
  */
@@ -662,6 +716,8 @@ module.exports = {
   transactionNoSave,
   save: _save,
   exportAllHistory,
+  exportWorks,
+  importWorks,
   searchWorks,
   getSaleWorks,
   getAllRjCodes,
