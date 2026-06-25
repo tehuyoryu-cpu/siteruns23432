@@ -33,6 +33,12 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   let batchesSinceSave = 0;
 
   while (true) {
+    // 中断フラグ確認（全て巡回など優先ジョブから abort シグナルを受けた場合）
+    if (global._crawlerAbort?.detail) {
+      log.info('[detail] interrupted — processed so far:', result.processed);
+      return result;
+    }
+
     const due = db.getDueWorks(limit);
     if (!due.length) {
       if (result.total === 0) log.info('[detail] no due works');
@@ -40,7 +46,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
     }
 
     result.total += due.length;
-    log.info('[detail] due batch:', due.length, '(total so far:', result.total, ')');
+    log.info('[detail] due:', due.length);
 
     const bySite = {};
     for (const w of due) {
@@ -52,6 +58,11 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
 
     for (const [site, works] of Object.entries(bySite)) {
       for (let i = 0; i < works.length; i += BATCH) {
+        // バッチ間で中断フラグを確認
+        if (global._crawlerAbort?.detail) {
+          log.info('[detail] interrupted mid-batch — processed:', result.processed);
+          return result;
+        }
         const batch = works.slice(i, i + BATCH);
         const r     = await _processBatch(batch, site);
         result.processed    += r.processed;
@@ -69,7 +80,6 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
       }
     }
 
-    // 取得件数が limit 未満なら、これ以上 due な作品は残っていない
     if (due.length < limit) break;
   }
 

@@ -83,10 +83,7 @@ async function handleRun(job, res) {
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
   const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery' };
-  // 'all' は discovery + detail を両方ロック（scheduler との競合防止）
-  if (job === 'all' && shared['detail']) {
-    return _json(res, { ok: false, message: '価格更新が実行中のため全て巡回を開始できません。完了後にお試しください' });
-  }
+  // 'all' は detail 実行中でも abort して優先起動する（ブロックしない）
   const sharedKey  = sharedKeys[job];
 
   if (_jobRunning[job]) {
@@ -98,10 +95,7 @@ async function handleRun(job, res) {
   }
   _jobRunning[job] = true;
   if (sharedKey) shared[sharedKey] = true;
-  // 'all' は discovery に加えて detail も事前ロック
-  // （Node.jsのタイマー優先順位によりHTTPハンドラより先にschedulerが動く場合があるため、
-  //   レスポンスを返す前にロックを取得しておく必要がある）
-  if (job === 'all') shared['detail'] = true;
+  // 'all' の detail ロックは try内で取得（abort → wait → lock の順）
   _lastResult[job] = null;
 
   _json(res, { ok: true, message: `${job} started` });
@@ -137,8 +131,27 @@ async function handleRun(job, res) {
 
     } else if (job === 'all') {
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      // 起動時 discovery が走っている場合は完了を待つ（最大2分）、スキップして detail へ進む
-      // ※ detail ロックはHTTPハンドラ実行前に取得済み（scheduler競合防止）
+      // ── Step1: 実行中の detail fetch を中断 ──
+      if (shared['detail']) {
+        if (!global._crawlerAbort) global._crawlerAbort = {};
+        global._crawlerAbort.detail = true;
+        _sseSend('log', '価格更新を中断して全て巡回を優先します...');
+        log.info('[api] all: aborting running detail fetch...');
+        const abortStart = Date.now();
+        await new Promise(resolve => {
+          const t = setInterval(() => {
+            // scheduler の finally が detail=false にするのを待つ
+            if (!shared['detail'] || Date.now() - abortStart > 15_000) {
+              clearInterval(t); resolve();
+            }
+          }, 150);
+        });
+        global._crawlerAbort.detail = false;
+        log.info('[api] all: detail fetch stopped, taking lock');
+      }
+      shared['detail'] = true;   // ここで detail ロックを確保
+
+      // ── Step2: 起動時 discovery が走っている場合は完了を待つ（最大2分） ──
       let discR;
       if (global._crawlerRunning?.discovery) {
         log.info('[api] all: waiting for ongoing discovery to finish...');
