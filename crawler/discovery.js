@@ -123,15 +123,23 @@ async function _collectPages(type, knownRjs) {
 async function _collectCircles(knownRjs) {
   // セール中を優先し、最も長くチェックされていないサークルをローテーション
   const toCheck = db.getCirclesForDiscovery(30);
+  const CONC    = 3;  // 同時リクエスト数（DLsite負荷を考慮）
 
   let count = 0;
-  for (const mid of toCheck) {
-    for (const site of config.dlsite.sites) {
-      const url   = `${BASE}/${site}/fsr/=/maker_id/${mid}/order/release/per_page/30/show_type/1`;
-      const items = await _fetchWithPrice(url);
-      count += _upsert(items, site, knownRjs);
-      await sleep(RL);
-    }
+  // CONC 件ずつ並列フェッチ
+  for (let i = 0; i < toCheck.length; i += CONC) {
+    const chunk = toCheck.slice(i, i + CONC);
+    const results = await Promise.all(
+      chunk.flatMap(mid =>
+        config.dlsite.sites.map(async site => {
+          const url   = `${BASE}/${site}/fsr/=/maker_id/${mid}/order/release/per_page/30/show_type/1`;
+          const items = await _fetchWithPrice(url);
+          return _upsert(items, site, knownRjs);
+        })
+      )
+    );
+    count += results.reduce((a, b) => a + b, 0);
+    if (i + CONC < toCheck.length) await sleep(RL);
   }
   return count;
 }

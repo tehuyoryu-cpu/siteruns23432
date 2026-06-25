@@ -12,7 +12,7 @@ const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
 
 const BASE  = config.dlsite.baseUrl;
-const BATCH = Math.min(config.fetch.batchSize ?? 20, 20);  // DLsite API の安全上限
+const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Info API 上限
 
 // ─── public ──────────────────────────────────────────────────────────────────
 

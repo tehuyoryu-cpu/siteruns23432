@@ -14,7 +14,7 @@ module.exports = {
     retryMax:     3,
     retryBaseDelay: 3000,
     concurrency:  3,
-    rateLimit:    1500,
+    rateLimit:    1000,   // 旧1500ms: DLsite負荷テスト済み、1000msで安定
     batchSize:    50,
   },
 
