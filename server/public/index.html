@@ -338,6 +338,15 @@ html {
 .detail-rj    { font-family:"Courier New",monospace; font-size:10px; opacity:.8; }
 .detail-title { font-size:16px; font-weight:bold; margin:2px 0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .detail-sub   { font-size:11px; opacity:.85; }
+.detail-meta  {
+  display:flex; flex-wrap:wrap; gap:0 16px;
+  margin:3px 0 2px; font-size:11px;
+}
+.detail-meta-item { display:flex; gap:4px; align-items:baseline; }
+.detail-meta-key  { font-size:10px; color:#888; white-space:nowrap; }
+.detail-meta-val  { color:#222; }
+.detail-meta-val a { color:#0055aa; text-decoration:none; }
+.detail-meta-val a:hover { text-decoration:underline; }
 .detail-prices {
   display:flex; gap:20px; margin-top:6px; align-items:baseline;
 }
@@ -932,9 +941,17 @@ function renderDetail(work, history, rj) {
 
   const headerHtml =
     '<div class="detail-header">' +
-    '<div class="detail-rj">' + esc(rj) + ' / ' + esc(work?.work_type||'') + ' / ' + esc(work?.release_date||'') + '</div>' +
+    '<div class="detail-rj">' + esc(rj) + (work?.work_type ? ' / ' + esc(work.work_type) : '') + (work?.release_date ? ' / ' + esc(work.release_date) : '') + '</div>' +
     '<div class="detail-title">' + esc(title) + onSaleBadge + '</div>' +
-    '<div class="detail-sub">' + esc(circle) + '</div>' +
+    '<div class="detail-meta">' +
+      '<div class="detail-meta-item"><span class="detail-meta-key">サークル</span>' +
+        '<span class="detail-meta-val">' +
+          (work?.maker_id
+            ? '<a href="https://www.dlsite.com/maniax/circle/profile/=/maker_id/' + esc(work.maker_id) + '.html" target="_blank" rel="noopener">' + esc(circle) + '</a>'
+            : esc(circle)) +
+        '</span></div>' +
+      (work?.maker_id ? '<div class="detail-meta-item"><span class="detail-meta-key">ID</span><span class="detail-meta-val" style="font-family:monospace;font-size:10px;opacity:.8">' + esc(work.maker_id) + '</span></div>' : '') +
+    '</div>' +
     '<div class="detail-prices">' +
       '<div><div class="dp-label">定価</div><div class="dp-value">' + priceStr + '</div></div>' +
       (saleStr ? '<div><div class="dp-label">セール価格</div><div class="dp-value sale">' + saleStr + (disc ? '<span class="dp-badge">' + esc(disc) + '</span>' : '') + '</div></div>' : '') +
