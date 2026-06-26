@@ -26,6 +26,12 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
   const VALID_SITES = new Set(['maniax', 'girls', 'home', 'bl', 'pro']);
 
+  // sql.js の保存(_save)は DB 全体を毎回シリアライズし直すコストがあるため、
+  // バッチごとに毎回保存せず SAVE_EVERY_N_BATCHES 回に1回だけ明示的に保存する。
+  // (20000件規模だと毎バッチ保存は非常に遅くなるため)
+  const SAVE_EVERY_N_BATCHES = 5;
+  let batchesSinceSave = 0;
+
   while (true) {
     const due = db.getDueWorks(limit);
     if (!due.length) {
@@ -52,6 +58,13 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
         result.priceChanges += r.priceChanges;
         result.errors       += r.errors;
         onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
+
+        batchesSinceSave++;
+        if (batchesSinceSave >= SAVE_EVERY_N_BATCHES) {
+          db.save();
+          batchesSinceSave = 0;
+        }
+
         if (i + BATCH < works.length) await sleep(config.fetch.rateLimit);
       }
     }
@@ -59,6 +72,9 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
     // 取得件数が limit 未満なら、これ以上 due な作品は残っていない
     if (due.length < limit) break;
   }
+
+  // ループ終了時点でまだ保存していない分が残っていれば最後にフラッシュする
+  if (batchesSinceSave > 0) db.save();
 
   log.info('[detail] done', result);
   return result;
@@ -102,8 +118,8 @@ async function _processBatch(works, site) {
   }
 
   if (!body) {
-    // 1件でも失敗 — transaction でまとめて保存
-    db.transaction(() => {
+    // 1件でも失敗 — まとめて記録するが、保存は呼び出し元(runDetailFetch)が間引いて行う
+    db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
     });
     result.errors += works.length;
@@ -119,7 +135,7 @@ async function _processBatch(works, site) {
     if (nopad !== upper) normalizedBody[nopad] = v;  // 例: RJ01234567 → RJ1234567 も登録
   }
 
-  db.transaction(() => {
+  db.transactionNoSave(() => {
     for (const w of works) {
       try {
         const dbKey   = w.rj_code;                          // DB に登録されているキー（これのみDB操作に使う）

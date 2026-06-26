@@ -98,7 +98,8 @@ function _applySchema() {
       priority              INTEGER DEFAULT 20,
       is_on_sale            INTEGER DEFAULT 0,
       consecutive_no_change INTEGER DEFAULT 0,
-      consecutive_errors    INTEGER DEFAULT 0
+      consecutive_errors    INTEGER DEFAULT 0,
+      next_check_at         INTEGER DEFAULT 0
     );
 
     -- forward-only migration: æ¢å­ãã¼ãã«ã¸ã®ã«ã©ã è¿½å 
@@ -128,6 +129,7 @@ function _applySchema() {
     CREATE INDEX IF NOT EXISTS idx_ph_rj       ON price_history(rj_code);
     CREATE INDEX IF NOT EXISTS idx_ph_at       ON price_history(checked_at);
     CREATE INDEX IF NOT EXISTS idx_works_maker ON works(maker_id);
+    CREATE INDEX IF NOT EXISTS idx_works_next_check ON works(next_check_at);
   `);
 
   // æ¢å­DBã¸ã®å®å¨ãªã«ã©ã è¿½å  (IF NOT EXISTS ã¯ä½¿ããªãã®ã§try/catch)
@@ -135,9 +137,19 @@ function _applySchema() {
     'ALTER TABLE works ADD COLUMN consecutive_errors INTEGER DEFAULT 0',
     'ALTER TABLE price_history ADD COLUMN is_on_sale    INTEGER DEFAULT 0',
     'ALTER TABLE price_history ADD COLUMN is_point_only INTEGER DEFAULT 0',
+    'ALTER TABLE works ADD COLUMN next_check_at INTEGER DEFAULT 0',
   ];
   for (const sql of migrations) {
-    try { _db.run(sql); log.info('[db] migrated:', sql.slice(0, 60)); }
+    try {
+      _db.run(sql);
+      log.info('[db] migrated:', sql.slice(0, 60));
+      // next_check_at は新規カラムなので既存行に一度だけ初期値を入れる
+      // (due 作品検索を計算式の全件スキャンからインデックス参照に変えるため)
+      if (sql.includes('next_check_at')) {
+        _db.run('UPDATE works SET next_check_at = last_checked + check_interval');
+        log.info('[db] backfilled next_check_at for existing works');
+      }
+    }
     catch (_) { /* already exists */ }
   }
 
@@ -212,6 +224,25 @@ function transaction(fn) {
 }
 
 /**
+ * transaction() と同じだが _save() を呼ばない。
+ * sql.js の保存は export()+writeFileSync で DB 全体を毎回シリアライズし直すため、
+ * 大量バッチ処理で毎回呼ぶと件数に比例して遅くなる。呼び出し側で save() の
+ * タイミングを間引けるようにするためのバリエーション。
+ * （クラッシュ時は直前の明示的な save() 地点まで巻き戻る）
+ */
+function transactionNoSave(fn) {
+  _db.run('BEGIN');
+  try {
+    fn();
+    _db.run('COMMIT');
+  } catch (err) {
+    try { _db.run('ROLLBACK'); } catch (_) {}
+    log.error('[db] transactionNoSave rolled back:', err.message);
+    throw err;
+  }
+}
+
+/**
  * è¤æ°ãã¥ã¼ãã¼ã·ã§ã³ããã©ã³ã¶ã¯ã·ã§ã³ã§ã©ãããæå¾ã«1åã ãä¿å­ã
  * @param {Function} fn  dbæä½ãè¡ãåæé¢æ°
  */
@@ -261,6 +292,7 @@ function upsertWork(w) {
 }
 
 function markChecked(rjCode, fields) {
+  const now = unixNow();
   _run(`
     UPDATE works SET
       last_checked          = ?,
@@ -268,15 +300,17 @@ function markChecked(rjCode, fields) {
       priority              = ?,
       is_on_sale            = ?,
       consecutive_no_change = ?,
-      consecutive_errors    = ?
+      consecutive_errors    = ?,
+      next_check_at         = ?
     WHERE rj_code = ?
   `, [
-    unixNow(),
+    now,
     fields.check_interval,
     fields.priority,
     fields.is_on_sale,
     fields.consecutive_no_change ?? 0,
     fields.consecutive_errors    ?? 0,
+    now + fields.check_interval,
     rjCode,
   ]);
 }
@@ -290,21 +324,24 @@ function recordFetchError(rjCode) {
   const interval = errs >= 10 ? 7 * 86400
                  : errs >=  5 ? 3 * 86400
                  : w.check_interval ?? 86400;
+  const now = unixNow();
   _run(`
     UPDATE works SET
       last_checked       = ?,
       consecutive_errors = ?,
-      check_interval     = ?
+      check_interval     = ?,
+      next_check_at       = ?
     WHERE rj_code = ?
-  `, [unixNow(), errs, interval, rjCode]);
+  `, [now, errs, interval, now + interval, rjCode]);
 }
 
 function getDueWorks(limit = 50) {
   const now = unixNow();
+  // next_check_at にインデックスがあるため、計算式での全件スキャンより高速
   return _all(`
     SELECT * FROM works
-    WHERE (last_checked + check_interval) <= ?
-    ORDER BY priority DESC, (last_checked + check_interval) ASC
+    WHERE next_check_at <= ?
+    ORDER BY priority DESC, next_check_at ASC
     LIMIT ?
   `, [now, limit]);
 }
@@ -341,18 +378,18 @@ function getCirclesForDiscovery(limit = 30) {
 function boostCircleWorks(makerId, priority, checkInterval) {
   _run(`
     UPDATE works
-    SET priority = ?, check_interval = ?
+    SET priority = ?, check_interval = ?, next_check_at = last_checked + ?
     WHERE maker_id = ?
-  `, [priority, checkInterval, makerId]);
+  `, [priority, checkInterval, checkInterval, makerId]);
 }
 
 /** â¡ ã»ã¼ã«çµäº: ãµã¼ã¯ã«å¨ä½åã®åªååº¦ã¨ééãéå¸¸å¤ã«æ»ã */
 function resetCircleWorksPriority(makerId, priority, checkInterval) {
   _run(`
     UPDATE works
-    SET priority = ?, check_interval = ?
+    SET priority = ?, check_interval = ?, next_check_at = last_checked + ?
     WHERE maker_id = ?
-  `, [priority, checkInterval, makerId]);
+  `, [priority, checkInterval, checkInterval, makerId]);
 }
 
 // âââ price_history ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -622,6 +659,7 @@ module.exports = {
   getStats,
   backup,
   transaction,
+  transactionNoSave,
   save: _save,
   exportAllHistory,
   searchWorks,
