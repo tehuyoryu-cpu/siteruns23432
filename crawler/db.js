@@ -87,6 +87,7 @@ function close() {
 
 function _applySchema() {
   let changed = false;
+  console.log('[db] _applySchema: creating tables...');
   _db.run(`
     CREATE TABLE IF NOT EXISTS works (
       rj_code               TEXT    PRIMARY KEY,
@@ -159,6 +160,7 @@ function _applySchema() {
     catch (_) { /* already exists */ }
   }
 
+  console.log('[db] _applySchema: running migrations...');
   // データマイグレーション: 旧バージョンが書き込んだ無効な site_id を maniax に統一
   // 'aix'/'appx' は廃止済みの DLsite サブドメイン。RJ コードは maniax API で取得可能。
   {
@@ -171,6 +173,7 @@ function _applySchema() {
     const rows = _db.getRowsModified();
     if (rows > 0) { log.info('[db] fixed invalid site_id -> maniax:', rows, '件'); changed = true; }
   }
+  console.log('[db] _applySchema: done, changed='+changed);
   return changed;
 }
 

@@ -109,16 +109,19 @@ async function warmUpSession() {
   });
 }
 async function startBackend() {
+  console.log('[startup] requiring modules...');
   db            = require('./crawler/db');
   apiServer     = require('./crawler/apiServer');
   scheduler     = require('./crawler/scheduler');
   discovery     = require('./crawler/discovery');
   detailFetcher = require('./crawler/detailFetcher');
+  console.log('[startup] modules loaded, starting db.init()...');
 
   await db.init();
+  console.log('[startup] db.init() done, starting apiServer...');
+
   apiServer.start();
-  // ウィンドウ表示に必要な最低限の初期化はここまで
-  // warmUp は createWindow() の後にバックグラウンドで実行する
+  console.log('[startup] apiServer started');
 }
 
 /** warmUp + scheduler を非同期で起動（ウィンドウ表示をブロックしない） */
@@ -407,10 +410,15 @@ async function _execJobSafe(job) {
 // ─── app lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  await startBackend();   // DB init + API server のみ（高速）
+  console.log('[startup] app ready');
+  await startBackend();
+  console.log('[startup] _bindIpc...');
   _bindIpc();
+  console.log('[startup] createTray...');
   createTray();
-  createWindow();         // ← ウィンドウをすぐ表示
+  console.log('[startup] createWindow...');
+  createWindow();
+  console.log('[startup] window created, starting background tasks...');
   startCrawlerBackground().catch(e =>
     console.error('[electron] background init error', e.message)
   );
