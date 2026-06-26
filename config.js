@@ -12,9 +12,9 @@ module.exports = {
   fetch: {
     timeout:      20000,
     retryMax:     3,
-    retryBaseDelay: 3000,
+    retryBaseDelay: 1500,
     concurrency:  3,
-    rateLimit:    1000,   // 旧1500ms: DLsite負荷テスト済み、1000msで安定
+    rateLimit:    700,    // DLsite安定動作確認済み
     batchSize:    50,
   },
 

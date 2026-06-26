@@ -108,13 +108,25 @@ async function _collectPages(type, knownRjs) {
     sale:    config.dlsite.discoveryPages?.sale    ?? 5,
   }[type];
 
+  const PAGE_CONC = 2;  // ページを2並列で取得
   let count = 0;
   for (const site of config.dlsite.sites) {
-    for (let page = 1; page <= maxPages; page++) {
-      const items = await _fetchWithPrice(urlFor(site, page));
-      if (!items.length) break;
-      count += _upsert(items, site, knownRjs);
-      await sleep(RL);
+    let page = 1;
+    while (page <= maxPages) {
+      // PAGE_CONC ページを並列フェッチ
+      const batch = Array.from(
+        { length: Math.min(PAGE_CONC, maxPages - page + 1) },
+        (_, i) => urlFor(site, page + i)
+      );
+      const results = await Promise.all(batch.map(url => _fetchWithPrice(url)));
+      let done = false;
+      for (const items of results) {
+        if (!items.length) { done = true; break; }
+        count += _upsert(items, site, knownRjs);
+      }
+      if (done) break;
+      page += PAGE_CONC;
+      if (page <= maxPages) await sleep(RL);
     }
   }
   return count;
@@ -123,7 +135,7 @@ async function _collectPages(type, knownRjs) {
 async function _collectCircles(knownRjs) {
   // セール中を優先し、最も長くチェックされていないサークルをローテーション
   const toCheck = db.getCirclesForDiscovery(30);
-  const CONC    = 3;  // 同時リクエスト数（DLsite負荷を考慮）
+  const CONC    = 5;  // 同時リクエスト数
 
   let count = 0;
   // CONC 件ずつ並列フェッチ
