@@ -116,9 +116,14 @@ async function startBackend() {
   detailFetcher = require('./crawler/detailFetcher');
 
   await db.init();
-
   apiServer.start();
-  await new Promise(r => setTimeout(r, 400));
+  // ウィンドウ表示に必要な最低限の初期化はここまで
+  // warmUp は createWindow() の後にバックグラウンドで実行する
+}
+
+/** warmUp + scheduler を非同期で起動（ウィンドウ表示をブロックしない） */
+async function startCrawlerBackground() {
+  await new Promise(r => setTimeout(r, 500));
 
   // 1. 必須 Cookie を事前注入（年齢確認・ロケール）
   try {
@@ -136,9 +141,11 @@ async function startBackend() {
     console.log('[startBackend] cookies pre-injected');
   } catch(e) { console.warn('[cookie] session not ready', e.message); }
 
-  // 2. DLsite を実際に開いてCF/年齢確認をクリア（Cookie が session に蓄積される）
+  // 2. DLsite セッションウォームアップ（バックグラウンド、ウィンドウ表示に影響しない）
+  global._sseSend?.('log', 'DLsite セッション初期化中...');
   await warmUpSession();
   console.log('[startBackend] session warmed up, starting scheduler');
+  global._sseSend?.('log', 'セッション初期化完了 — クローラー起動');
 
   // 3. クローラー起動
   scheduler.start().catch(err =>
@@ -400,10 +407,13 @@ async function _execJobSafe(job) {
 // ─── app lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  await startBackend();
+  await startBackend();   // DB init + API server のみ（高速）
   _bindIpc();
   createTray();
-  createWindow();
+  createWindow();         // ← ウィンドウをすぐ表示
+  startCrawlerBackground().catch(e =>
+    console.error('[electron] background init error', e.message)
+  );
 });
 
 app.on('window-all-closed', () => { /* トレイに残す */ });
