@@ -135,7 +135,6 @@ function _applySchema() {
     CREATE INDEX IF NOT EXISTS idx_ph_rj       ON price_history(rj_code);
     CREATE INDEX IF NOT EXISTS idx_ph_at       ON price_history(checked_at);
     CREATE INDEX IF NOT EXISTS idx_works_maker ON works(maker_id);
-    CREATE INDEX IF NOT EXISTS idx_works_next_check ON works(next_check_at);
   `);
 
   // æ¢å­DBã¸ã®å®å¨ãªã«ã©ã è¿½å  (IF NOT EXISTS ã¯ä½¿ããªãã®ã§try/catch)
@@ -158,6 +157,15 @@ function _applySchema() {
       }
     }
     catch (_) { /* already exists */ }
+  }
+
+  // next_check_at カラムが(新規作成 or 上のALTERで)確実に存在する状態になった後でindexを作る。
+  // CREATE TABLE 直後にまとめて作ると、既存DBでは ALTER 前にこの文が実行されてしまい
+  // 「no such column: next_check_at」で起動が落ちるバグがあったため、ここに移動した。
+  try {
+    _db.run('CREATE INDEX IF NOT EXISTS idx_works_next_check ON works(next_check_at)');
+  } catch (e) {
+    log.error('[db] failed to create idx_works_next_check:', e.message);
   }
 
   console.log('[db] _applySchema: running migrations...');
