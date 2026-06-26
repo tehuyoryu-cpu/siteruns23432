@@ -65,14 +65,18 @@ async function init() {
     log.info('[db] created', DB_PATH);
   }
 
-  _applySchema();
-  _save();
+  const schemaChanged = _applySchema();
+  if (schemaChanged) {
+    log.info('[db] schema changed — saving...');
+    _saveNow();
+    log.info('[db] save complete');
+  }
 }
 
 /** Returns the live sql.js Database. Throws if init() was not awaited. */
 function close() {
   if (_db) {
-    _save();
+    _saveNow();
     _db.close();
     _db = null;
     log.info('[db] closed');
@@ -82,6 +86,7 @@ function close() {
 // âââ schema âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function _applySchema() {
+  let changed = false;
   _db.run(`
     CREATE TABLE IF NOT EXISTS works (
       rj_code               TEXT    PRIMARY KEY,
@@ -143,6 +148,7 @@ function _applySchema() {
     try {
       _db.run(sql);
       log.info('[db] migrated:', sql.slice(0, 60));
+      changed = true;
       // next_check_at は新規カラムなので既存行に一度だけ初期値を入れる
       // (due 作品検索を計算式の全件スキャンからインデックス参照に変えるため)
       if (sql.includes('next_check_at')) {
@@ -162,9 +168,10 @@ function _applySchema() {
     stmt.bind(VALID);
     stmt.step();
     stmt.free();
-    const changed = _db.getRowsModified();
-    if (changed > 0) log.info('[db] fixed invalid site_id -> maniax:', changed, '件');
+    const rows = _db.getRowsModified();
+    if (rows > 0) { log.info('[db] fixed invalid site_id -> maniax:', rows, '件'); changed = true; }
   }
+  return changed;
 }
 
 // âââ low-level query helpers âââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -259,14 +266,26 @@ function runInTransaction(fn) {
 }
 
 
-/** Persist the in-memory DB to disk. Called after every mutation. */
+/** Persist the in-memory DB to disk. Debounced — max once per 800ms. */
+let _saveTimer  = null;
 function _save() {
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    try {
+      const data = _db.export();
+      fs.writeFileSync(DB_PATH, Buffer.from(data));
+    } catch (e) { log.error('[db] save error:', e.message); }
+  }, 800);
+}
+
+/** 即時書き出し（終了時・バックアップ専用）*/
+function _saveNow() {
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
   try {
     const data = _db.export();
     fs.writeFileSync(DB_PATH, Buffer.from(data));
-  } catch (err) {
-    log.error('[db] _save failed', err.message, 'path:', DB_PATH);
-  }
+  } catch (e) { log.error('[db] saveNow error:', e.message); }
 }
 
 // âââ works ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
