@@ -44,7 +44,7 @@ function _startDetailJob() {
     }
     global._crawlerRunning.detail = true;
     try   {
-      await runDetailFetch(30, {
+      await runDetailFetch(300, {
         onProgress: ({ processed, priceChanges, total }) => {
           if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
         },
@@ -120,7 +120,7 @@ async function start() {
   setTimeout(() => {
     if (!global._crawlerRunning) global._crawlerRunning = {};
     global._crawlerRunning.detail = true;
-    runDetailFetch(50, {
+    runDetailFetch(300, {
       onProgress: ({ processed, priceChanges, total }) => {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
       },

@@ -20,7 +20,7 @@ module.exports = {
 
   cron: {
     discovery: '0 */6 * * *',
-    detail:    '*/20 * * * *',
+    detail:    '*/10 * * * *',
     saleBoost: '*/10 * * * *',
   },
 
