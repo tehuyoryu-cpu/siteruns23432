@@ -124,6 +124,23 @@ async function startBackend() {
   console.log('[startup] apiServer started');
 }
 
+// バックグラウンド価格変動通知
+global._notifyPriceChange = (count) => {
+  try {
+    const { Notification } = require('electron');
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'DLsite 価格変動',
+        body: `${count}件の価格変動を検出しました`,
+        silent: false,
+      }).show();
+    }
+    // トレイアイコンのツールチップも更新
+    if (_tray) _tray.setToolTip(`DLsite Price Tracker — 変動 ${count}件`);
+    setTimeout(() => { if (_tray) _tray.setToolTip('DLsite Price Tracker'); }, 10_000);
+  } catch (e) { console.warn('[notify] error', e.message); }
+};
+
 /** warmUp + scheduler を非同期で起動（ウィンドウ表示をブロックしない） */
 async function startCrawlerBackground() {
   await new Promise(r => setTimeout(r, 500));

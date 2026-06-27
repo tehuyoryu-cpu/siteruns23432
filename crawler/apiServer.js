@@ -68,7 +68,7 @@ setTimeout(() => {
 
 const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
-  fullscan: false, fullscan_sale: false, all: false,
+  fullscan: false, fullscan_sale: false, all: false, turbo: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -82,7 +82,7 @@ async function handleRun(job, res) {
   // schedulerと共有フラグを確認（schedulerが実行中なら HTTP API からも起動しない）
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
-  const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery' };
+  const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery', turbo: 'detail' };
   // 'all' は discovery + detail を両方ロック（scheduler との競合防止）
   if (job === 'all' && shared['detail']) {
     return _json(res, { ok: false, message: '価格更新が実行中のため全て巡回を開始できません。完了後にお試しください' });
@@ -126,6 +126,9 @@ async function handleRun(job, res) {
       _lastResult[job] = { ok: true, ...r, finishedAt: Date.now() };
       _sseSend(r?.priceChanges > 0 ? 'change' : 'log',
         `価格更新完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`);
+      if (r?.priceChanges > 0 && global._notifyPriceChange) {
+        global._notifyPriceChange(r.priceChanges);
+      }
 
     } else if (job === 'saleboost') {
       const circles = db.getCirclesOnSale();
@@ -139,9 +142,10 @@ async function handleRun(job, res) {
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       // 起動時 discovery が走っている場合は完了を待つ（最大2分）、スキップして detail へ進む
       // ※ detail ロックはHTTPハンドラ実行前に取得済み（scheduler競合防止）
-      let discR;
+      // ── Phase 1: RJ収集（失敗しても Phase2 へ進む）──
+      let discR = { discovered: 0 };
       if (global._crawlerRunning?.discovery) {
-        log.info('[api] all: waiting for ongoing discovery to finish...');
+        log.info('[api] all: waiting for ongoing discovery...');
         _sseSend('log', 'RJ収集が実行中のため完了を待っています...');
         const waitStart = Date.now();
         await new Promise(resolve => {
@@ -151,14 +155,20 @@ async function handleRun(job, res) {
             }
           }, 1000);
         });
-        _sseSend('log', 'RJ収集完了 — スキップ済み（起動時に実行済み）');
-        discR = { discovered: 0 };
+        _sseSend('log', 'RJ収集スキップ（起動時に実行済み）');
       } else {
-        discR = await runDiscovery();
-        _sseSend('log', `RJ収集完了 — 新規: ${discR?.discovered ?? 0}件`);
+        try {
+          discR = await runDiscovery() ?? discR;
+          _sseSend('log', `RJ収集完了 — 新規: ${discR.discovered}件`);
+        } catch (discErr) {
+          log.error('[api] all: discovery error (continuing to detail fetch)', discErr.message);
+          _sseSend('log', `⚠ RJ収集エラー: ${discErr.message} — 価格更新は続行します`);
+        }
       }
 
-      const fetchR = await detailFetcher.runDetailFetch(300, {
+      // ── Phase 2: 価格更新（全 due 作品を処理）──
+      _sseSend('log', '価格更新を開始します...');
+      const fetchR = await detailFetcher.runDetailFetch(99_999, {
         onProgress: ({ processed, priceChanges, total }) => {
           Object.assign(_progress, { found: processed, total });
           _sseSend('progress', { processed, priceChanges, total });
@@ -166,12 +176,42 @@ async function handleRun(job, res) {
         },
       });
       if (global._crawlerRunning) global._crawlerRunning['detail'] = false;
+
+      // ── Phase 3: セールブースト ──
       const circles = db.getCirclesOnSale();
       db.transaction(() => {
         for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
       });
-      _lastResult[job] = { ok: true, discovered: discR?.discovered ?? 0, ...fetchR, finishedAt: Date.now() };
-      _sseSend('log', `全て巡回完了 — 新規:${discR?.discovered ?? 0}件 価格更新:${fetchR?.processed ?? 0}件 変動:${fetchR?.priceChanges ?? 0}件`);
+
+      const summary = `新規:${discR.discovered}件 / 価格更新:${fetchR?.processed ?? 0}件 / 変動:${fetchR?.priceChanges ?? 0}件 / エラー:${fetchR?.errors ?? 0}件`;
+      _lastResult[job] = { ok: true, discovered: discR.discovered, ...fetchR, finishedAt: Date.now() };
+      _sseSend(fetchR?.priceChanges > 0 ? 'change' : 'log', `全て巡回完了 — ${summary}`);
+      // バックグラウンド通知（価格変動時）
+      if (fetchR?.priceChanges > 0 && global._notifyPriceChange) {
+        global._notifyPriceChange(fetchR.priceChanges);
+      }
+
+    } else if (job === 'turbo') {
+      // ぶっ飛ばしモード: rateLimit なし・全 due 作品を処理
+      _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速処理します');
+      Object.assign(_progress, { job, found: 0, total: 0, startedAt: Math.floor(Date.now() / 1000), done: false });
+      const origRL = require('./config').fetch.rateLimit;
+      require('./config').fetch.rateLimit = 200;   // rate limit を最小化
+      try {
+        const r = await detailFetcher.runDetailFetch(99_999, {
+          onProgress: ({ processed, priceChanges, total }) => {
+            Object.assign(_progress, { found: processed, total });
+            _sseSend('progress', { processed, priceChanges, total });
+            if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
+          },
+        });
+        _lastResult[job] = { ok: true, ...r, finishedAt: Date.now() };
+        const msg = `ぶっ飛ばし完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`;
+        _sseSend(r?.priceChanges > 0 ? 'change' : 'log', msg);
+        if (r?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(r.priceChanges);
+      } finally {
+        require('./config').fetch.rateLimit = origRL;   // rateLimit を元に戻す
+      }
 
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
@@ -285,7 +325,7 @@ function createServer() {
 
       if (pathname === '/api/run/status') return _json(res, handleRunStatus());
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);
