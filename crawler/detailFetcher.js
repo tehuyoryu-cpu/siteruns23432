@@ -146,7 +146,7 @@ async function _processBatch(works, site) {
         if (!found) {
           log.warn('[detail] key not in API response', rj,
             'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
-          db.recordFetchError(dbKey);
+          db.recordApiMissing(dbKey);   // API不在→急速退避
           result.errors++;
           continue;
         }

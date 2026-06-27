@@ -365,6 +365,29 @@ function recordFetchError(rjCode) {
   `, [now, errs, interval, now + interval, rjCode]);
 }
 
+/**
+ * API に存在しない作品（"key not in API response"）を記録。
+ * ネットワークエラーより急速に interval を延ばして due キューから退避させる。
+ *  1回目: 7日, 2回目: 30日, 3回目以降: 180日
+ */
+function recordApiMissing(rjCode) {
+  const w = getWorkByRj(rjCode);
+  if (!w) return;
+  const errs = (w.consecutive_errors ?? 0) + 1;
+  const interval = errs >= 3 ? 180 * 86400
+                 : errs >= 2 ?  30 * 86400
+                 :               7 * 86400;
+  const now = unixNow();
+  _run(`
+    UPDATE works SET
+      last_checked       = ?,
+      consecutive_errors = ?,
+      check_interval     = ?,
+      next_check_at       = ?
+    WHERE rj_code = ?
+  `, [now, errs, interval, now + interval, rjCode]);
+}
+
 function getDueWorks(limit = 50) {
   const now = unixNow();
   // next_check_at にインデックスがあるため、計算式での全件スキャンより高速
@@ -672,6 +695,7 @@ module.exports = {
   upsertWork,
   markChecked,
   recordFetchError,
+  recordApiMissing,
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,
