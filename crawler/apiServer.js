@@ -83,25 +83,19 @@ async function handleRun(job, res) {
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
   const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery', turbo: 'detail' };
-  // 'all' は discovery + detail を両方ロック（scheduler との競合防止）
-  if (job === 'all' && shared['detail']) {
-    return _json(res, { ok: false, message: '価格更新が実行中のため全て巡回を開始できません。完了後にお試しください' });
-  }
   const sharedKey  = sharedKeys[job];
 
   if (_jobRunning[job]) {
     return _json(res, { ok: false, message: (_JOB_LABELS?.[job] ?? job) + ' はすでに実行中です' });
   }
-  // 'all' 以外で共有ロックが取れない場合はブロック
-  if (job !== 'all' && sharedKey && shared[sharedKey]) {
+  // 'all'/'turbo' 以外で共有ロックが取れない場合はブロック
+  if (job !== 'all' && job !== 'turbo' && sharedKey && shared[sharedKey]) {
     return _json(res, { ok: false, message: '他の巡回処理が実行中です。完了後にお試しください' });
   }
   _jobRunning[job] = true;
   if (sharedKey) shared[sharedKey] = true;
-  // 'all' は discovery に加えて detail も事前ロック
-  // （Node.jsのタイマー優先順位によりHTTPハンドラより先にschedulerが動く場合があるため、
-  //   レスポンスを返す前にロックを取得しておく必要がある）
-  if (job === 'all') shared['detail'] = true;
+  // discovery ロックは事前に確保（スケジューラーとの競合防止）
+  // detail ロックは try ブロック内で abort 後に確保する
   _lastResult[job] = null;
 
   _json(res, { ok: true, message: `${job} started` });
@@ -140,8 +134,26 @@ async function handleRun(job, res) {
 
     } else if (job === 'all') {
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      // 起動時 discovery が走っている場合は完了を待つ（最大2分）、スキップして detail へ進む
-      // ※ detail ロックはHTTPハンドラ実行前に取得済み（scheduler競合防止）
+
+      // ── Phase 0: 実行中の価格更新を中断して detail ロックを取得 ──
+      if (shared['detail']) {
+        if (!global._crawlerAbort) global._crawlerAbort = {};
+        global._crawlerAbort.detail = true;
+        _sseSend('log', '価格更新を中断して全て巡回を優先します...');
+        log.info('[api] all: aborting running detail fetch...');
+        const abortStart = Date.now();
+        await new Promise(resolve => {
+          const t = setInterval(() => {
+            if (!shared['detail'] || Date.now() - abortStart > 15_000) {
+              clearInterval(t); resolve();
+            }
+          }, 150);
+        });
+        global._crawlerAbort.detail = false;
+        log.info('[api] all: detail fetch stopped');
+      }
+      shared['detail'] = true;   // detail ロック確保
+
       // ── Phase 1: RJ収集（失敗しても Phase2 へ進む）──
       let discR = { discovered: 0 };
       if (global._crawlerRunning?.discovery) {
@@ -192,13 +204,28 @@ async function handleRun(job, res) {
       }
 
     } else if (job === 'turbo') {
-      // ぶっ飛ばしモード: rateLimit なし・全 due 作品を処理
+      // ぶっ飛ばしモード: rateLimit 最小・全 due 作品を処理
+      if (shared['detail']) {
+        if (!global._crawlerAbort) global._crawlerAbort = {};
+        global._crawlerAbort.detail = true;
+        _sseSend('log', '価格更新を中断してぶっ飛ばし開始...');
+        const abortStart = Date.now();
+        await new Promise(resolve => {
+          const t = setInterval(() => {
+            if (!shared['detail'] || Date.now() - abortStart > 15_000) {
+              clearInterval(t); resolve();
+            }
+          }, 150);
+        });
+        global._crawlerAbort.detail = false;
+      }
+      shared['detail'] = true;
       _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速処理します');
       Object.assign(_progress, { job, found: 0, total: 0, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const origRL = require('./config').fetch.rateLimit;
-      require('./config').fetch.rateLimit = 200;   // rate limit を最小化
+      const origRL = config.fetch.rateLimit;
+      config.fetch.rateLimit = 200;
       try {
-        const r = await detailFetcher.runDetailFetch(99_999, {
+        const r = await detailFetcher.runDetailFetch(99999, {
           onProgress: ({ processed, priceChanges, total }) => {
             Object.assign(_progress, { found: processed, total });
             _sseSend('progress', { processed, priceChanges, total });
@@ -210,7 +237,7 @@ async function handleRun(job, res) {
         _sseSend(r?.priceChanges > 0 ? 'change' : 'log', msg);
         if (r?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(r.priceChanges);
       } finally {
-        require('./config').fetch.rateLimit = origRL;   // rateLimit を元に戻す
+        config.fetch.rateLimit = origRL;
       }
 
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
@@ -235,7 +262,7 @@ async function handleRun(job, res) {
     const sk = sharedKeys[job];
     if (sk && global._crawlerRunning) global._crawlerRunning[sk] = false;
     // 'all' は discovery + detail の両方をロックするため両方解放
-    if (job === 'all' && global._crawlerRunning) global._crawlerRunning['detail'] = false;
+    if ((job === 'all' || job === 'turbo') && global._crawlerRunning) global._crawlerRunning['detail'] = false;
     _progress.done = true;
   }
 }
@@ -256,7 +283,7 @@ function handleRunStatus() {
 
 const _dbPath = require('path').resolve(
   process.env.DLSITE_DATA_DIR || process.cwd(),
-  require('../config').db.path
+  config.db.path
 );
 
 function handleStats() {
