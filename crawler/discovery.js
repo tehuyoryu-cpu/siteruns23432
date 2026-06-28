@@ -16,17 +16,49 @@ const RL   = config.fetch.rateLimit;
 
 // ─── 通常discovery ───────────────────────────────────────────────────────────
 
+// 今月リリース FSR URL テンプレート
+// {date} = YYYY-MM-DD（今月1日）、{page} = /page/N（ページ番号：1は省略）
+const DISCOVERY_FSR = {
+  maniax: 'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/release_term/month/show_type/1',
+  bl:     'https://www.dlsite.com/bl/fsr/=/language/jp/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/drama/work_category%5B3%5D/pc/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/KO_KR/options%5B4%5D/SPA/options%5B5%5D/GER/options%5B6%5D/FRE/options%5B7%5D/IND/options%5B8%5D/ITA/options%5B9%5D/POR/options%5B10%5D/SWE/options%5B11%5D/THA/options%5B12%5D/VIE/options%5B13%5D/OTL/options%5B14%5D/NM/per_page/100{page}/is_tl/1/is_bl/1/is_gay%5B0%5D/1/release_term/month/show_type/1',
+};
+
+/** 今月1日の日付文字列を返す (YYYY-MM-DD) */
+function _monthStart() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+/** FSR URL を全ページスキャンして新着RJを収集 */
+async function _scanFsrMonthly(site, knownRjs) {
+  const date = _monthStart();
+  const tmpl = DISCOVERY_FSR[site];
+  if (!tmpl) return 0;
+
+  let page = 1, count = 0;
+  while (true) {
+    const pagePart = page === 1 ? '' : `/page/${page}`;
+    const url = tmpl.replace('{date}', date).replace('{page}', pagePart);
+    const items = await _fetchWithPrice(url);
+    if (!items.length) break;
+    count += _upsert(items, site, knownRjs);
+    log.info('[discovery] monthly', { site, page, parsed: items.length, newAdded: count });
+    if (items.length < 100) break;
+    page++;
+    await sleep(config.fetch.rateLimit);
+  }
+  return count;
+}
+
 async function runDiscovery() {
-  log.info('[discovery] start');
+  const month = _monthStart();
+  log.info('[discovery] start — monthly FSR', { month });
   try {
     const knownRjs = _loadKnown();
-    log.debug('[discovery] known RJs:', knownRjs.size);
     const results  = {};
-    results.new     = await _collectPages('new',     knownRjs);
-    results.ranking = await _collectPages('ranking', knownRjs);
-    // sale: /campaign/=/per_page/100.html は廃止済み(404)。
-    //       セール作品はFSRのsale URLで runFullScan が対応するため省略。
-    results.circle  = await _collectCircles(knownRjs);
+    results.maniax = await _scanFsrMonthly('maniax', knownRjs);
+    results.bl     = await _scanFsrMonthly('bl',     knownRjs);
+    results.circle = await _collectCircles(knownRjs);
     const total = Object.values(results).reduce((a, b) => a + b, 0);
     log.info('[discovery] done', { total, ...results });
     return { discovered: total, sources: results };
