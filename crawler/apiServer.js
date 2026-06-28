@@ -30,7 +30,7 @@ const path   = require('path');
 const db     = require('./db');
 const log    = require('./logger');
 const config = require('../config');
-const { runDiscovery, runFullScan } = require('./discovery');
+const { runDiscovery, runFullScan, runEndingSoonScan } = require('./discovery');
 const detailFetcher = require('./detailFetcher');
 
 // ─── SSE ────────────────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ setTimeout(() => {
 const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
   fullscan: false, fullscan_sale: false, all: false, turbo: false,
+  endingsoon: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -240,6 +241,20 @@ async function handleRun(job, res) {
         config.fetch.rateLimit = origRL;
       }
 
+    } else if (job === 'endingsoon') {
+      // 割引終了まで24時間以内(soon/1)の作品を優先度最優先で収集する
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      const result = await runEndingSoonScan({
+        onProgress: ({ site, page, found, total }) => {
+          Object.assign(_progress, { site, page, found: total, totalPages: null });
+          _sseSend('progress', { site, page, found: total });
+        },
+      });
+      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      Object.assign(_progress, { done: true });
+      _sseSend('log', `終了間近収集完了 — 新規:${result?.newCount ?? 0}件 優先度UP:${result?.boostedCount ?? 0}件`);
+      log.info('[api] endingSoonScan done', result);
+
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
       Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
@@ -352,7 +367,7 @@ function createServer() {
 
       if (pathname === '/api/run/status') return _json(res, handleRunStatus());
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);
