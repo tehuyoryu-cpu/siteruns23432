@@ -212,4 +212,96 @@ function _loadKnown() {
   return db.getAllRjCodes();
 }
 
-module.exports = { runDiscovery, runFullScan };
+// ─── 割引終了間近(24時間以内)収集 ────────────────────────────────────────────
+// DLsiteのFSR検索には soon/1 という「割引終了まで24時間以内」フィルタが存在する。
+// これに該当する作品は優先度を最優先(endingSoon)に上げ、チェック間隔も短くして、
+// 終了直前の価格・割引状況の取りこぼしを防ぐ。
+
+async function runEndingSoonScan({ onProgress = null } = {}) {
+  log.info('[discovery] endingSoonScan start');
+
+  const knownRjs = _loadKnown();
+  const fsrUrls  = config.dlsite.fsrUrls ?? {};
+  const priority = config.priority.endingSoon;
+  const interval = config.checkInterval.endingSoon;
+
+  let grandTotal = 0, newCount = 0, boostedCount = 0;
+  const sites = {};
+
+  for (const [site, urls] of Object.entries(fsrUrls)) {
+    const baseUrl = urls.soon;
+    if (!baseUrl) continue;
+
+    let page = 1, siteTotal = 0;
+
+    while (true) {
+      // page=1はURLに/page/1を含まないDLsiteの仕様に対応
+      const url = page === 1
+        ? baseUrl.replace(/\/page\/\{page\}/, '')
+        : baseUrl.replace('{page}', String(page));
+      const items = await _fetchWithPrice(url);
+
+      if (!items.length) {
+        log.info('[discovery] endingSoonScan end', { site, page });
+        break;
+      }
+
+      db.transaction(() => {
+        for (const item of items) {
+          if (!item.rjCode) continue;
+
+          if (!knownRjs.has(item.rjCode)) {
+            db.upsertWork({
+              rj_code:      item.rjCode,
+              title:        item.title       ?? null,
+              circle:       item.circle      ?? null,
+              maker_id:     item.makerId     ?? null,
+              work_type:    item.workType    ?? null,
+              site_id:      site,
+              release_date: item.releaseDate ?? null,
+              dl_count:     0,
+            });
+            knownRjs.add(item.rjCode);
+            newCount++;
+          }
+
+          if (item.price !== null) {
+            db.savePriceIfChanged(item.rjCode, {
+              price:         item.price,
+              sale_price:    item.salePrice    ?? null,
+              discount_rate: item.discountRate ?? null,
+              point:         null,
+              is_on_sale:    item.isOnSale ? 1 : 0,
+            });
+          }
+
+          // 割引終了間近 = 最優先 & 次回チェックをすぐに(next_check_at = now)
+          db.boostWorkUrgent(item.rjCode, priority, interval);
+          boostedCount++;
+        }
+      });
+
+      siteTotal  += items.length;
+      grandTotal += items.length;
+
+      if (onProgress) onProgress({ site, page, found: items.length, total: siteTotal });
+      log.info('[discovery] endingSoonScan', { site, page, parsed: items.length, total: siteTotal });
+
+      // FSRは per_page=100 なので100件未満なら最終ページ
+      if (items.length < 100) {
+        log.info('[discovery] endingSoonScan end', { site, page, reason: 'last page' });
+        break;
+      }
+
+      page++;
+      await sleep(RL);
+    }
+
+    sites[site] = siteTotal;
+  }
+
+  log.info('[discovery] endingSoonScan done', { grandTotal, newCount, boostedCount, ...sites });
+  return { grandTotal, newCount, boostedCount, sites };
+}
+
+module.exports = { runDiscovery, runFullScan, runEndingSoonScan };
