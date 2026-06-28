@@ -1153,7 +1153,9 @@ function _spUpdate() {
   _spSetBar('sf-sale',  'sp-sale',  Math.min(Math.round(pct * 0.5), 100));
 }
 
-function _spLog(msg, type) {
+// serverOrigin=true のとき /api/client-error への再投稿をスキップ
+// （SSE由来のメッセージをサーバーに折り返すと二重ログになるため）
+function _spLog(msg, type, serverOrigin = false) {
   const el = document.getElementById('scanLog');
   if (!el) return;
   const now = new Date();
@@ -1165,8 +1167,8 @@ function _spLog(msg, type) {
   div.textContent = '[' + ts + '] ' + msgStr;
   el.prepend(div);
   while (el.children.length > SCAN_LOG_MAX) el.removeChild(el.lastChild);
-  // エラー/警告はサーバーのエラーログにも記録（SSE接続エラー自体は除外してループ防止）
-  if ((type === 'err' || type === 'warn') && msgStr && !msgStr.includes('接続が切れました')) {
+  // クライアント発生エラーのみ /api/client-error に記録（SSE由来は再投稿しない）
+  if (!serverOrigin && type === 'err' && msgStr && !msgStr.includes('接続が切れました')) {
     fetch('/api/client-error', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1195,8 +1197,8 @@ function _spStartSSE() {
   });
   _sseConn.addEventListener('log',    e => _spLog(e.data));
   _sseConn.addEventListener('change', e => { _spChanges++; _spLog(e.data, 'change'); _spUpdate(); });
-  _sseConn.addEventListener('warn',   e => _spLog(e.data, 'warn'));
-  _sseConn.addEventListener('error',  e => { if (e.data) _spLog(e.data, 'err'); });
+  _sseConn.addEventListener('warn',   e => _spLog(e.data, 'warn', true));
+  _sseConn.addEventListener('error',  e => { if (e.data) _spLog(e.data, 'err', true); });
   _sseConn.onerror = () => {
     // サーバーへのPOSTはしない（ループ防止）。タイマーを1つだけ設定して5秒後に再接続
     if (_sseReconnectTimer) return;
