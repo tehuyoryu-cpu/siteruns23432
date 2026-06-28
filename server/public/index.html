@@ -912,9 +912,11 @@ function renderPager(page, pages, total) {
   const el = document.getElementById('pager');
   if (pages <= 1) { el.innerHTML = '<span class="pager-info">' + total + ' 件</span>'; return; }
   el.innerHTML =
-    '<div class="pager-btn" onclick="loadWorks(' + Math.max(1,page-1) + ')">◀</div>' +
+    '<div class="pager-btn" onclick="loadWorks(1)" title="最初のページ">«</div>' +
+    '<div class="pager-btn" onclick="loadWorks(' + Math.max(1,page-1) + ')" title="前のページ">◀</div>' +
     '<span class="pager-info">' + page + ' / ' + pages + ' ページ (' + total + ' 件)</span>' +
-    '<div class="pager-btn" onclick="loadWorks(' + Math.min(pages,page+1) + ')">▶</div>';
+    '<div class="pager-btn" onclick="loadWorks(' + Math.min(pages,page+1) + ')" title="次のページ">▶</div>' +
+    '<div class="pager-btn" onclick="loadWorks(' + pages + ')" title="最後のページ">»</div>';
 }
 
 // ── Detail ─────────────────────────────────────────────────────────────────
