@@ -190,6 +190,7 @@ const _JOB_TO_STATE = {
   fullscan:     'fullscan',
   fullscan_sale:'fullscan_sale',
   all:          'discovery',
+  endingsoon:   'endingsoon',
 };
 
 function _bindIpc() {
@@ -252,6 +253,12 @@ async function _execJob(job) {
     db.transaction(() => {
       for (const { maker_id } of circles) {
         db.boostCircleWorks(maker_id, 100, 7200);
+      }
+    });
+  } else if (job === 'endingsoon') {
+    await discovery.runEndingSoonScan({
+      onProgress: ({ site, page, found }) => {
+        global._sseSend?.('progress', { site, page, found });
       }
     });
   } else if (job === 'fullscan') {
@@ -360,6 +367,8 @@ function _buildAppMenu() {
         { type: 'separator' },
         runItem('全て巡回',                        'all',            'Ctrl+Shift+A'),
         { type: 'separator' },
+        runItem('終了間近収集（24時間以内）',       'endingsoon',     'Ctrl+Shift+E'),
+        { type: 'separator' },
         runItem('全収集（FSR全ページ）',           'fullscan',       'Ctrl+Shift+F'),
         runItem('全セール収集',                    'fullscan_sale',  'Ctrl+Shift+S'),
       ],
@@ -394,6 +403,7 @@ function createTray() {
     { label: 'セール優先',  click: () => _execJobSafe('saleboost') },
     { label: '全て巡回',    click: () => _execJobSafe('all') },
     { type: 'separator' },
+    { label: '終了間近収集（24時間以内）', click: () => _execJobSafe('endingsoon') },
     { label: '全収集（時間がかかります）', click: () => _execJobSafe('fullscan') },
     { type: 'separator' },
     {
