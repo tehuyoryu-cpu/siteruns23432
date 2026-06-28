@@ -436,6 +436,21 @@ function boostCircleWorks(makerId, priority, checkInterval) {
   `, [priority, checkInterval, checkInterval, makerId]);
 }
 
+/**
+ * 個別作品(RJコード単位)を「割引終了間近」として緊急優先度に上げる。
+ * boostCircleWorks はサークル単位だが、こちらは runEndingSoonScan が見つけた
+ * 個々の作品をすぐ再チェック対象にするためのもの。next_check_at = now なので
+ * 次回の価格更新パスで最優先(priority DESC)かつ即時 due になる。
+ */
+function boostWorkUrgent(rjCode, priority, checkInterval) {
+  const now = unixNow();
+  _run(`
+    UPDATE works
+    SET priority = ?, check_interval = ?, next_check_at = ?
+    WHERE rj_code = ?
+  `, [priority, checkInterval, now, rjCode]);
+}
+
 /** â¡ ã»ã¼ã«çµäº: ãµã¼ã¯ã«å¨ä½åã®åªååº¦ã¨ééãéå¸¸å¤ã«æ»ã */
 function resetCircleWorksPriority(makerId, priority, checkInterval) {
   _run(`
@@ -701,6 +716,7 @@ module.exports = {
   getAllMakerIds,
   getCirclesForDiscovery,
   boostCircleWorks,
+  boostWorkUrgent,
   resetCircleWorksPriority,
   getLatestPrice,
   savePriceIfChanged,
