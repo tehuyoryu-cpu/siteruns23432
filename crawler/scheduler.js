@@ -15,7 +15,7 @@ const cron   = require('node-cron');
 const config = require('../config');
 const db     = require('./db');
 const log    = require('./logger');
-const { runDiscovery }   = require('./discovery');
+const { runDiscovery, runFullScan } = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
 
 // ─── discovery job ───────────────────────────────────────────────────────────
@@ -122,6 +122,46 @@ function _startBackupJob() {
   log.info('[scheduler] backup job scheduled (daily 03:00)');
 }
 
+// ─── 前月分フルスキャンジョブ ─────────────────────────────────────────────────
+// 毎月2日 04:00 に前月リリース分の FSR 全ページをスキャンする。
+// 通常の discovery は「今月分」だけを対象にしているため、月をまたいで
+// アプリを起動していなかった場合に前月末リリースの作品が取りこぼされる
+// 問題を防ぐ。
+function _startPrevMonthScanJob() {
+  cron.schedule('0 4 2 * *', async () => {
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.discovery) {
+      log.warn('[scheduler] prevMonthScan skipped (discovery running)'); return;
+    }
+    const myToken = Symbol('scheduler-prev-month-scan');
+    global._crawlerRunning.discovery = true;
+    global._crawlerRunning._discoveryOwner = myToken;
+    log.info('[scheduler] prevMonthScan start — scanning last month FSR');
+    try {
+      // 前月1日を計算
+      const now  = new Date();
+      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-01`;
+      const result = await runFullScan({
+        sale: false, maxPages: 0,
+        dateOverride: dateStr,   // discovery.js 側で参照（未実装の場合は無視される）
+        onProgress: ({ site, page, found }) => {
+          log.debug('[scheduler] prevMonthScan', { site, page, found });
+        },
+      });
+      log.info('[scheduler] prevMonthScan done', result);
+    } catch (err) {
+      log.error('[scheduler] prevMonthScan error', err.message);
+    } finally {
+      if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myToken) {
+        global._crawlerRunning.discovery = false;
+        global._crawlerRunning._discoveryOwner = null;
+      }
+    }
+  });
+  log.info('[scheduler] prevMonthScan job scheduled (monthly 2nd 04:00)');
+}
+
 // ─── public API ──────────────────────────────────────────────────────────────
 
 async function start() {
@@ -131,6 +171,7 @@ async function start() {
   _startDetailJob();
   _startSaleBoostJob();
   _startBackupJob();
+  _startPrevMonthScanJob();
 
   log.info('[scheduler] running initial passes on startup');
 
