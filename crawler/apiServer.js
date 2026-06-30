@@ -85,6 +85,9 @@ async function handleRun(job, res) {
   const shared     = global._crawlerRunning;
   const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery', turbo: 'detail' };
   const sharedKey  = sharedKeys[job];
+  // detail ロックの所有者トークン。自分が確保した場合のみ this 関数内の finally で解放する。
+  // (横取り/横取られによる「他人のロックを誤って解放してしまう」バグを防ぐ)
+  let myDetailToken = null;
 
   if (_jobRunning[job]) {
     return _json(res, { ok: false, message: (_JOB_LABELS?.[job] ?? job) + ' はすでに実行中です' });
@@ -94,9 +97,15 @@ async function handleRun(job, res) {
     return _json(res, { ok: false, message: '他の巡回処理が実行中です。完了後にお試しください' });
   }
   _jobRunning[job] = true;
-  if (sharedKey) shared[sharedKey] = true;
+  if (sharedKey) {
+    shared[sharedKey] = true;
+    if (sharedKey === 'detail') {
+      myDetailToken = Symbol('api-' + job);
+      shared._detailOwner = myDetailToken;
+    }
+  }
   // discovery ロックは事前に確保（スケジューラーとの競合防止）
-  // detail ロックは try ブロック内で abort 後に確保する
+  // detail ロックは try ブロック内で abort 後に確保する（'all'/'turbo'）
   _lastResult[job] = null;
 
   _json(res, { ok: true, message: `${job} started` });
@@ -154,6 +163,8 @@ async function handleRun(job, res) {
         log.info('[api] all: detail fetch stopped');
       }
       shared['detail'] = true;   // detail ロック確保
+      myDetailToken = Symbol('api-all');
+      shared._detailOwner = myDetailToken;
 
       // ── Phase 1: RJ収集（失敗しても Phase2 へ進む）──
       let discR = { discovered: 0 };
@@ -221,6 +232,8 @@ async function handleRun(job, res) {
         global._crawlerAbort.detail = false;
       }
       shared['detail'] = true;
+      myDetailToken = Symbol('api-turbo');
+      shared._detailOwner = myDetailToken;
       _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速処理します');
       Object.assign(_progress, { job, found: 0, total: 0, startedAt: Math.floor(Date.now() / 1000), done: false });
       const origRL = config.fetch.rateLimit;
@@ -275,9 +288,20 @@ async function handleRun(job, res) {
   } finally {
     _jobRunning[job] = false;
     const sk = sharedKeys[job];
-    if (sk && global._crawlerRunning) global._crawlerRunning[sk] = false;
+    // 自分が確保した detail ロックの場合のみ解放する（横取りされていたら何もしない）
+    const releaseDetail = () => {
+      if (global._crawlerRunning && global._crawlerRunning._detailOwner === myDetailToken) {
+        global._crawlerRunning.detail = false;
+        global._crawlerRunning._detailOwner = null;
+      }
+    };
+    if (sk === 'detail') {
+      releaseDetail();
+    } else if (sk && global._crawlerRunning) {
+      global._crawlerRunning[sk] = false;
+    }
     // 'all' は discovery + detail の両方をロックするため両方解放
-    if ((job === 'all' || job === 'turbo') && global._crawlerRunning) global._crawlerRunning['detail'] = false;
+    if (job === 'all' || job === 'turbo') releaseDetail();
     _progress.done = true;
   }
 }
