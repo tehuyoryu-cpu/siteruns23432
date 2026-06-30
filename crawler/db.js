@@ -627,8 +627,11 @@ function getStats() {
     priceChanges:  _get('SELECT COUNT(*) AS n FROM price_history').n,
     totalCircles:  _get('SELECT COUNT(*) AS n FROM circles').n,
     circlesOnSale: _get('SELECT COUNT(*) AS n FROM circles WHERE on_sale = 1').n,
+    // getDueWorks() は next_check_at を見るため、ここも合わせる。
+    // boostWorkUrgent() 等は next_check_at だけを更新し last_checked は変えないため、
+    // 旧式 (last_checked + check_interval) のままだとここと実際のキューの件数がずれる。
     dueNow: _get(
-      'SELECT COUNT(*) AS n FROM works WHERE (last_checked + check_interval) <= ?',
+      'SELECT COUNT(*) AS n FROM works WHERE next_check_at <= ?',
       [unixNow()]
     ).n,
   };

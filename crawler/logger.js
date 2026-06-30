@@ -44,15 +44,22 @@ function _getErrStream() {
   return _errStream;
 }
 
-function _log(level, ...args) {
-  if ((LEVELS[level] ?? 0) < MIN_LEVEL) return;
-
-  const ts  = new Date().toISOString();
-  const msg = args.map(a =>
+/** ログ引数を1行のテキストに整形する（オブジェクトはJSON化）。
+ *  apiServer.js の SSE 転送でも同じ整形を使い、[object Object] 表示を防ぐ。
+ */
+function formatArgs(args) {
+  return args.map(a =>
     a instanceof Error    ? `${a.message}\n${a.stack ?? ''}` :
     typeof a === 'object' ? JSON.stringify(a) :
     String(a)
   ).join(' ');
+}
+
+function _log(level, ...args) {
+  if ((LEVELS[level] ?? 0) < MIN_LEVEL) return;
+
+  const ts  = new Date().toISOString();
+  const msg = formatArgs(args);
 
   const line = `${ts} [${level.toUpperCase().padEnd(5)}] ${msg}\n`;
 
@@ -78,4 +85,5 @@ module.exports = {
   getRecentErrors: () => [..._recentErrors],
   getLogPath:      () => LOG_PATH,
   getErrorLogPath: () => ERROR_PATH,
+  formatArgs,
 };

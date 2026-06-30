@@ -204,75 +204,47 @@ function _bindIpc() {
   });
 
   // 各ジョブ実行
+  // ロック判定・取得は apiServer.js の handleRun() に一本化する。
+  // ここで事前に _running[sk]=true をセットすると、_running は
+  // apiServer.js と共有(global._crawlerRunning)しているため、
+  // apiServer.js 側が「既に実行中」と誤判定してジョブを拒否してしまう。
   ipcMain.handle('crawler:run', async (_, job) => {
-    const sk = _JOB_TO_STATE[job] ?? job;
-    if (_running[sk]) return { ok: false, message: `${job} is already running` };
-    _running[sk] = true;
-
-    // レスポンスをすぐ返してバックグラウンドで実行
     setImmediate(async () => {
       try {
         await _execJob(job);
       } catch (err) {
         console.error('[electron] job error', job, err.message);
       } finally {
-        _running[sk] = false;
-        // 完了をウィンドウに通知
         if (_win && !_win.isDestroyed()) {
           _win.webContents.send('crawler:done', { job, stats: db.getStats() });
         }
       }
     });
-
     return { ok: true, message: `${job} started` };
   });
 }
 
+/**
+ * ジョブ実行は必ず apiServer.js の HTTP API 経由で行う。
+ * 理由: 以前はここに discovery/detailFetcher を直接呼ぶ別実装があり、
+ * abort機構・ロックのトークン方式・999件処理などapiServer.js側に積んだ
+ * 修正が一切反映されない「裏口」になっていた（トレイメニュー・アプリメニュー
+ * から実行すると古い壊れた挙動に戻るバグ）。二重実装を防ぐため、
+ * ここでは fetch で同じ /api/run/{job} を叩くだけにする。
+ */
 async function _execJob(job) {
   const log = require('./crawler/logger');
-  log.info('[electron] job start', job);
-  const onProgress = ({ processed, priceChanges, total }) => {
-    global._sseSend?.('progress', { processed, priceChanges, total });
-  };
-  if (job === 'discover') {
-    await discovery.runDiscovery();
-  } else if (job === 'fetch') {
-    await detailFetcher.runDetailFetch(300, { onProgress });
-  } else if (job === 'saleboost') {
-    const circles = db.getCirclesOnSale();
-    db.transaction(() => {
-      for (const { maker_id } of circles) {
-        db.boostCircleWorks(maker_id, 100, 7200);
-      }
-    });
-    db.syncCircleWorksCounts();
-  } else if (job === 'all') {
-    await discovery.runDiscovery();
-    await detailFetcher.runDetailFetch(300, { onProgress });
-    const circles = db.getCirclesOnSale();
-    db.transaction(() => {
-      for (const { maker_id } of circles) {
-        db.boostCircleWorks(maker_id, 100, 7200);
-      }
-    });
-  } else if (job === 'endingsoon') {
-    await discovery.runEndingSoonScan({
-      onProgress: ({ site, page, found }) => {
-        global._sseSend?.('progress', { site, page, found });
-      }
-    });
-  } else if (job === 'fullscan') {
-    await discovery.runFullScan({ sale: false, maxPages: 0,
-      onProgress: ({ site, page, found }) => {
-        global._sseSend?.('progress', { site, page, found });
-      }
-    });
-  } else if (job === 'fullscan_sale') {
-    await discovery.runFullScan({ sale: true, maxPages: 0,
-      onProgress: ({ site, page, found }) => {
-        global._sseSend?.('progress', { site, page, found });
-      }
-    });
+  log.info('[electron] job start (via HTTP API)', job);
+  const res = await fetch(`http://127.0.0.1:7777/api/run/${job}`, { method: 'POST' });
+  const body = await res.json().catch(() => ({}));
+  if (!body.ok) {
+    throw new Error(body.message || `job ${job} failed to start`);
+  }
+  // apiServer.js 側でジョブは非同期実行される。完了は /api/run/status をポーリングして待つ。
+  const sk = _JOB_TO_STATE[job] ?? job;
+  const start = Date.now();
+  while (global._crawlerRunning?.[sk] && Date.now() - start < 30 * 60 * 1000) {
+    await new Promise(r => setTimeout(r, 1000));
   }
 }
 
@@ -321,19 +293,17 @@ function createWindow() {
 // ─── ネイティブメニューバー ────────────────────────────────────────────────────
 
 function _buildAppMenu() {
+  // ロック判定は apiServer.js の handleRun() に一本化（事前ロックしない）
   const runItem = (label, job, accel) => ({
     label,
     accelerator: accel,
     click: async () => {
-      const sk = _JOB_TO_STATE[job] ?? job;
-      if (_running[sk]) {
-        dialog.showMessageBox(_win, { message: `${label} は実行中です`, type: 'info' });
-        return;
-      }
-      _running[sk] = true;
       _win?.webContents.send('crawler:started', { job });
-      try { await _execJob(job); } finally {
-        _running[sk] = false;
+      try {
+        await _execJob(job);
+      } catch (err) {
+        dialog.showMessageBox(_win, { message: `${label}: ${err.message}`, type: 'warning' });
+      } finally {
         _win?.webContents.send('crawler:done', { job, stats: db.getStats() });
       }
     },
@@ -421,15 +391,12 @@ function createTray() {
   });
 }
 
+// ロック判定は apiServer.js の handleRun() に一本化（事前ロックしない）
 async function _execJobSafe(job) {
-  const sk = _JOB_TO_STATE[job] ?? job;
-  if (_running[sk]) return;
-  _running[sk] = true;
   _win?.webContents.send('crawler:started', { job });
   try { await _execJob(job); } catch (err) {
     console.error('[electron] tray job error', job, err.message);
   } finally {
-    _running[sk] = false;
     _win?.webContents.send('crawler:done', { job, stats: db?.getStats() });
   }
 }
@@ -453,6 +420,13 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => { /* トレイに残す */ });
 app.on('activate', () => { if (_win) _win.show(); });
+
+// 終了時に DB を確実にフラッシュする。
+// _save() は800msデバウンスされているため、何もせず終了すると
+// 直近の価格更新が最大800ms分失われる可能性がある。
+app.on('before-quit', () => {
+  try { db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
+});
 
 // ─── tray icon ────────────────────────────────────────────────────────────────
 

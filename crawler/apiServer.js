@@ -49,16 +49,20 @@ setTimeout(() => {
   const _origInfo  = log.info.bind(log);
   const _origWarn  = log.warn.bind(log);
   const _origError = log.error.bind(log);
+  // logger.js の formatArgs と同じ整形を使う。
+  // 以前は a.join(' ') を直接使っており、オブジェクト引数
+  // （例: log.info('[detail] price changed', {...}) ）が
+  // ダッシュボードのライブログ上で [object Object] になってしまっていた。
   log.info = (...a) => {
     _origInfo(...a);
-    const msg = a.join(' ');
+    const msg = log.formatArgs(a);
     // crawlerのinfoのみSSEに流す（API/DB等の頻繁なログは除外）
     if (/\[(discovery|detail|scheduler|electron)\]/.test(msg)) {
       _sseSend('log', msg);
     }
   };
-  log.warn  = (...a) => { _origWarn(...a);  _sseSend('warn',  a.join(' ')); };
-  log.error = (...a) => { _origError(...a); _sseSend('error', a.join(' ')); };
+  log.warn  = (...a) => { _origWarn(...a);  _sseSend('warn',  log.formatArgs(a)); };
+  log.error = (...a) => { _origError(...a); _sseSend('error', log.formatArgs(a)); };
   // apiServer から SSE 送信関数をグローバルに公開
   // （electron-main._execJob・scheduler がオンデマンドで使用）
   global._sseSend = _sseSend;

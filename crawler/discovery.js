@@ -21,6 +21,7 @@ const RL   = config.fetch.rateLimit;
 const DISCOVERY_FSR = {
   maniax: 'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/release_term/month/show_type/1',
   bl:     'https://www.dlsite.com/bl/fsr/=/language/jp/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/drama/work_category%5B3%5D/pc/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/KO_KR/options%5B4%5D/SPA/options%5B5%5D/GER/options%5B6%5D/FRE/options%5B7%5D/IND/options%5B8%5D/ITA/options%5B9%5D/POR/options%5B10%5D/SWE/options%5B11%5D/THA/options%5B12%5D/VIE/options%5B13%5D/OTL/options%5B14%5D/NM/per_page/100{page}/is_tl/1/is_bl/1/is_gay%5B0%5D/1/release_term/month/show_type/1',
+  girls:  'https://www.dlsite.com/girls/fsr/=/language/jp/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order%5B0%5D/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/release_term/month/show_type/1',
 };
 
 /** 今月1日の日付文字列を返す (YYYY-MM-DD) */
@@ -58,6 +59,7 @@ async function runDiscovery() {
     const results  = {};
     results.maniax = await _scanFsrMonthly('maniax', knownRjs);
     results.bl     = await _scanFsrMonthly('bl',     knownRjs);
+    results.girls  = await _scanFsrMonthly('girls',  knownRjs);
     results.circle = await _collectCircles(knownRjs);
     const total = Object.values(results).reduce((a, b) => a + b, 0);
     log.info('[discovery] done', { total, ...results });
@@ -121,47 +123,6 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
 
   log.info('[discovery] fullScan done', { grandTotal, ...sites });
   return { grandTotal, sites };
-}
-
-// ─── ページ種別別収集 ─────────────────────────────────────────────────────────
-
-async function _collectPages(type, knownRjs) {
-  const urlFor = (site, page) => {
-    // DLsiteはpage=1のとき /page/1 を含まない
-    const pagePart = page === 1 ? '' : `/page/${page}`;
-    if (type === 'new')     return `${BASE}/${site}/new/=/per_page/100${pagePart}.html`;
-    if (type === 'ranking') return `${BASE}/${site}/ranking/=/term/week/per_page/100${pagePart}.html`;
-    if (type === 'sale')    return `${BASE}/${site}/campaign/=/per_page/100${pagePart}.html`;
-  };
-
-  const maxPages = {
-    new:     config.dlsite.discoveryPages?.new     ?? 5,
-    ranking: config.dlsite.discoveryPages?.ranking ?? 3,
-    sale:    config.dlsite.discoveryPages?.sale    ?? 5,
-  }[type];
-
-  const PAGE_CONC = 2;  // ページを2並列で取得
-  let count = 0;
-  for (const site of config.dlsite.sites) {
-    let page = 1;
-    while (page <= maxPages) {
-      // PAGE_CONC ページを並列フェッチ
-      const batch = Array.from(
-        { length: Math.min(PAGE_CONC, maxPages - page + 1) },
-        (_, i) => urlFor(site, page + i)
-      );
-      const results = await Promise.all(batch.map(url => _fetchWithPrice(url)));
-      let done = false;
-      for (const items of results) {
-        if (!items.length) { done = true; break; }
-        count += _upsert(items, site, knownRjs);
-      }
-      if (done) break;
-      page += PAGE_CONC;
-      if (page <= maxPages) await sleep(RL);
-    }
-  }
-  return count;
 }
 
 async function _collectCircles(knownRjs) {

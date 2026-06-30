@@ -51,7 +51,7 @@ module.exports = {
   },
 
   dlsite: {
-    sites: ['maniax'],
+    sites: ['maniax', 'bl', 'girls'],
 
     fsrUrls: {
       maniax: {

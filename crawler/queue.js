@@ -51,13 +51,17 @@ async function fetchWithRetry(url, opts = {}) {
   const maxRetry  = config.fetch.retryMax;
   const baseDelay = config.fetch.retryBaseDelay;
   let last;
+  // 429/503 用の待機を既に消化した場合、次ループ先頭の通常バックオフを
+  // 重ねて待たないようにするフラグ（二重待機バグ修正）
+  let throttledWait = false;
 
   for (let i = 0; i <= maxRetry; i++) {
-    if (i > 0) {
+    if (i > 0 && !throttledWait) {
       const wait = baseDelay * 2 ** (i - 1);
       log.warn(`[fetch] retry ${i}/${maxRetry} wait ${wait}ms`, url);
       await sleep(wait);
     }
+    throttledWait = false;
     try {
       const ctrl = new AbortController();
       const tid  = setTimeout(() => ctrl.abort(), config.fetch.timeout);
@@ -77,6 +81,7 @@ async function fetchWithRetry(url, opts = {}) {
         log.warn(`[fetch] ${res.status} throttle – wait ${wait}ms`, url);
         last = new Error(`HTTP ${res.status}`);
         await sleep(wait);
+        throttledWait = true;   // 次ループ先頭の通常バックオフをスキップ
         continue;
       }
       if (!res.ok) log.warn(`[fetch] ${res.status}`, url);
