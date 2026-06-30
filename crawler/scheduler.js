@@ -26,10 +26,20 @@ function _startDiscoveryJob() {
     if (global._crawlerRunning.discovery) {
       log.warn('[scheduler] discovery still running, skip'); return;
     }
+    // detail ロックと同様、所有者トークンを付与する。
+    // 'all' ジョブが discovery ロックを横取りした場合に、ここの finally が
+    // 横取りした側のロックを誤って解放してしまうバグを防ぐ。
+    const myToken = Symbol('scheduler-discovery');
     global._crawlerRunning.discovery = true;
+    global._crawlerRunning._discoveryOwner = myToken;
     try   { await runDiscovery(); }
     catch (err) { log.error('[scheduler] discovery error', err.message); }
-    finally     { if (global._crawlerRunning) global._crawlerRunning.discovery = false; }
+    finally {
+      if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myToken) {
+        global._crawlerRunning.discovery = false;
+        global._crawlerRunning._discoveryOwner = null;
+      }
+    }
   });
   log.info('[scheduler] discovery job scheduled', config.cron.discovery);
 }
@@ -126,10 +136,19 @@ async function start() {
 
   if (!global._crawlerRunning) global._crawlerRunning = {};
 
-  global._crawlerRunning.discovery = true;
-  runDiscovery()
-    .catch(err => log.error('[scheduler] initial discovery error', err.message))
-    .finally(() => { if (global._crawlerRunning) global._crawlerRunning.discovery = false; });
+  {
+    const myInitToken = Symbol('scheduler-initial-discovery');
+    global._crawlerRunning.discovery = true;
+    global._crawlerRunning._discoveryOwner = myInitToken;
+    runDiscovery()
+      .catch(err => log.error('[scheduler] initial discovery error', err.message))
+      .finally(() => {
+        if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myInitToken) {
+          global._crawlerRunning.discovery = false;
+          global._crawlerRunning._discoveryOwner = null;
+        }
+      });
+  }
 
   setTimeout(() => {
     if (!global._crawlerRunning) global._crawlerRunning = {};
