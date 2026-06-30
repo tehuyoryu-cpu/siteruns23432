@@ -234,10 +234,15 @@ async function handleRun(job, res) {
       shared['detail'] = true;
       myDetailToken = Symbol('api-turbo');
       shared._detailOwner = myDetailToken;
-      _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速処理します');
+      _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速並列処理します');
       Object.assign(_progress, { job, found: 0, total: 0, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const origRL = config.fetch.rateLimit;
-      config.fetch.rateLimit = 200;
+      // rateLimit縮小だけでなく concurrency(同時並列リクエスト数) も引き上げる。
+      // 以前は concurrency 設定が定義されているのに使われておらず、'turbo' でも
+      // 実質ほぼ逐次処理のままで体感速度がほとんど変わらないバグがあった。
+      const origRL          = config.fetch.rateLimit;
+      const origConcurrency = config.fetch.concurrency;
+      config.fetch.rateLimit    = 200;
+      config.fetch.concurrency  = Math.max(origConcurrency ?? 1, 6);
       try {
         const r = await detailFetcher.runDetailFetch(99999, {
           onProgress: ({ processed, priceChanges, total }) => {
@@ -251,7 +256,8 @@ async function handleRun(job, res) {
         _sseSend(r?.priceChanges > 0 ? 'change' : 'log', msg);
         if (r?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(r.priceChanges);
       } finally {
-        config.fetch.rateLimit = origRL;
+        config.fetch.rateLimit   = origRL;
+        config.fetch.concurrency = origConcurrency;
       }
 
     } else if (job === 'endingsoon') {
