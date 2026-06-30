@@ -32,7 +32,17 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   const SAVE_EVERY_N_BATCHES = 5;
   let batchesSinceSave = 0;
 
+  // 'all'/'turbo' ジョブからの中断要求を実際に確認する。
+  // (以前は global._crawlerAbort.detail がセットされても誰も見ておらず、
+  //  「中断した」というログだけが出て実際には動き続けるバグがあった)
+  const isAborted = () => !!global._crawlerAbort?.detail;
+
   while (true) {
+    if (isAborted()) {
+      log.info('[detail] aborted by external request (before fetching due works)');
+      break;
+    }
+
     const due = db.getDueWorks(limit);
     if (!due.length) {
       if (result.total === 0) log.info('[detail] no due works');
@@ -50,8 +60,16 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
       (bySite[s] ??= []).push(w);
     }
 
+    let abortedMidBatch = false;
     for (const [site, works] of Object.entries(bySite)) {
+      if (abortedMidBatch) break;
       for (let i = 0; i < works.length; i += BATCH) {
+        if (isAborted()) {
+          log.info('[detail] aborted by external request (mid-batch)');
+          abortedMidBatch = true;
+          break;
+        }
+
         const batch = works.slice(i, i + BATCH);
         const r     = await _processBatch(batch, site);
         result.processed    += r.processed;
@@ -68,6 +86,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
         if (i + BATCH < works.length) await sleep(config.fetch.rateLimit);
       }
     }
+    if (abortedMidBatch) break;
 
     // 取得件数が limit 未満なら、これ以上 due な作品は残っていない
     if (due.length < limit) break;
