@@ -143,7 +143,16 @@ function _applySchema() {
     'ALTER TABLE price_history ADD COLUMN is_on_sale    INTEGER DEFAULT 0',
     'ALTER TABLE price_history ADD COLUMN is_point_only INTEGER DEFAULT 0',
     'ALTER TABLE works ADD COLUMN next_check_at INTEGER DEFAULT 0',
+    // 最新価格をworksに非正規化（price_history全件スキャンを回避し一覧表示を高速化）
+    'ALTER TABLE works ADD COLUMN cur_price        INTEGER',
+    'ALTER TABLE works ADD COLUMN cur_sale_price    INTEGER',
+    'ALTER TABLE works ADD COLUMN cur_discount_rate INTEGER',
+    'ALTER TABLE works ADD COLUMN cur_point         INTEGER',
+    'ALTER TABLE works ADD COLUMN cur_is_point_only INTEGER DEFAULT 0',
+    'ALTER TABLE works ADD COLUMN price_checked_at  INTEGER',
   ];
+
+
   for (const sql of migrations) {
     try {
       _db.run(sql);
@@ -167,6 +176,14 @@ function _applySchema() {
   } catch (e) {
     log.error('[db] failed to create idx_works_next_check:', e.message);
   }
+  // cur_* カラム(非正規化価格)が存在する状態になった後でソート用indexを作成
+  try {
+    _db.run('CREATE INDEX IF NOT EXISTS idx_works_cur_discount ON works(cur_discount_rate)');
+    _db.run('CREATE INDEX IF NOT EXISTS idx_works_cur_price    ON works(cur_price)');
+    _db.run('CREATE INDEX IF NOT EXISTS idx_works_on_sale      ON works(is_on_sale)');
+  } catch (e) {
+    log.error('[db] failed to create cur_* indexes:', e.message);
+  }
 
   console.log('[db] _applySchema: running migrations...');
   // データマイグレーション: 旧バージョンが書き込んだ無効な site_id を maniax に統一
@@ -181,6 +198,28 @@ function _applySchema() {
     const rows = _db.getRowsModified();
     if (rows > 0) { log.info('[db] fixed invalid site_id -> maniax:', rows, '件'); changed = true; }
   }
+  // cur_price 非正規化カラムのバックフィル（既存DBの cur_price が NULL の作品のみ）
+  try {
+    const pending = _get(`SELECT COUNT(*) AS n FROM works WHERE cur_price IS NULL AND rj_code IN (SELECT rj_code FROM price_history)`);
+    if (pending && pending.n > 0) {
+      console.log('[db] backfilling cur_price for', pending.n, 'works...');
+      _db.run(`
+        UPDATE works SET
+          cur_price        = (SELECT price         FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+          cur_sale_price    = (SELECT sale_price    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+          cur_discount_rate = (SELECT discount_rate FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+          cur_point         = (SELECT point         FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+          cur_is_point_only = (SELECT is_point_only FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+          price_checked_at  = (SELECT checked_at    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1)
+        WHERE cur_price IS NULL AND rj_code IN (SELECT rj_code FROM price_history)
+      `);
+      console.log('[db] backfill complete');
+      changed = true;
+    }
+  } catch (e) {
+    console.error('[db] backfill error:', e.message);
+  }
+
   console.log('[db] _applySchema: done, changed='+changed);
   return changed;
 }
@@ -476,19 +515,25 @@ function getLatestPrice(rjCode) {
  * Returns true if a row was inserted.
  */
 function savePriceIfChanged(rjCode, priceData) {
-  const last = getLatestPrice(rjCode);
+  // price_history への ORDER BY 全件スキャンをやめ、works に非正規化した
+  // cur_* カラムと直接比較する（30万件規模でも O(1) lookup）
+  const last = _get(
+    `SELECT cur_price, cur_sale_price, cur_discount_rate, cur_point, is_on_sale, cur_is_point_only
+     FROM works WHERE rj_code = ?`, [rjCode]
+  );
 
   const changed =
-    !last ||
-    last.price         !== (priceData.price         ?? null) ||
-    last.sale_price    !== (priceData.sale_price    ?? null) ||
-    last.discount_rate !== (priceData.discount_rate ?? null) ||
-    last.point         !== (priceData.point         ?? null) ||
-    last.is_on_sale    !== (priceData.is_on_sale    ?? 0)    ||
-    last.is_point_only !== (priceData.is_point_only ?? 0);
+    !last || last.cur_price === null ||
+    last.cur_price          !== (priceData.price         ?? null) ||
+    last.cur_sale_price     !== (priceData.sale_price    ?? null) ||
+    last.cur_discount_rate  !== (priceData.discount_rate ?? null) ||
+    last.cur_point          !== (priceData.point         ?? null) ||
+    last.is_on_sale         !== (priceData.is_on_sale    ?? 0)    ||
+    last.cur_is_point_only  !== (priceData.is_point_only ?? 0);
 
   if (!changed) return false;
 
+  const now = unixNow();
   _run(`
     INSERT INTO price_history
       (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
@@ -501,7 +546,27 @@ function savePriceIfChanged(rjCode, priceData) {
     priceData.discount_rate ?? null,
     priceData.is_on_sale    ?? 0,
     priceData.is_point_only ?? 0,
-    unixNow(),
+    now,
+  ]);
+
+  // works の非正規化カラムも同期更新（一覧表示の高速化用キャッシュ）
+  _run(`
+    UPDATE works SET
+      cur_price         = ?,
+      cur_sale_price     = ?,
+      cur_discount_rate  = ?,
+      cur_point          = ?,
+      cur_is_point_only  = ?,
+      price_checked_at   = ?
+    WHERE rj_code = ?
+  `, [
+    priceData.price         ?? null,
+    priceData.sale_price    ?? null,
+    priceData.discount_rate ?? null,
+    priceData.point         ?? null,
+    priceData.is_point_only ?? 0,
+    now,
+    rjCode,
   ]);
 
   return true;
@@ -628,10 +693,11 @@ function exportAllHistory() {
 function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limit = 50 } = {}) {
   const offset = (Math.max(1, page) - 1) * limit;
 
+  // works に非正規化済みの cur_* カラムを直接参照
   const sortMap = {
     priority: 'w.priority DESC, w.last_checked DESC',
-    discount: 'COALESCE(ph.discount_rate, 0) DESC',
-    price:    'ph.price ASC',
+    discount: 'COALESCE(w.cur_discount_rate, 0) DESC',
+    price:    'w.cur_price ASC',
     checked:  'w.last_checked DESC',
     release:  'w.release_date DESC',
   };
@@ -641,32 +707,21 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
   const params = [];
 
   if (q) {
-    where += 'AND (LOWER(w.rj_code) LIKE ? OR LOWER(COALESCE(w.title,\'\')) LIKE ? OR LOWER(COALESCE(w.circle,\'\')) LIKE ?) ';
+    where += "AND (LOWER(w.rj_code) LIKE ? OR LOWER(COALESCE(w.title,'')) LIKE ? OR LOWER(COALESCE(w.circle,'')) LIKE ?) ";
     const like = '%' + q.toLowerCase() + '%';
     params.push(like, like, like);
   }
 
-  // latest_price ã WITHå¥ã§äºåéè¨ã ã³ãªã¬ã¼ããµãã¯ã¨ãªãæé¤
-  const cte = `
-    WITH latest_price AS (
-      SELECT rj_code, MAX(id) AS max_id
-      FROM price_history GROUP BY rj_code
-    )
-  `;
-  const joins = `
-    FROM works w
-    LEFT JOIN latest_price lp ON lp.rj_code = w.rj_code
-    LEFT JOIN price_history ph ON ph.id = lp.max_id
-    WHERE 1=1 ${where}
-  `;
+  const baseFrom = `FROM works w WHERE 1=1 ${where}`;
 
-  const total = (_get(
-    `${cte} SELECT COUNT(*) AS n ${joins}`,
-    params
-  ) ?? { n: 0 }).n;
+  const total = (_get(`SELECT COUNT(*) AS n ${baseFrom}`, params) ?? { n: 0 }).n;
 
   const works = _all(
-    `${cte} SELECT w.*, ph.price, ph.sale_price, ph.discount_rate, ph.is_point_only, ph.checked_at AS ph_checked_at ${joins} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+    `SELECT w.*,
+       w.cur_price AS price, w.cur_sale_price AS sale_price,
+       w.cur_discount_rate AS discount_rate, w.cur_is_point_only AS is_point_only,
+       w.price_checked_at AS ph_checked_at
+     ${baseFrom} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
 
@@ -678,19 +733,17 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
  */
 function getSaleWorks(limit = 200) {
   return _all(`
-    WITH latest_ph AS (
-      SELECT rj_code, price, sale_price, discount_rate, point, is_point_only, checked_at
-      FROM price_history WHERE id IN (SELECT MAX(id) FROM price_history GROUP BY rj_code)
-    )
-    SELECT w.rj_code, w.title, w.circle, w.maker_id,
-           ph.price, ph.sale_price, ph.discount_rate, ph.is_point_only, ph.checked_at
+    SELECT w.*,
+      w.cur_price AS price, w.cur_sale_price AS sale_price,
+      w.cur_discount_rate AS discount_rate, w.cur_is_point_only AS is_point_only,
+      w.price_checked_at AS checked_at
     FROM works w
-    JOIN latest_ph ph ON ph.rj_code = w.rj_code
     WHERE w.is_on_sale = 1
-    ORDER BY COALESCE(ph.discount_rate, 0) DESC, ph.price ASC
+    ORDER BY COALESCE(w.cur_discount_rate, 0) DESC, w.cur_price ASC
     LIMIT ?
   `, [limit]);
 }
+
 
 
 

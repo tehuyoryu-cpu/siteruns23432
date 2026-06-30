@@ -47,8 +47,9 @@ function _startDetailJob() {
     // トークンと一致しなくなるため、finally で誤って解放してしまう
     // （= 横取りした側のロックを壊す）バグを防ぐ。
     const myToken = Symbol('scheduler-detail');
-    global._crawlerRunning.detail = true;
-    global._crawlerRunning._detailOwner = myToken;
+    global._crawlerRunning.detail                 = true;
+    global._crawlerRunning._detailOwner           = myToken;
+    global._crawlerRunning.schedulerDetailRunning = true;   // all-job の abort-wait が監視するフラグ
     try   {
       await runDetailFetch(300, {
         onProgress: ({ processed, priceChanges, total }) => {
@@ -58,6 +59,7 @@ function _startDetailJob() {
     }
     catch (err) { log.error('[scheduler] detail error', err.message); }
     finally {
+      global._crawlerRunning.schedulerDetailRunning = false;
       // 自分が確保したロックの場合のみ解放する（横取りされていたら何もしない）
       if (global._crawlerRunning && global._crawlerRunning._detailOwner === myToken) {
         global._crawlerRunning.detail = false;
@@ -136,8 +138,9 @@ async function start() {
       return;
     }
     const myToken = Symbol('scheduler-initial-detail');
-    global._crawlerRunning.detail = true;
-    global._crawlerRunning._detailOwner = myToken;
+    global._crawlerRunning.detail                 = true;
+    global._crawlerRunning._detailOwner           = myToken;
+    global._crawlerRunning.schedulerDetailRunning = true;
     runDetailFetch(300, {
       onProgress: ({ processed, priceChanges, total }) => {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
@@ -145,6 +148,7 @@ async function start() {
     })
       .catch(err => log.error('[scheduler] initial detail error', err.message))
       .finally(() => {
+        global._crawlerRunning.schedulerDetailRunning = false;
         if (global._crawlerRunning && global._crawlerRunning._detailOwner === myToken) {
           global._crawlerRunning.detail = false;
           global._crawlerRunning._detailOwner = null;
