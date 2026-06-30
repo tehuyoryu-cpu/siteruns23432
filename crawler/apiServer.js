@@ -87,11 +87,13 @@ async function handleRun(job, res) {
   // schedulerと共有フラグを確認（schedulerが実行中なら HTTP API からも起動しない）
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
-  const sharedKeys = { discover: 'discovery', fetch: 'detail', all: 'discovery', turbo: 'detail' };
+  const sharedKeys = { discover: 'discovery', fetch: 'detail', turbo: 'detail' };
   const sharedKey  = sharedKeys[job];
-  // detail ロックの所有者トークン。自分が確保した場合のみ this 関数内の finally で解放する。
+  // detail / discovery ロックの所有者トークン。自分が確保した場合のみ
+  // this 関数内の finally で解放する。
   // (横取り/横取られによる「他人のロックを誤って解放してしまう」バグを防ぐ)
-  let myDetailToken = null;
+  let myDetailToken    = null;
+  let myDiscoveryToken = null;
 
   if (_jobRunning[job]) {
     return _json(res, { ok: false, message: (_JOB_LABELS?.[job] ?? job) + ' はすでに実行中です' });
@@ -106,9 +108,14 @@ async function handleRun(job, res) {
     if (sharedKey === 'detail') {
       myDetailToken = Symbol('api-' + job);
       shared._detailOwner = myDetailToken;
+    } else if (sharedKey === 'discovery') {
+      myDiscoveryToken = Symbol('api-' + job);
+      shared._discoveryOwner = myDiscoveryToken;
     }
   }
-  // discovery ロックは事前に確保（スケジューラーとの競合防止）
+  // 'discover' の discovery ロックはここで事前確保（スケジューラーとの競合防止）。
+  // 'all' は discovery を必ずしも自分で実行するとは限らない（他者が実行中なら
+  // スキップする）ため、ここでは確保せず Phase 1 内で自分自身が必要な時だけ確保する。
   // detail ロックは try ブロック内で abort 後に確保する（'all'/'turbo'）
   _lastResult[job] = null;
 
@@ -171,6 +178,10 @@ async function handleRun(job, res) {
       shared._detailOwner = myDetailToken;
 
       // ── Phase 1: RJ収集（失敗しても Phase2 へ進む）──
+      // 以前は handleRun 冒頭で 'all' 自身が discovery ロックを確保してしまっており、
+      // このチェックが常に自分自身を指して true になるため、'all' は毎回120秒待った末に
+      // 自分の discovery を一度も実行せず「スキップ」していたバグがあった。
+      // (check → claim を await を挟まず同期的に行うことでスケジューラーとの競合も防ぐ)
       let discR = { discovered: 0 };
       if (global._crawlerRunning?.discovery) {
         log.info('[api] all: waiting for ongoing discovery...');
@@ -183,14 +194,30 @@ async function handleRun(job, res) {
             }
           }, 1000);
         });
-        _sseSend('log', 'RJ収集スキップ（起動時に実行済み）');
+        if (global._crawlerRunning?.discovery) {
+          _sseSend('log', 'RJ収集の完了待ちがタイムアウトしました。スキップして価格更新へ進みます');
+        } else {
+          _sseSend('log', 'RJ収集スキップ（他のジョブで実行済み）');
+        }
       } else {
+        // ここまで await を挟んでいないため、このチェック→確保は他から横取りされない
+        if (!global._crawlerRunning) global._crawlerRunning = {};
+        const myAllDiscoveryToken = Symbol('api-all-discovery');
+        global._crawlerRunning.discovery = true;
+        global._crawlerRunning._discoveryOwner = myAllDiscoveryToken;
+        myDiscoveryToken = myAllDiscoveryToken;
         try {
           discR = await runDiscovery() ?? discR;
           _sseSend('log', `RJ収集完了 — 新規: ${discR.discovered}件`);
         } catch (discErr) {
           log.error('[api] all: discovery error (continuing to detail fetch)', discErr.message);
           _sseSend('log', `⚠ RJ収集エラー: ${discErr.message} — 価格更新は続行します`);
+        } finally {
+          // Phase 2(価格更新)は discovery ロックを必要としないため、ここで早めに解放する
+          if (global._crawlerRunning?._discoveryOwner === myAllDiscoveryToken) {
+            global._crawlerRunning.discovery = false;
+            global._crawlerRunning._discoveryOwner = null;
+          }
         }
       }
 
@@ -305,13 +332,24 @@ async function handleRun(job, res) {
         global._crawlerRunning._detailOwner = null;
       }
     };
+    const releaseDiscovery = () => {
+      if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myDiscoveryToken) {
+        global._crawlerRunning.discovery = false;
+        global._crawlerRunning._discoveryOwner = null;
+      }
+    };
     if (sk === 'detail') {
       releaseDetail();
+    } else if (sk === 'discovery') {
+      releaseDiscovery();
     } else if (sk && global._crawlerRunning) {
       global._crawlerRunning[sk] = false;
     }
-    // 'all' は discovery + detail の両方をロックするため両方解放
+    // 'all' は detail ロックを保持したまま Phase2/3 を実行するため最後に解放する。
+    // discovery ロックは Phase 1 内で既に解放済みのはずだが、例外発生時の保険として
+    // ここでも自分のトークンが残っていれば解放する。
     if (job === 'all' || job === 'turbo') releaseDetail();
+    if (job === 'all') releaseDiscovery();
     _progress.done = true;
   }
 }
