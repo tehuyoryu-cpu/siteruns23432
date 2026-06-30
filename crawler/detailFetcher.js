@@ -37,6 +37,43 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   //  「中断した」というログだけが出て実際には動き続けるバグがあった)
   const isAborted = () => !!global._crawlerAbort?.detail;
 
+  // バッチ(50件)単位のHTTPリクエストを config.fetch.concurrency 件まで並列実行する
+  // ワーカープール。以前は concurrency 設定が定義されているのに使われておらず、
+  // 'turbo'(ぶっ飛ばし)モードも rateLimit を縮めるだけで実質ほぼ逐次処理のままだった。
+  // (sql.js への書き込み自体はNodeのシングルスレッド実行内で同期的に行われるため、
+  //  await の合間に他のPromiseの同期区間が割り込むことはなく安全)
+  async function _runConcurrentBatches(works, site) {
+    const chunks = [];
+    for (let i = 0; i < works.length; i += BATCH) chunks.push(works.slice(i, i + BATCH));
+    let nextIdx = 0;
+    let aborted = false;
+
+    async function worker() {
+      while (nextIdx < chunks.length) {
+        if (isAborted()) { aborted = true; return; }
+        const myIdx = nextIdx++;
+        const batch = chunks[myIdx];
+        const r = await _processBatch(batch, site);
+        result.processed    += r.processed;
+        result.priceChanges += r.priceChanges;
+        result.errors       += r.errors;
+        onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
+
+        batchesSinceSave++;
+        if (batchesSinceSave >= SAVE_EVERY_N_BATCHES) {
+          db.save();
+          batchesSinceSave = 0;
+        }
+
+        if (config.fetch.rateLimit > 0) await sleep(config.fetch.rateLimit);
+      }
+    }
+
+    const poolSize = Math.max(1, Math.min(config.fetch.concurrency ?? 1, chunks.length));
+    await Promise.all(Array.from({ length: poolSize }, () => worker()));
+    return aborted;
+  }
+
   while (true) {
     if (isAborted()) {
       log.info('[detail] aborted by external request (before fetching due works)');
@@ -50,7 +87,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
     }
 
     result.total += due.length;
-    log.info('[detail] due batch:', due.length, '(total so far:', result.total, ')');
+    log.info('[detail] due batch:', due.length, '(total so far:', result.total, ') concurrency=' + (config.fetch.concurrency ?? 1));
 
     const bySite = {};
     for (const w of due) {
@@ -63,30 +100,12 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
     let abortedMidBatch = false;
     for (const [site, works] of Object.entries(bySite)) {
       if (abortedMidBatch) break;
-      for (let i = 0; i < works.length; i += BATCH) {
-        if (isAborted()) {
-          log.info('[detail] aborted by external request (mid-batch)');
-          abortedMidBatch = true;
-          break;
-        }
-
-        const batch = works.slice(i, i + BATCH);
-        const r     = await _processBatch(batch, site);
-        result.processed    += r.processed;
-        result.priceChanges += r.priceChanges;
-        result.errors       += r.errors;
-        onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
-
-        batchesSinceSave++;
-        if (batchesSinceSave >= SAVE_EVERY_N_BATCHES) {
-          db.save();
-          batchesSinceSave = 0;
-        }
-
-        if (i + BATCH < works.length) await sleep(config.fetch.rateLimit);
-      }
+      abortedMidBatch = await _runConcurrentBatches(works, site);
     }
-    if (abortedMidBatch) break;
+    if (abortedMidBatch) {
+      log.info('[detail] aborted by external request (mid-batch)');
+      break;
+    }
 
     // 取得件数が limit 未満なら、これ以上 due な作品は残っていない
     if (due.length < limit) break;
