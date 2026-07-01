@@ -81,6 +81,19 @@ const _progress = {
   site: null, startedAt: null, done: false,
 };
 
+// ─── ジョブラベル ────────────────────────────────────────────────────────────
+// フロントエンドの _JOB_LABELS と揃えておくことでエラーメッセージを日本語化する
+const _JOB_LABELS = {
+  discover:      'RJ収集',
+  fetch:         '価格更新',
+  saleboost:     'セール優先',
+  all:           '全て巡回',
+  fullscan:      '全収集',
+  fullscan_sale: '全セール収集',
+  turbo:         'ぶっ飛ばし',
+  endingsoon:    '終了間近収集',
+};
+
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
 
 async function handleRun(job, res) {
@@ -230,7 +243,8 @@ async function handleRun(job, res) {
           if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
         },
       });
-      if (global._crawlerRunning) global._crawlerRunning['detail'] = false;
+      // Phase 2 完了。detail ロックの解放は finally の releaseDetail()（トークン一致チェックあり）に任せる。
+      // ここで直接 shared['detail'] = false をしていた旧コードはトークン保護を素通りするバグがあった。
 
       // ── Phase 3: セールブースト ──
       const circles = db.getCirclesOnSale();

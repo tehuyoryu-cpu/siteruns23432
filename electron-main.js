@@ -235,7 +235,10 @@ function _bindIpc() {
 async function _execJob(job) {
   const log = require('./crawler/logger');
   log.info('[electron] job start (via HTTP API)', job);
-  const res = await fetch(`http://127.0.0.1:7777/api/run/${job}`, { method: 'POST' });
+  const cfg = require('./config');
+  const host = cfg.ui?.host ?? '127.0.0.1';
+  const port = cfg.ui?.port ?? 7777;
+  const res = await fetch(`http://${host}:${port}/api/run/${job}`, { method: 'POST' });
   const body = await res.json().catch(() => ({}));
   if (!body.ok) {
     throw new Error(body.message || `job ${job} failed to start`);
@@ -273,7 +276,10 @@ function createWindow() {
   // Electron ネイティブメニューバー
   _win.setMenu(_buildAppMenu());
 
-  _win.loadURL('http://127.0.0.1:7777');
+  const _cfg  = require('./config');
+  const _host = _cfg.ui?.host ?? '127.0.0.1';
+  const _port = _cfg.ui?.port ?? 7777;
+  _win.loadURL(`http://${_host}:${_port}`);
 
   _win.once('ready-to-show', () => _win.show());
 
@@ -378,7 +384,7 @@ function createTray() {
     { type: 'separator' },
     {
       label: 'ブラウザで開く',
-      click: () => shell.openExternal('http://127.0.0.1:7777'),
+      click: () => { const c = require('./config'); shell.openExternal(`http://${c.ui?.host ?? '127.0.0.1'}:${c.ui?.port ?? 7777}`); },
     },
     { type: 'separator' },
     { label: '終了', click: () => { app.isQuiting = true; app.quit(); } },

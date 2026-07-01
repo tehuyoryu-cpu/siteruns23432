@@ -845,7 +845,9 @@ let _charts = {}, _searchTimer = null;
 
 // job名 → ツールバーボタン要素
 function _jobBtn(job) {
-  const cap = s => s.charAt(0).toUpperCase() + s.replace(/_([a-z])/g, (_, c) => c.toUpperCase()).slice(1);
+  // 単純先頭大文字化のみ。キャメルケース変換しない（HTMLのid属性と一致させるため）。
+  // 例: fullscan_sale → btnFullscan_sale（キャメルケース変換するとbtnFullscanSaleになりマッチしない）
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   return document.getElementById('btn' + cap(job));
 }
 

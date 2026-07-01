@@ -74,13 +74,26 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
     return aborted;
   }
 
+  // limit = 処理件数の上限（scheduler は 300、all/turbo は 99999 で「全件」を意味する）
+  // イテレーション毎の取得サイズは ITER_SIZE で固定し、limit とは分離する。
+  // 以前は getDueWorks(limit) を繰り返し呼んでいたため、limit=300 でも
+  // due 作品が無くなるまでループし続け「全件処理」と同義になっていた。
+  const ITER_SIZE = 300;
   while (true) {
     if (isAborted()) {
       log.info('[detail] aborted by external request (before fetching due works)');
       break;
     }
 
-    const due = db.getDueWorks(limit);
+    // 残り処理可能件数を計算してキャップする
+    const remaining = limit - result.total;
+    if (remaining <= 0) {
+      log.info('[detail] limit reached:', limit);
+      break;
+    }
+    const batchSize = Math.min(ITER_SIZE, remaining);
+
+    const due = db.getDueWorks(batchSize);
     if (!due.length) {
       if (result.total === 0) log.info('[detail] no due works');
       break;
@@ -107,8 +120,8 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
       break;
     }
 
-    // 取得件数が limit 未満なら、これ以上 due な作品は残っていない
-    if (due.length < limit) break;
+    // 取得件数が batchSize 未満 → due 作品が枯渇、終了
+    if (due.length < batchSize) break;
   }
 
   // ループ終了時点でまだ保存していない分が残っていれば最後にフラッシュする
