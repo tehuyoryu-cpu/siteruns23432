@@ -25,14 +25,21 @@ const DISCOVERY_FSR = {
 };
 
 /** 今月1日の日付文字列を返す (YYYY-MM-DD) */
-function _monthStart() {
+function _monthStart(offset = 0) {
   const d = new Date();
+  // offset=-1 で前月1日を返す（月またぎ時のカバー用）
+  d.setMonth(d.getMonth() + offset);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-/** FSR URL を全ページスキャンして新着RJを収集 */
-async function _scanFsrMonthly(site, knownRjs) {
-  const date = _monthStart();
+/** 月が変わったばかり（1〜5日）かどうか */
+function _isMonthRollover() {
+  return new Date().getDate() <= 5;
+}
+
+/** FSR URL を指定日付(月初)から全ページスキャンして新着RJを収集 */
+async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
+  const date = dateStr ?? _monthStart();
   const tmpl = DISCOVERY_FSR[site];
   if (!tmpl) return 0;
 
@@ -43,7 +50,7 @@ async function _scanFsrMonthly(site, knownRjs) {
     const items = await _fetchWithPrice(url);
     if (!items.length) break;
     count += _upsert(items, site, knownRjs);
-    log.info('[discovery] monthly', { site, page, parsed: items.length, newAdded: count });
+    log.info('[discovery] monthly', { site, date, page, parsed: items.length, newAdded: count });
     if (items.length < 100) break;
     page++;
     await sleep(config.fetch.rateLimit);
@@ -52,14 +59,27 @@ async function _scanFsrMonthly(site, knownRjs) {
 }
 
 async function runDiscovery() {
-  const month = _monthStart();
-  log.info('[discovery] start — monthly FSR', { month });
+  const month     = _monthStart();
+  const prevMonth = _isMonthRollover() ? _monthStart(-1) : null;
+  log.info('[discovery] start — monthly FSR', { month, prevMonth: prevMonth ?? '(skip)' });
   try {
     const knownRjs = _loadKnown();
     const results  = {};
+
+    // 今月分を収集
     results.maniax = await _scanFsrMonthly('maniax', knownRjs);
     results.bl     = await _scanFsrMonthly('bl',     knownRjs);
     results.girls  = await _scanFsrMonthly('girls',  knownRjs);
+
+    // 月が変わったばかり(1〜5日)の場合、前月末リリース分の取りこぼしをカバー
+    // （月またぎで起動していなかった期間のRJを拾う）
+    if (prevMonth) {
+      log.info('[discovery] rollover: scanning previous month', prevMonth);
+      results.maniax_prev = await _scanFsrMonthly('maniax', knownRjs, prevMonth);
+      results.bl_prev     = await _scanFsrMonthly('bl',     knownRjs, prevMonth);
+      results.girls_prev  = await _scanFsrMonthly('girls',  knownRjs, prevMonth);
+    }
+
     results.circle = await _collectCircles(knownRjs);
     const total = Object.values(results).reduce((a, b) => a + b, 0);
     log.info('[discovery] done', { total, ...results });
