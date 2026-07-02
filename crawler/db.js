@@ -201,6 +201,42 @@ function _applySchema() {
     const rows = _db.getRowsModified();
     if (rows > 0) { log.info('[db] fixed invalid site_id -> maniax:', rows, '件'); changed = true; }
   }
+  // ゴーストRJコード（末尾000パターン）の掃除
+  // 旧discoveryバグでDBに混入したコードをDBから削除して無駄なAPIリクエストを止める
+  try {
+    const ghostStmt = _db.prepare(`DELETE FROM works WHERE rj_code GLOB 'RJ*000' OR rj_code GLOB 'RJ*0000' OR rj_code = 'RJ000000'`);
+    ghostStmt.step();
+    ghostStmt.free();
+    const ghostRows = _db.getRowsModified();
+    if (ghostRows > 0) {
+      log.info('[db] removed ghost RJ codes (trailing 000):', ghostRows, '件');
+      changed = true;
+    }
+  } catch (e) {
+    console.error('[db] ghost cleanup error:', e.message);
+  }
+
+  // ゴーストRJコード（末尾が3桁以上の000、または全ゼロ）を180日退避
+  // parser.jsの除外フィルタ追加前にDBに入ったものを一括クリーンアップ。
+  // SQLiteはREGEXPを持たないため LIKE で近似マッチングする。
+  {
+    const FAR_FUTURE = unixNow() + 180 * 86400;
+    const ghostSql   = `
+      UPDATE works SET
+        consecutive_errors = 99,
+        check_interval     = ${180 * 86400},
+        next_check_at      = ${FAR_FUTURE}
+      WHERE (
+        rj_code LIKE '%000'   OR rj_code LIKE '%0000'
+        OR rj_code LIKE '%00000' OR rj_code LIKE 'RJ000000'
+        OR rj_code LIKE 'RJ0000000' OR rj_code LIKE 'RJ00000000'
+      ) AND consecutive_errors < 99
+    `;
+    _db.run(ghostSql);
+    const ghostRows = _db.getRowsModified();
+    if (ghostRows > 0) log.info('[db] ghost RJ codes quarantined:', ghostRows, '件');
+  }
+
   // cur_price 非正規化カラムのバックフィル（既存DBの cur_price が NULL の作品のみ）
   try {
     const pending = _get(`SELECT COUNT(*) AS n FROM works WHERE cur_price IS NULL AND rj_code IN (SELECT rj_code FROM price_history)`);

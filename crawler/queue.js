@@ -47,15 +47,44 @@ const _baseHeaders = _isElectron
 
 // ─── fetchWithRetry ───────────────────────────────────────────────────────────
 
+// ── ネットワーク断グローバルポーズ ─────────────────────────────────────────
+// ERR_NETWORK_IO_SUSPENDED 等の全接続失敗を検知したとき、
+// concurrency=3 の全ワーカーが独立してリトライを繰り返すのを防ぐ。
+// 最初にエラーを検知したワーカーがフラグをセットし、全ワーカーが
+// ポーズ中はリクエストを送らずに待機する。
+let   _networkPaused    = false;
+let   _networkPauseMs   = 0;
+const _NETWORK_ERRORS   = new Set([
+  'ERR_NETWORK_IO_SUSPENDED', 'ERR_INTERNET_DISCONNECTED',
+  'ERR_NETWORK_CHANGED', 'ERR_CONNECTION_RESET',
+  'ERR_TIMED_OUT', 'net::ERR_NETWORK_IO_SUSPENDED',
+]);
+const _PAUSE_DURATION   = 30_000;   // 30秒待機してからリトライ
+
+function _isNetworkError(msg) {
+  return _NETWORK_ERRORS.has(msg) || /ERR_NETWORK|NETWORK_IO_SUSPENDED|ECONNRESET|ETIMEDOUT/.test(msg);
+}
+
+async function _waitForNetwork() {
+  if (!_networkPaused) return;
+  const remaining = _networkPauseMs - Date.now();
+  if (remaining > 0) {
+    log.warn(`[fetch] network pause: waiting ${Math.ceil(remaining/1000)}s`);
+    await sleep(remaining);
+  }
+  _networkPaused = false;
+}
+
 async function fetchWithRetry(url, opts = {}) {
   const maxRetry  = config.fetch.retryMax;
   const baseDelay = config.fetch.retryBaseDelay;
   let last;
-  // 429/503 用の待機を既に消化した場合、次ループ先頭の通常バックオフを
-  // 重ねて待たないようにするフラグ（二重待機バグ修正）
   let throttledWait = false;
 
   for (let i = 0; i <= maxRetry; i++) {
+    // ネットワーク断ポーズ中は全ワーカーが同期して待機
+    await _waitForNetwork();
+
     if (i > 0 && !throttledWait) {
       const wait = baseDelay * 2 ** (i - 1);
       log.warn(`[fetch] retry ${i}/${maxRetry} wait ${wait}ms`, url);
@@ -81,7 +110,7 @@ async function fetchWithRetry(url, opts = {}) {
         log.warn(`[fetch] ${res.status} throttle – wait ${wait}ms`, url);
         last = new Error(`HTTP ${res.status}`);
         await sleep(wait);
-        throttledWait = true;   // 次ループ先頭の通常バックオフをスキップ
+        throttledWait = true;
         continue;
       }
       if (!res.ok) log.warn(`[fetch] ${res.status}`, url);
@@ -89,6 +118,13 @@ async function fetchWithRetry(url, opts = {}) {
     } catch (e) {
       last = e;
       log.warn(`[fetch] error (${e.message})`, url);
+      // ネットワーク断を検知したらグローバルポーズをセット
+      // （既にセット済みの場合は上書きしない = 最初の検知者のタイマーを尊重）
+      if (_isNetworkError(e.message) && !_networkPaused) {
+        _networkPaused  = true;
+        _networkPauseMs = Date.now() + _PAUSE_DURATION;
+        log.warn(`[fetch] network error detected — all workers pausing ${_PAUSE_DURATION/1000}s`, e.message);
+      }
     }
   }
   throw last ?? new Error(`fetchWithRetry failed: ${url}`);
@@ -98,4 +134,5 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-module.exports = { fetchWithRetry, sleep };
+function isNetworkPaused() { return _networkPaused; }
+module.exports = { fetchWithRetry, sleep, _isNetworkError, isNetworkPaused };
