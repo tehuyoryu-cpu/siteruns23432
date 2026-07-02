@@ -1368,12 +1368,12 @@ async function _waitJobDone(job, btn) {
   showProgress(true);
 
   // 走査パネルを表示して SSE 接続
-  if (job === 'fetch' || job === 'all') {
+  if (job === 'fetch' || job === 'all' || job === 'turbo') {
     const status = await api('/api/stats');
     _spTotal   = status?.dueNow ?? 0;
     _spScanned = 0; _spChanges = 0;
     _spUpdate();
-    if (_spTotal === 0 && job === 'fetch') {
+    if (_spTotal === 0 && (job === 'fetch' || job === 'turbo')) {
       _spLog('更新対象なし（全作品が最新です）');
     }
     _spShow(true);
@@ -1440,11 +1440,13 @@ function updateProgressBar(p, job) {
     const page  = p.page ? 'p.' + p.page : '';
     const found = p.found ? p.found + '件' : '';
     label.textContent = [site, page, found, elapsed].filter(Boolean).join(' ');
-  } else if (job === 'fetch' || job === 'all') {
+  } else if (job === 'fetch' || job === 'all' || job === 'turbo') {
     fill.classList.remove('indeterminate');
     const pct = (p.found && p.total) ? Math.min(99, Math.round(p.found / p.total * 100)) : (p.found ? 10 : 0);
     fill.style.width = pct + '%';
-    const phaseLabel = job === 'all' && !p.total ? 'RJ収集中...' : (p.found || 0) + '件更新';
+    const phaseLabel = job === 'all' && !p.total ? 'RJ収集中...'
+      : job === 'turbo' ? '🚀 ' + (p.found || 0) + '件処理'
+      : (p.found || 0) + '件更新';
     label.textContent = phaseLabel + (elapsed ? ' ' + elapsed : '');
   } else {
     fill.classList.add('indeterminate');
