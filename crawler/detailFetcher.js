@@ -65,7 +65,10 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
           batchesSinceSave = 0;
         }
 
-        if (config.fetch.rateLimit > 0) await sleep(config.fetch.rateLimit);
+        // 次チャンクがある場合のみsleep（最終バッチ後の無駄な700ms待機を除去）
+        if (config.fetch.rateLimit > 0 && nextIdx < chunks.length) {
+          await sleep(config.fetch.rateLimit);
+        }
       }
     }
 
@@ -78,7 +81,9 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   // イテレーション毎の取得サイズは ITER_SIZE で固定し、limit とは分離する。
   // 以前は getDueWorks(limit) を繰り返し呼んでいたため、limit=300 でも
   // due 作品が無くなるまでループし続け「全件処理」と同義になっていた。
-  const ITER_SIZE = 300;
+  // ITER_SIZE=500: concurrency=3, batchSize=50 → ceil(500/50)=10チャンク / 3worker = 4ラウンド
+  // ≈ 4 × (APIレスポンス + 700ms) ≈ 約5秒/500件（前回の300件から1.67倍のスループット）
+  const ITER_SIZE = 500;
   while (true) {
     if (isAborted()) {
       log.info('[detail] aborted by external request (before fetching due works)');

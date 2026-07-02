@@ -61,7 +61,7 @@ function _startDetailJob() {
     global._crawlerRunning._detailOwner           = myToken;
     global._crawlerRunning.schedulerDetailRunning = true;   // all-job の abort-wait が監視するフラグ
     try   {
-      await runDetailFetch(300, {
+      await runDetailFetch(500, {
         onProgress: ({ processed, priceChanges, total }) => {
           if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
         },
@@ -201,7 +201,7 @@ async function start() {
     global._crawlerRunning.detail                 = true;
     global._crawlerRunning._detailOwner           = myToken;
     global._crawlerRunning.schedulerDetailRunning = true;
-    runDetailFetch(300, {
+    runDetailFetch(500, {
       onProgress: ({ processed, priceChanges, total }) => {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
       },

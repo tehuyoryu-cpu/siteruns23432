@@ -173,6 +173,9 @@ function _applySchema() {
   // 「no such column: next_check_at」で起動が落ちるバグがあったため、ここに移動した。
   try {
     _db.run('CREATE INDEX IF NOT EXISTS idx_works_next_check ON works(next_check_at)');
+    // getDueWorks の ORDER BY priority DESC, next_check_at ASC に対応した複合インデックス。
+    // priority 単列は別途インデックスがないため、20万件規模でインメモリソートが発生していた。
+    _db.run('CREATE INDEX IF NOT EXISTS idx_works_priority_next ON works(priority DESC, next_check_at ASC)');
   } catch (e) {
     log.error('[db] failed to create idx_works_next_check:', e.message);
   }
@@ -531,7 +534,11 @@ function savePriceIfChanged(rjCode, priceData) {
     last.is_on_sale         !== (priceData.is_on_sale    ?? 0)    ||
     last.cur_is_point_only  !== (priceData.is_point_only ?? 0);
 
-  if (!changed) return false;
+  // changed=false の場合も既存の consecutive_no_change を返す
+  // (呼び出し側で getWorkByRj() を重ねて呼ばなくて済むようにする)
+  if (!changed) {
+    return { changed: false, consecutive_no_change: last?.consecutive_no_change ?? 0 };
+  }
 
   const now = unixNow();
   _run(`
@@ -569,7 +576,7 @@ function savePriceIfChanged(rjCode, priceData) {
     rjCode,
   ]);
 
-  return true;
+  return { changed: true, consecutive_no_change: 0 };
 }
 
 function getPriceHistory(rjCode) {
@@ -621,20 +628,18 @@ function getCircle(makerId) {
 // âââ stats ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function getStats() {
-  return {
-    totalWorks:    _get('SELECT COUNT(*) AS n FROM works').n,
-    onSale:        _get('SELECT COUNT(*) AS n FROM works WHERE is_on_sale = 1').n,
-    priceChanges:  _get('SELECT COUNT(*) AS n FROM price_history').n,
-    totalCircles:  _get('SELECT COUNT(*) AS n FROM circles').n,
-    circlesOnSale: _get('SELECT COUNT(*) AS n FROM circles WHERE on_sale = 1').n,
-    // getDueWorks() は next_check_at を見るため、ここも合わせる。
-    // boostWorkUrgent() 等は next_check_at だけを更新し last_checked は変えないため、
-    // 旧式 (last_checked + check_interval) のままだとここと実際のキューの件数がずれる。
-    dueNow: _get(
-      'SELECT COUNT(*) AS n FROM works WHERE next_check_at <= ?',
-      [unixNow()]
-    ).n,
-  };
+  // 6本の独立クエリを1本のサブクエリに統合してラウンドトリップを削減
+  const now = unixNow();
+  const row = _get(`
+    SELECT
+      (SELECT COUNT(*)           FROM works)                                   AS totalWorks,
+      (SELECT COUNT(*)           FROM works   WHERE is_on_sale = 1)            AS onSale,
+      (SELECT COUNT(*)           FROM price_history)                           AS priceChanges,
+      (SELECT COUNT(*)           FROM circles)                                 AS totalCircles,
+      (SELECT COUNT(*)           FROM circles WHERE on_sale = 1)               AS circlesOnSale,
+      (SELECT COUNT(*)           FROM works   WHERE next_check_at <= ${now})   AS dueNow
+  `);
+  return row ?? { totalWorks: 0, onSale: 0, priceChanges: 0, totalCircles: 0, circlesOnSale: 0, dueNow: 0 };
 }
 
 // âââ backup ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -755,8 +760,15 @@ function unixNow() {
 }
 
 /** å¨RJã³ã¼ããSetã§è¿ãï¼discoveryé«éç§åç¨ï¼ */
+// rj_code の全件取得は discovery が6時間毎に呼ぶため、インメモリキャッシュで高速化する。
+// upsertWork が呼ばれたときにキャッシュを無効化する（次回 getAllRjCodes() 時に再構築）。
+let _rjCodesCache = null;
+function _invalidateRjCache() { _rjCodesCache = null; }
 function getAllRjCodes() {
-  return new Set(_all('SELECT rj_code FROM works').map(r => r.rj_code));
+  if (!_rjCodesCache) {
+    _rjCodesCache = new Set(_all('SELECT rj_code FROM works').map(r => r.rj_code));
+  }
+  return _rjCodesCache;
 }
 
 module.exports = {
