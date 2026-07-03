@@ -182,17 +182,6 @@ const _running = {};
 // scheduler.js / apiServer.js が参照できるよう global に公開
 global._crawlerRunning = _running;
 
-// job名 → state名 マッピング（apiServer.js の sharedKeys と一致させる）
-const _JOB_TO_STATE = {
-  discover:     'discovery',
-  fetch:        'detail',
-  saleboost:    'saleBoost',
-  fullscan:     'fullscan',
-  fullscan_sale:'fullscan_sale',
-  all:          'discovery',
-  endingsoon:   'endingsoon',
-};
-
 function _bindIpc() {
   // ステータス取得
   ipcMain.handle('crawler:status', () => {
@@ -244,10 +233,27 @@ async function _execJob(job) {
     throw new Error(body.message || `job ${job} failed to start`);
   }
   // apiServer.js 側でジョブは非同期実行される。完了は /api/run/status をポーリングして待つ。
-  const sk = _JOB_TO_STATE[job] ?? job;
+  //
+  // 重大バグ修正: 以前は global._crawlerRunning[sk]（discovery/detail等の下位共有ロック）を
+  // 見ていたが、これはジョブ単位の状態と一致しない。
+  //   - 'all' は sk='discovery' だったが、discoveryロックはPhase1完了時点でfalseに戻るため、
+  //     Phase2（価格更新・最も時間がかかる）実行中に待機ループが抜けて crawler:done が誤発火していた。
+  //   - 'turbo' はマッピングに存在せず sk='turbo' になるが、apiServer.js は
+  //     global._crawlerRunning.turbo というキーを一切セットしない（turboの共有ロックは'detail'）ため、
+  //     while条件が最初から偽になり、待機ゼロで即座に crawler:done が発火していた。
+  // ダッシュボードJS（_waitJobDone）と同じ方式：/api/run/status の _jobRunning[job] を直接見る。
+  // このフラグは apiServer.js の handleRun() が全フェーズ完了後（finally節）まで true を保つため、
+  // 'all'/'turbo' のような複数フェーズジョブでも正確に完了を検知できる。
   const start = Date.now();
-  while (global._crawlerRunning?.[sk] && Date.now() - start < 30 * 60 * 1000) {
+  while (Date.now() - start < 30 * 60 * 1000) {
     await new Promise(r => setTimeout(r, 1000));
+    try {
+      const statusRes = await fetch(`http://${host}:${port}/api/run/status`);
+      const status = await statusRes.json();
+      if (!status[job]) break;
+    } catch (e) {
+      log.warn('[electron] status poll failed, retrying', e.message);
+    }
   }
 }
 
