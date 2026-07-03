@@ -307,6 +307,7 @@ function _run(sql, params = []) {
 
 /** è¤æ°ã® _run ãã²ã¨ã¾ã¨ãã«ãã¦æå¾ã«1åã ãä¿å­ã */
 function transaction(fn) {
+  if (!_db) throw new Error('[db] transaction() called but _db is null (DB not initialized or already closed)');
   _db.run('BEGIN');
   try {
     fn();
@@ -327,6 +328,7 @@ function transaction(fn) {
  * （クラッシュ時は直前の明示的な save() 地点まで巻き戻る）
  */
 function transactionNoSave(fn) {
+  if (!_db) throw new Error('[db] transactionNoSave() called but _db is null (DB not initialized or already closed)');
   _db.run('BEGIN');
   try {
     fn();
@@ -343,6 +345,7 @@ function transactionNoSave(fn) {
  * @param {Function} fn  dbæä½ãè¡ãåæé¢æ°
  */
 function runInTransaction(fn) {
+  if (!_db) throw new Error('[db] runInTransaction() called but _db is null (DB not initialized or already closed)');
   _db.run('BEGIN');
   try {
     fn();

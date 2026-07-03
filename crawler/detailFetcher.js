@@ -160,13 +160,19 @@ async function _processBatch(works, site) {
 
   // 失敗→バイナリ分割（半分ずつ）→1件まで再帰して個別エラー記録
   // SUB=10 固定にすると works.length < SUB の場合に無限ループするため halving を使う
+  //
+  // 以前は Promise.all で両半分を無条件に並列実行しており、失敗した50件バッチが
+  // 25→12→6→3→1件…と再帰する過程で config.fetch.concurrency を無視した
+  // 大量の同時リクエストが一気にDLsiteへ飛んでしまうバグがあった
+  // (2026-07-03のログで2秒間に100件超のリクエストバーストを確認、直後に
+  //  ERR_HTTP2_PING_FAILED / ERR_CONNECTION_TIMED_OUT が多発した原因と推測される)。
+  // 分割時は逐次実行にし、間に短い待機を挟んでバーストを防ぐ。
   if (!body && works.length > 1) {
     log.warn('[detail] batch fail, splitting', works.length);
     const mid = Math.ceil(works.length / 2);
-    const [r1, r2] = await Promise.all([
-      _processBatch(works.slice(0, mid),  site),
-      _processBatch(works.slice(mid),     site),
-    ]);
+    const r1 = await _processBatch(works.slice(0, mid), site);
+    await sleep(Math.max(config.fetch.rateLimit ?? 0, 300));
+    const r2 = await _processBatch(works.slice(mid), site);
     result.processed    += r1.processed    + r2.processed;
     result.priceChanges += r1.priceChanges + r2.priceChanges;
     result.errors       += r1.errors       + r2.errors;
