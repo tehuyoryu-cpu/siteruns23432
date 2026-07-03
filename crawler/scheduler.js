@@ -177,7 +177,15 @@ async function start() {
 
   if (!global._crawlerRunning) global._crawlerRunning = {};
 
-  {
+  // 重大バグ修正: 以前はここで既存ロックの有無を確認せず無条件に
+  // global._crawlerRunning.discovery を上書きしていた。そのため、
+  // アプリ起動直後にユーザーがUI等から手動でdiscoveryを開始していた場合、
+  // ここの初回パスがそのロックを横取りして2つ目の runDiscovery() を
+  // 並行起動してしまい、同じFSRページを二重に取得するバグがあった
+  // （cronジョブ・apiServer.jsのhandleRunは元々このチェックを行っていた）。
+  if (global._crawlerRunning.discovery) {
+    log.warn('[scheduler] initial discovery skipped (already running)');
+  } else {
     const myInitToken = Symbol('scheduler-initial-discovery');
     global._crawlerRunning.discovery = true;
     global._crawlerRunning._discoveryOwner = myInitToken;
