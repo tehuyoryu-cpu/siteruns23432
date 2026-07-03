@@ -235,8 +235,12 @@ async function handleRun(job, res) {
       }
 
       // ── Phase 2: 価格更新（全 due 作品を処理）──
+      // バグ修正: 99_999 は「実質無制限」のつもりの値だったが、実装上は
+      // ハードキャップとして扱われるため、due作品数がこれを超えると
+      // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
+      // Infinity にすることで、真に due が枯渇するまで処理を続ける。
       _sseSend('log', '価格更新を開始します...');
-      const fetchR = await detailFetcher.runDetailFetch(99_999, {
+      const fetchR = await detailFetcher.runDetailFetch(Infinity, {
         onProgress: ({ processed, priceChanges, total }) => {
           Object.assign(_progress, { found: processed, total });
           _sseSend('progress', { processed, priceChanges, total });
@@ -289,7 +293,11 @@ async function handleRun(job, res) {
       config.fetch.rateLimit    = 200;
       config.fetch.concurrency  = Math.max(origConcurrency ?? 1, 6);
       try {
-        const r = await detailFetcher.runDetailFetch(99999, {
+        // バグ修正: 99999 は「実質無制限」のつもりの値だったが、実装上は
+        // ハードキャップとして扱われるため、due作品数がこれを超えると
+        // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
+        // Infinity にすることで、真に due が枯渇するまで処理を続ける。
+        const r = await detailFetcher.runDetailFetch(Infinity, {
           onProgress: ({ processed, priceChanges, total }) => {
             Object.assign(_progress, { found: processed, total });
             _sseSend('progress', { processed, priceChanges, total });
