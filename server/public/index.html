@@ -1527,6 +1527,7 @@ async function showDiag() {
       if (t.cfBlock)  out += `  ⚠ Cloudflare ブロック検出\n`;
       if (t.ageCheck) out += `  ⚠ 年齢確認ページ検出\n`;
       if (t.returnedKeys != null) out += `  APIキー数: ${t.returnedKeys}件\n`;
+      if (t.contentType)  out += `  Content-Type: ${t.contentType}\n`;
       if (t.testedCodes) out += `  テスト対象: ${t.testedCodes.join(', ')}\n`;
       if (t.error)    out += `  エラー: ${t.error}\n`;
       if (t.note)     out += `  メモ: ${t.note}\n`;
