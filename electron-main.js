@@ -44,24 +44,49 @@ let db, apiServer, scheduler, discovery, detailFetcher;
 
 // DLsite をヘッドレスChromiumで開き、CF/年齢確認をクリアして
 // セッションCookieを確立する。以後 electron.net.fetch が自動でそのCookieを使う。
+//
+// バグ修正: 以前は 'https://www.dlsite.com/maniax/' だけを開いていたが、
+// DLsiteはサイトファミリー(maniax/girls/bl等)ごとに個別の年齢確認ゲートを
+//持っており、maniaxの年齢確認を突破してもgirls/blのゲートは未通過のままだった。
+// そのため config.dlsite.sites に設定された girls/bl の product/info/ajax が
+// 常に空応答({})を返し、診断ツールでも実際の巡回でも取得できずにいた。
+// config.dlsite.sites の全サイトを順番に開いて年齢確認するように変更。
 async function warmUpSession() {
-  return new Promise(resolve => {
-    const { BrowserWindow, session } = require('electron');
-    const w = new BrowserWindow({
-      show: false,
-      webPreferences: { nodeIntegration: false, contextIsolation: true },
-    });
+  const { BrowserWindow, session } = require('electron');
+  const config = require('./config');
 
+  const w = new BrowserWindow({
+    show: false,
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+
+  const sites = config.dlsite.sites?.length ? config.dlsite.sites : ['maniax'];
+  for (const site of sites) {
+    await _warmUpOneSite(w, `https://www.dlsite.com/${site}/`);
+  }
+
+  try {
+    const cookies = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
+    console.log('[warmUp] cookies obtained:', cookies.map(c => c.name).join(', '));
+  } catch {}
+
+  try { w.destroy(); } catch {}
+}
+
+// 1サイト分の年齢確認突破を試みる。did-finish-load/did-fail-load いずれかが
+// 発火するか、タイムアウトしたら resolve する。
+function _warmUpOneSite(w, url) {
+  return new Promise(resolve => {
     let resolved = false;
     const done = () => {
       if (resolved) return;
       resolved = true;
-      try { w.destroy(); } catch {}
+      w.webContents.removeListener('did-finish-load', onFinish);
+      w.webContents.removeListener('did-fail-load', done);
       resolve();
     };
 
-    // ページロード完了ごとに年齢確認ボタンをクリック試行
-    w.webContents.on('did-finish-load', async () => {
+    const onFinish = async () => {
       try {
         // 年齢確認ボタン（複数のセレクタに対応）
         await w.webContents.executeJavaScript(`
@@ -89,23 +114,15 @@ async function warmUpSession() {
         `);
       } catch {}
 
-      // 2秒後にCookieを確認して完了
-      setTimeout(async () => {
-        try {
-          const cookies = await session.defaultSession.cookies.get(
-            { domain: 'dlsite.com' }
-          );
-          console.log('[warmUp] cookies obtained:', cookies.map(c => c.name).join(', '));
-        } catch {}
-        done();
-      }, 2000);
-    });
+      // 2秒後にCookie確立を待ってから次のサイトへ
+      setTimeout(done, 2000);
+    };
 
+    w.webContents.once('did-finish-load', onFinish);
     w.webContents.once('did-fail-load', done);
-    setTimeout(done, 25000); // タイムアウト25秒
+    setTimeout(done, 10000); // サイトごとのタイムアウト。3サイト構成で最悪ケースでも合計30秒程度。
 
-    // 成人向けコンテンツページを直接開く（年齢確認をトリガー）
-    w.loadURL('https://www.dlsite.com/maniax/');
+    w.loadURL(url);
   });
 }
 async function startBackend() {
