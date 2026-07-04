@@ -239,14 +239,29 @@ async function handleRun(job, res) {
       // ハードキャップとして扱われるため、due作品数がこれを超えると
       // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
       // Infinity にすることで、真に due が枯渇するまで処理を続ける。
+      //
+      // 'turbo' と同じ concurrency/rateLimit ブーストを適用する。
+      // 以前は 'all' の Phase2 だけ素の設定(concurrency=3, rateLimit=700ms)のまま
+      // 実行されており、'turbo' で動作確認済み(concurrency=6, rateLimit=200ms)の
+      // 速度が「全て巡回」には反映されていなかった。
       _sseSend('log', '価格更新を開始します...');
-      const fetchR = await detailFetcher.runDetailFetch(Infinity, {
-        onProgress: ({ processed, priceChanges, total }) => {
-          Object.assign(_progress, { found: processed, total });
-          _sseSend('progress', { processed, priceChanges, total });
-          if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
-        },
-      });
+      const origRL_all          = config.fetch.rateLimit;
+      const origConcurrency_all = config.fetch.concurrency;
+      config.fetch.rateLimit    = 200;
+      config.fetch.concurrency  = Math.max(origConcurrency_all ?? 1, 6);
+      let fetchR;
+      try {
+        fetchR = await detailFetcher.runDetailFetch(Infinity, {
+          onProgress: ({ processed, priceChanges, total }) => {
+            Object.assign(_progress, { found: processed, total });
+            _sseSend('progress', { processed, priceChanges, total });
+            if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
+          },
+        });
+      } finally {
+        config.fetch.rateLimit   = origRL_all;
+        config.fetch.concurrency = origConcurrency_all;
+      }
       // Phase 2 完了。detail ロックの解放は finally の releaseDetail()（トークン一致チェックあり）に任せる。
       // ここで直接 shared['detail'] = false をしていた旧コードはトークン保護を素通りするバグがあった。
 
