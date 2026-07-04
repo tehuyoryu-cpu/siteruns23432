@@ -348,9 +348,9 @@ async function handleRun(job, res) {
       // 走査し、DBに存在しないRJコードを検出・登録する。
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await runCircleGapScan({
-        onProgress: ({ checked, total, totalMissing, makerId }) => {
-          Object.assign(_progress, { found: checked, totalPages: total, site: makerId });
-          _sseSend('progress', { checked, total, totalMissing, makerId });
+        onProgress: ({ checked, total, totalMissing, makerId, page }) => {
+          Object.assign(_progress, { found: checked, totalPages: total, site: makerId, page: page ?? 0 });
+          _sseSend('progress', { checked, total, totalMissing, makerId, page });
         },
       });
       _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
