@@ -95,9 +95,17 @@ async function fetchWithRetry(url, opts = {}) {
       const ctrl = new AbortController();
       const tid  = setTimeout(() => ctrl.abort(), config.fetch.timeout);
 
+      // バグ修正: cache オプションを指定していなかったため、Electronの
+      // net.fetch（ChromiumのHTTPキャッシュ）が標準のキャッシュ挙動に従い、
+      // 同一URLへの再アクセス時に古い(場合によっては年齢確認未通過時の空応答)
+      // キャッシュを返すことがあった。価格トラッカーとして常に最新の応答が
+      // 必要なため、明示的にキャッシュを無効化する。診断ツールのように
+      // 毎回ほぼ同じURL（同じRJコードの組み合わせ）を叩くケースで特に顕著だった
+      // （本番の巡回はdue作品の組み合わせが毎回変わるため気づきにくかった）。
       const res = await _fetch(url, {
         ...opts,
         headers: { ..._baseHeaders, ...opts.headers },
+        cache: 'no-store',
         signal: ctrl.signal,
       });
       clearTimeout(tid);
