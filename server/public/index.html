@@ -1456,10 +1456,13 @@ function updateProgressBar(p, job) {
     label.textContent = phaseLabel + (elapsed ? ' ' + elapsed : '');
   } else if (job === 'circlegap') {
     fill.classList.remove('indeterminate');
+    // totalPagesはループ開始直後に即時通知されるようになったため、
+    // 最初のサークル処理中でも「?」にならず正しい総数が表示される
     const pct = (p.found && p.totalPages) ? Math.min(99, Math.round(p.found / p.totalPages * 100)) : (p.found ? 5 : 0);
     fill.style.width = pct + '%';
     const site = p.site ? '[' + p.site + ']' : '';
-    label.textContent = [site, (p.found || 0) + '/' + (p.totalPages || '?') + 'サークル', elapsed].filter(Boolean).join(' ');
+    const pageInfo = p.page ? ' (' + p.page + 'ページ目)' : '';
+    label.textContent = [site, (p.found || 0) + '/' + (p.totalPages || '?') + 'サークル' + pageInfo, elapsed].filter(Boolean).join(' ');
   } else {
     fill.classList.add('indeterminate');
     label.textContent = (_JOB_LABELS[job] ?? job) + '中... ' + elapsed;
