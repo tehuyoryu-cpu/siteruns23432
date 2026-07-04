@@ -8,6 +8,9 @@
 
 const cheerio = require('cheerio');
 const log     = require('./logger');
+const config  = require('../config');
+
+const VALID_SITE_IDS = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
 
 // ─── Product Info API ─────────────────────────────────────────────────────────
 
@@ -99,7 +102,16 @@ function parseProductInfo(rjCode, body) {
         circle:       _str(d.maker_name ?? d.brand_name),
         maker_id:     _str(d.maker_id   ?? d.brand_id),
         work_type:    _str(d.work_type),
-        site_id:      _str(d.site_id ?? 'maniax'),
+        // バグ修正: DLsiteのAPIはURLサイトファミリーとは別の内部分類コード
+        // (AI生成作品/スマホアプリ向けと思われる aix/appx 等)を site_id として
+        // 返すことがある。これを無検証でそのまま採用すると、毎回のスキャンで
+        // 正しいsite_idが上書きされ壊れ続ける。既知のサイトファミリーに
+        // 一致しない場合は null を返し、呼び出し側(detailFetcher.js)で
+        // 既存DB値の維持 or 'maniax' フォールバックを判断させる。
+        site_id:      (() => {
+          const raw = _str(d.site_id);
+          return raw && VALID_SITE_IDS.has(raw) ? raw : null;
+        })(),
         release_date: _str(d.regist_date ?? d.product_date ?? d.sales_date),
         dl_count:     _int(d.dl_count ?? d.down_count),
       },
