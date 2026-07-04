@@ -330,7 +330,13 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
 async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   log.info('[discovery] circleGapScan start', { limit: limit ?? 'all' });
 
-  const makerSites = db.getMakerSiteMap();   // Map<maker_id, site_id>
+  const makerSites  = db.getMakerSiteMap();   // Map<maker_id, site_id>（無効なsite_idのサークルは含まれない）
+  const allMakerIds = db.getAllMakerIds();
+  const skippedInvalidSite = allMakerIds.filter(m => !makerSites.has(m)).length;
+  if (skippedInvalidSite > 0) {
+    log.warn('[discovery] circleGapScan: site_id不明のためスキップしたサークル', { count: skippedInvalidSite });
+  }
+
   let makerIds = [...makerSites.keys()];
   if (limit) makerIds = makerIds.slice(0, limit);
 
@@ -376,9 +382,9 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   }
 
   log.info('[discovery] circleGapScan done', {
-    checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length,
+    checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length, skippedInvalidSite,
   });
-  return { checked, totalMissing, missingByCircle };
+  return { checked, totalMissing, missingByCircle, skippedInvalidSite };
 }
 
 module.exports = { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan };

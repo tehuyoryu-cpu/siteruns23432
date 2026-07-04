@@ -495,8 +495,15 @@ function getAllMakerIds() {
  * 1サークルは通常1サイトのみで活動するが、稀に複数サイトに作品がある場合は
  * 件数が多い方のサイトを巡回対象として採用する（少数派サイトの作品は既存作品として
  * 既にDBにあるので、巡回自体は多数派サイトで問題ない）。
+ *
+ * 過去に site_id が 'aix'/'appx' 等のDLsite内部分類コードで継続的に破損していた
+ * 問題があり(parser.js側で修正済みだが、修正前に書き込まれた既存レコードは
+ * そのまま残っている)、そういった無効な site_id しか持たないサークルを対象URLに
+ * 使うと存在しないサイトパスへ巡回してしまう。ここで既知の有効なサイトファミリー
+ * (config.dlsite.validSiteIds)のみを候補として採用する。
  */
 function getMakerSiteMap() {
+  const validSites = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
   const rows = _all(`
     SELECT maker_id, site_id, COUNT(*) AS cnt
     FROM works
@@ -505,6 +512,7 @@ function getMakerSiteMap() {
   `);
   const map = new Map();
   for (const { maker_id, site_id, cnt } of rows) {
+    if (!validSites.has(site_id)) continue;   // 破損値(aix/appx等)は候補から除外
     const cur = map.get(maker_id);
     if (!cur || cnt > cur.cnt) map.set(maker_id, { site_id, cnt });
   }

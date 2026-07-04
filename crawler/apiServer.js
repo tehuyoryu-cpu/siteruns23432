@@ -356,7 +356,8 @@ async function handleRun(job, res) {
       _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
       Object.assign(_progress, { done: true });
       const gapSummary = `チェック:${result.checked}サークル / 発見した欠落:${result.totalMissing}件` +
-        (result.totalMissing > 0 ? ` (${Object.keys(result.missingByCircle).length}サークルで検出)` : '');
+        (result.totalMissing > 0 ? ` (${Object.keys(result.missingByCircle).length}サークルで検出)` : '') +
+        (result.skippedInvalidSite > 0 ? ` / site_id不明で除外:${result.skippedInvalidSite}サークル` : '');
       _sseSend(result.totalMissing > 0 ? 'change' : 'log', `サークル欠落診断完了 — ${gapSummary}`);
       log.info('[api] circleGapScan done', result);
 
@@ -665,36 +666,51 @@ async function _runDiagnostics() {
   }
 
   // テスト2: Product Info API（product_id[] 形式）
-  let knownRjs = [];
+  // バグ修正: 以前はサンプルRJの実際のsite_idを見ず、URLを 'maniax' に固定していた。
+  // product/info/ajax はサイトファミリー(maniax/girls/bl等)ごとにパスが異なるため、
+  // サンプルがmaniax以外の作品だと正常に動いていてもAPIキー数0件(=偽陽性)になる。
+  // サンプルを実際のsite_idごとにグループ化し、サイトごとに正しいURLでテストする。
+  let sampleWorks = [];
   try {
-    const rows = db.searchWorks({ q: '', sort: 'priority', page: 1, limit: 3 });
-    knownRjs = (rows.works ?? []).map(w => w.rj_code).filter(Boolean);
+    const rows = db.searchWorks({ q: '', sort: 'priority', page: 1, limit: 12 });
+    sampleWorks = rows.works ?? [];
   } catch (e) {
     log.warn('[diag] failed to get sample works:', e.message);
   }
 
-  if (knownRjs.length) {
-    const params = knownRjs.map(c => 'product_id%5B%5D=' + encodeURIComponent(c)).join('&');
-    const apiUrl = 'https://www.dlsite.com/maniax/product/info/ajax?' + params + '&cdn_cache_min=1';
-    try {
-      const t0   = Date.now();
-      const res  = await fetchWithRetry(apiUrl);
-      const ms   = Date.now() - t0;
-      const body = await res.json().catch(() => ({}));
-      result.tests.push({
-        name:         'Product Info API',
-        url:          apiUrl,
-        status:       res.status,
-        ok:           res.ok && Object.keys(body).length > 0,
-        ms,
-        returnedKeys: Object.keys(body).length,
-        testedCodes:  knownRjs,
-      });
-    } catch (e) {
-      result.tests.push({ name: 'Product Info API', url: apiUrl, ok: false, error: e.message });
+  const validSites = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
+  const bySite = new Map();   // site_id -> [rj_code, ...]（最大3件/サイト）
+  for (const w of sampleWorks) {
+    if (!w.rj_code || !validSites.has(w.site_id)) continue;
+    const list = bySite.get(w.site_id) ?? [];
+    if (list.length < 3) list.push(w.rj_code);
+    bySite.set(w.site_id, list);
+  }
+
+  if (bySite.size) {
+    for (const [site, codes] of bySite) {
+      const params = codes.map(c => 'product_id%5B%5D=' + encodeURIComponent(c)).join('&');
+      const apiUrl = `https://www.dlsite.com/${site}/product/info/ajax?${params}&cdn_cache_min=1`;
+      try {
+        const t0   = Date.now();
+        const res  = await fetchWithRetry(apiUrl);
+        const ms   = Date.now() - t0;
+        const body = await res.json().catch(() => ({}));
+        result.tests.push({
+          name:         `Product Info API [${site}]`,
+          url:          apiUrl,
+          status:       res.status,
+          ok:           res.ok && Object.keys(body).length > 0,
+          ms,
+          returnedKeys: Object.keys(body).length,
+          testedCodes:  codes,
+        });
+      } catch (e) {
+        result.tests.push({ name: `Product Info API [${site}]`, url: apiUrl, ok: false, error: e.message });
+      }
     }
   } else {
-    result.tests.push({ name: 'Product Info API', ok: null, note: 'DB内に作品なし (discovery未実施)' });
+    result.tests.push({ name: 'Product Info API', ok: null, note: 'DB内に有効なsite_idを持つ作品なし (discovery未実施 or site_id要修正)' });
   }
 
   return result;
