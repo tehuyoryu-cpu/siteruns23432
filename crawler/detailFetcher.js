@@ -24,7 +24,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
   // サイト別グループ
   // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
   // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
-  const VALID_SITES = new Set(['maniax', 'girls', 'home', 'bl', 'pro']);
+  const VALID_SITES = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
 
   // sql.js の保存(_save)は DB 全体を毎回シリアライズし直すコストがあるため、
   // バッチごとに毎回保存せず SAVE_EVERY_N_BATCHES 回に1回だけ明示的に保存する。
@@ -282,6 +282,19 @@ function _store(rjCode, body) {
   }
 
   const { work, price } = parsed;
+
+  // バグ修正(継続的なsite_id破損): parser.jsは既知のサイトファミリーに
+  // 一致しないsite_id(aix/appx等の内部分類コード)をnullとして返す。
+  // ここで null の場合は既存DB値を維持し、そもそも存在しない新規行なら
+  // 'maniax' にフォールバックする。以前はここでの検証が無く、無効な値を
+  // そのままDBへ書き込んでいたため、毎回のスキャンでsite_idが上書きされ
+  // 壊れ続けていた（過去のDBマイグレーションは一括修正のみで、この
+  // 書き込み時の未検証という根本原因自体は直っていなかった）。
+  if (work.site_id == null) {
+    const existingForSite = db.getWorkByRj(rjCode);
+    work.site_id = existingForSite?.site_id ?? 'maniax';
+  }
+
   db.upsertWork(work);
 
   if (work.maker_id) {
