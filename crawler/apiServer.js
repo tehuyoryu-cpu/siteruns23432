@@ -693,13 +693,24 @@ async function _runDiagnostics() {
       const apiUrl = `https://www.dlsite.com/${site}/product/info/ajax?${params}&cdn_cache_min=1`;
       try {
         const t0   = Date.now();
-        const res  = await fetchWithRetry(apiUrl);
+        // バグ修正: detailFetcher.js の実際に動いている _apiFetch() は
+        // `Accept: application/json, */*` ヘッダーを付けてリクエストしているが、
+        // この診断ツールはヘッダーなし(queue.jsのデフォルトはHTML向けAccept)で
+        // 叩いていたため、DLsite側がAjax APIとして扱わず年齢確認等のHTMLページ
+        // (またはそれに類する応答)を返していた可能性が高い。res.json()が失敗して
+        // catchで{}になり、HTTPステータスは200のまま「APIキー数0件」という
+        // 偽陽性が生じていた。detailFetcher.jsと同じヘッダーを付けて揃える。
+        const res  = await fetchWithRetry(apiUrl, {
+          headers: { Accept: 'application/json, */*' },
+        });
         const ms   = Date.now() - t0;
+        const contentType = res.headers.get('content-type') ?? '';
         const body = await res.json().catch(() => ({}));
         result.tests.push({
           name:         `Product Info API [${site}]`,
           url:          apiUrl,
           status:       res.status,
+          contentType,
           ok:           res.ok && Object.keys(body).length > 0,
           ms,
           returnedKeys: Object.keys(body).length,
