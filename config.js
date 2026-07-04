@@ -53,6 +53,14 @@ module.exports = {
   dlsite: {
     sites: ['maniax', 'bl', 'girls'],
 
+    // product/info/ajax が返す site_id フィールドとして有効な値。
+    // DLsiteのAPIは、URLのサイトファミリー(maniax/girls/bl等)とは別に
+    // AI生成作品やスマホアプリ向けなどの内部分類コード(aix/appx等)を
+    // site_id として返すことがある。これを無検証でDBへ書き込むと、
+    // 毎回のスキャンで正しいsite_idが上書きされ壊れ続けるバグになる
+    // (parser.js / detailFetcher.js の両方から参照する正規リスト)。
+    validSiteIds: ['maniax', 'girls', 'home', 'bl', 'pro'],
+
     fsrUrls: {
       maniax: {
         all:  'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/order/trend/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/CHI_HANS/options%5B4%5D/CHI_HANT/options%5B5%5D/KO_KR/options%5B6%5D/SPA/options%5B7%5D/GER/options%5B8%5D/FRE/options%5B9%5D/IND/options%5B10%5D/ITA/options%5B11%5D/POR/options%5B12%5D/SWE/options%5B13%5D/THA/options%5B14%5D/VIE/options%5B15%5D/OTL/options%5B16%5D/NM/per_page/100/page/{page}/show_type/3',
