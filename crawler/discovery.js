@@ -345,6 +345,14 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   let totalMissing = 0;
   const missingByCircle = {};
 
+  // バグ修正: 以前は1サークルの走査が完了するたびにしか onProgress を呼んでおらず、
+  // (1) ループ開始直後〜1サークル目完了まで total が一度も通知されずUIに「?」と表示され続ける
+  // (2) 1サークル内が複数ページ・リトライ等で時間がかかっても進捗がまったく更新されず、
+  //     UIが固まって見える
+  // という2つの問題があった。ループ開始前に総数を即時通知し、ページ単位でも
+  // 進捗を通知するようにする。
+  if (onProgress) onProgress({ checked: 0, total: makerIds.length, totalMissing: 0, makerId: null, site: null });
+
   for (const makerId of makerIds) {
     const site = makerSites.get(makerId);
     if (!site) { checked++; continue; }
@@ -360,6 +368,11 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
 
       for (const item of items) {
         if (item.rjCode && !knownRjs.has(item.rjCode)) missingItems.push(item);
+      }
+
+      // ページ単位の途中経過通知（サークル内訳: 現在何ページ目まで進んだか）
+      if (onProgress) {
+        onProgress({ checked, total: makerIds.length, totalMissing, makerId, site, page });
       }
 
       if (items.length < 100) break;   // 最終ページ
