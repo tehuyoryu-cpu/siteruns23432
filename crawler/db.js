@@ -491,6 +491,29 @@ function getAllMakerIds() {
 }
 
 /**
+ * サークル欠落診断(circleGapScan)用: maker_id -> 最も多くの手持ち作品がある site_id のマップ。
+ * 1サークルは通常1サイトのみで活動するが、稀に複数サイトに作品がある場合は
+ * 件数が多い方のサイトを巡回対象として採用する（少数派サイトの作品は既存作品として
+ * 既にDBにあるので、巡回自体は多数派サイトで問題ない）。
+ */
+function getMakerSiteMap() {
+  const rows = _all(`
+    SELECT maker_id, site_id, COUNT(*) AS cnt
+    FROM works
+    WHERE maker_id IS NOT NULL AND site_id IS NOT NULL
+    GROUP BY maker_id, site_id
+  `);
+  const map = new Map();
+  for (const { maker_id, site_id, cnt } of rows) {
+    const cur = map.get(maker_id);
+    if (!cur || cnt > cur.cnt) map.set(maker_id, { site_id, cnt });
+  }
+  const result = new Map();
+  for (const [makerId, { site_id }] of map) result.set(makerId, site_id);
+  return result;
+}
+
+/**
  * サークル巡回用: セール中を優先、残りは最近チェックされていないサークルを選ぶ
  * → 全サークルをローテーションする
  */
@@ -821,6 +844,7 @@ module.exports = {
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,
+  getMakerSiteMap,
   getCirclesForDiscovery,
   boostCircleWorks,
   boostWorkUrgent,

@@ -30,7 +30,7 @@ const path   = require('path');
 const db     = require('./db');
 const log    = require('./logger');
 const config = require('../config');
-const { runDiscovery, runFullScan, runEndingSoonScan } = require('./discovery');
+const { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan } = require('./discovery');
 const detailFetcher = require('./detailFetcher');
 
 // ─── SSE ────────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ setTimeout(() => {
 const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
   fullscan: false, fullscan_sale: false, all: false, turbo: false,
-  endingsoon: false,
+  endingsoon: false, circlegap: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -92,6 +92,7 @@ const _JOB_LABELS = {
   fullscan_sale: '全セール収集',
   turbo:         'ぶっ飛ばし',
   endingsoon:    '終了間近収集',
+  circlegap:     'サークル欠落診断',
 };
 
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
@@ -342,6 +343,23 @@ async function handleRun(job, res) {
       _sseSend('log', `終了間近収集完了 — 新規:${result?.newCount ?? 0}件 優先度UP:${result?.boostedCount ?? 0}件`);
       log.info('[api] endingSoonScan done', result);
 
+    } else if (job === 'circlegap') {
+      // サークル単位の欠落診断: 既知の全サークルについてDLsite上の全作品ページを
+      // 走査し、DBに存在しないRJコードを検出・登録する。
+      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      const result = await runCircleGapScan({
+        onProgress: ({ checked, total, totalMissing, makerId }) => {
+          Object.assign(_progress, { found: checked, totalPages: total, site: makerId });
+          _sseSend('progress', { checked, total, totalMissing, makerId });
+        },
+      });
+      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      Object.assign(_progress, { done: true });
+      const gapSummary = `チェック:${result.checked}サークル / 発見した欠落:${result.totalMissing}件` +
+        (result.totalMissing > 0 ? ` (${Object.keys(result.missingByCircle).length}サークルで検出)` : '');
+      _sseSend(result.totalMissing > 0 ? 'change' : 'log', `サークル欠落診断完了 — ${gapSummary}`);
+      log.info('[api] circleGapScan done', result);
+
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
       Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
@@ -476,7 +494,7 @@ function createServer() {
 
       if (pathname === '/api/run/status') return _json(res, handleRunStatus());
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);

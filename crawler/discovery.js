@@ -317,4 +317,68 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
   return { grandTotal, newCount, boostedCount, sites };
 }
 
-module.exports = { runDiscovery, runFullScan, runEndingSoonScan };
+// ─── サークル単位の欠落診断 ──────────────────────────────────────────────────
+// 通常のdiscoveryは「今月分」+「直近未チェック30サークル」しか見ないため、
+// 何らかの理由（bl の all/sale URL 未定義だった期間、アプリ停止中のリリース等）で
+// 一度も収集対象にならなかったRJが既知サークル内に埋もれている可能性がある。
+// 既知の全サークル(maker_id)についてDLsite上の全作品ページを走査し、
+// DBに存在しないRJコードを正確に検出・登録する。
+
+/**
+ * @param {number|null} limit  診断するサークル数の上限（null=全サークル）
+ */
+async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
+  log.info('[discovery] circleGapScan start', { limit: limit ?? 'all' });
+
+  const makerSites = db.getMakerSiteMap();   // Map<maker_id, site_id>
+  let makerIds = [...makerSites.keys()];
+  if (limit) makerIds = makerIds.slice(0, limit);
+
+  const knownRjs = _loadKnown();
+  let checked = 0;
+  let totalMissing = 0;
+  const missingByCircle = {};
+
+  for (const makerId of makerIds) {
+    const site = makerSites.get(makerId);
+    if (!site) { checked++; continue; }
+
+    // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
+    let page = 1;
+    const missingItems = [];
+    while (true) {
+      const pagePart = page === 1 ? '' : `/page/${page}`;
+      const url = `${BASE}/${site}/fsr/=/maker_id/${makerId}/order/release/per_page/100${pagePart}/show_type/1`;
+      const items = await _fetchWithPrice(url);
+      if (!items.length) break;
+
+      for (const item of items) {
+        if (item.rjCode && !knownRjs.has(item.rjCode)) missingItems.push(item);
+      }
+
+      if (items.length < 100) break;   // 最終ページ
+      page++;
+      await sleep(RL);
+    }
+
+    if (missingItems.length) {
+      const added = _upsert(missingItems, site, knownRjs);
+      if (added > 0) {
+        missingByCircle[makerId] = added;
+        totalMissing += added;
+        log.warn('[discovery] circleGap found missing works', { makerId, site, missing: added });
+      }
+    }
+
+    checked++;
+    if (onProgress) onProgress({ checked, total: makerIds.length, totalMissing, makerId, site });
+    await sleep(RL);
+  }
+
+  log.info('[discovery] circleGapScan done', {
+    checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length,
+  });
+  return { checked, totalMissing, missingByCircle };
+}
+
+module.exports = { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan };
