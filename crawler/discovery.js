@@ -381,46 +381,66 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   if (onProgress) onProgress({ checked: 0, total: makerIds.length, totalMissing: 0, makerId: null, site: null });
   log.info('[discovery] circleGapScan targets', { total: makerIds.length, skippedInvalidSite });
 
+  // 1サークルあたりのページ数上限。通常のサークルは数ページ以内に収まるはずで、
+  // これを超える場合は maker_id フィルタがDLsite側で効いておらず、実質的に
+  // カタログ全体を返してしまっている(=1サークルのつもりがfullscan相当の
+  // 量になっている)可能性が高い。「1サークルに数分かかる」の主因とみて
+  // 安全弁として上限を設ける。
+  const MAX_PAGES_PER_CIRCLE = 50; // per_page=100なので最大5000作品/サークルまで許容
+
   for (const makerId of makerIds) {
     const site = makerSites.get(makerId);
     if (!site) { checked++; continue; }
 
-    // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
-    let page = 1, consecutiveShort = 0;
-    const missingItems = [];
-    while (true) {
-      const pagePart = page === 1 ? '' : `/page/${page}`;
-      const url = `${BASE}/${site}/fsr/=/maker_id/${makerId}/order/release/per_page/100${pagePart}/show_type/1`;
-      const items = await _fetchWithPrice(url);
-      if (!items.length) break;
+    try {
+      // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
+      let page = 1, consecutiveShort = 0;
+      const missingItems = [];
+      while (true) {
+        if (page > MAX_PAGES_PER_CIRCLE) {
+          log.warn('[discovery] circleGap: ページ数上限に達したため打ち切り(maker_idフィルタ異常の可能性)', { makerId, site, page });
+          break;
+        }
 
-      for (const item of items) {
-        if (item.rjCode && !knownRjs.has(item.rjCode)) missingItems.push(item);
+        const pagePart = page === 1 ? '' : `/page/${page}`;
+        const url = `${BASE}/${site}/fsr/=/maker_id/${makerId}/order/release/per_page/100${pagePart}/show_type/1`;
+        const items = await _fetchWithPrice(url);
+        if (!items.length) break;
+
+        for (const item of items) {
+          if (item.rjCode && !knownRjs.has(item.rjCode)) missingItems.push(item);
+        }
+
+        // ページ単位の途中経過通知（サークル内訳: 現在何ページ目まで進んだか）
+        if (onProgress) {
+          onProgress({ checked, total: makerIds.length, totalMissing, makerId, site, page });
+        }
+
+        // 100件未満は1回だけなら疑って継続し、2回連続で短ければ最終ページと判断する
+        if (items.length < 100) {
+          consecutiveShort++;
+          if (consecutiveShort >= 2) break;
+        } else {
+          consecutiveShort = 0;
+        }
+        page++;
+        await sleep(RL);
       }
 
-      // ページ単位の途中経過通知（サークル内訳: 現在何ページ目まで進んだか）
-      if (onProgress) {
-        onProgress({ checked, total: makerIds.length, totalMissing, makerId, site, page });
+      if (missingItems.length) {
+        const added = _upsert(missingItems, site, knownRjs);
+        if (added > 0) {
+          missingByCircle[makerId] = added;
+          totalMissing += added;
+          log.warn('[discovery] circleGap found missing works', { makerId, site, missing: added });
+        }
       }
-
-      // 100件未満は1回だけなら疑って継続し、2回連続で短ければ最終ページと判断する
-      if (items.length < 100) {
-        consecutiveShort++;
-        if (consecutiveShort >= 2) break;
-      } else {
-        consecutiveShort = 0;
-      }
-      page++;
-      await sleep(RL);
-    }
-
-    if (missingItems.length) {
-      const added = _upsert(missingItems, site, knownRjs);
-      if (added > 0) {
-        missingByCircle[makerId] = added;
-        totalMissing += added;
-        log.warn('[discovery] circleGap found missing works', { makerId, site, missing: added });
-      }
+    } catch (err) {
+      // バグ修正: 以前は1サークルの取得でエラー(ネットワーク断・リトライ枯渇等)が
+      // 起きると例外がここまで伝播し、それまでの進捗を保持したまま診断ジョブ全体が
+      // 異常終了していた(「サークル診断が続かない」の主因)。1サークル分をスキップして
+      // 次に進むようにする。
+      log.error('[discovery] circleGap: サークル処理中にエラー、スキップして続行します', { makerId, site, error: err.message });
     }
 
     checked++;
