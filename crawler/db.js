@@ -492,6 +492,13 @@ function recordFetchError(rjCode) {
  * API に存在しない作品（"key not in API response"）を記録。
  * ネットワークエラーより急速に interval を延ばして due キューから退避させる。
  *  1回目: 7日, 2回目: 30日, 3回目以降: 180日
+ *
+ * バグ修正: 以前は check_interval だけを延ばし priority を一切下げていなかった。
+ * getDueWorks()も診断ツールのサンプル選択も ORDER BY priority DESC のため、
+ * 削除/非公開等でAPIが恒常的に空を返す作品が priority=100(セール中扱い等)の
+ * まま居座り続け、正常な作品より優先的に選ばれ続ける（本番の巡回帯域を無駄に
+ * 消費し、診断ツールも毎回同じ壊れた作品を掴んで誤検知の原因になっていた）。
+ * 2回連続で不在が確定した時点で priority を最低ランクまで落とす。
  */
 function recordApiMissing(rjCode) {
   const w = getWorkByRj(rjCode);
@@ -500,15 +507,17 @@ function recordApiMissing(rjCode) {
   const interval = errs >= 3 ? 180 * 86400
                  : errs >= 2 ?  30 * 86400
                  :               7 * 86400;
+  const priority = errs >= 2 ? config.priority.delisted : w.priority;
   const now = unixNow();
   _run(`
     UPDATE works SET
       last_checked       = ?,
       consecutive_errors = ?,
       check_interval     = ?,
-      next_check_at       = ?
+      next_check_at       = ?,
+      priority            = ?
     WHERE rj_code = ?
-  `, [now, errs, interval, now + interval, rjCode]);
+  `, [now, errs, interval, now + interval, priority, rjCode]);
 }
 
 function getDueWorks(limit = 50) {
