@@ -444,20 +444,35 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   // 1サークルあたりのページ数上限。通常のサークルは数ページ以内に収まるはずで、
   // これを超える場合は maker_id フィルタがDLsite側で効いておらず、実質的に
   // カタログ全体を返してしまっている(=1サークルのつもりがfullscan相当の
-  // 量になっている)可能性が高い。「1サークルに数分かかる」の主因とみて
-  // 安全弁として上限を設ける。
+  // 量になっている)可能性が高い。
   const MAX_PAGES_PER_CIRCLE = 50; // per_page=100なので最大5000作品/サークルまで許容
 
-  for (const makerId of makerIds) {
-    const site = makerSites.get(makerId);
-    if (!site) { checked++; continue; }
+  // 効率化バグ修正: 以前は1サークルずつ完全に逐次処理しており(32,392サークルを
+  // 1件ずつ)、さらにmaker_idフィルタが効かない一部のサークルで50ページ分
+  // (2分前後)を毎回律儀に最後まで引いてしまっていたため、実行時間の大半を
+  // 少数の「暴走サークル」が占め、全体スキャンが実質いつまでも終わらなかった
+  // （ログの複数回の 'circleGapScan start' はいずれも一度も 'done' に到達していない
+  // ことから確認）。以下の2点で改善する:
+  //   ① detailFetcher.jsと同じワーカープール方式で複数サークルを並列処理
+  //     （config.fetch.concurrency に連動、work-stealing方式）
+  //   ② 1サークル内で「missing」件数が明らかに異常な水準に達したら
+  //     50ページを待たず早期に打ち切る（正常なサークルは数ページ以内に
+  //     数件〜数十件の欠落で収まるはずで、それを大きく超えて増え続ける場合は
+  //     フィルタ異常の可能性が極めて高い）
+  const RUNAWAY_MISSING_THRESHOLD = 150;
 
+  async function _scanOneCircle(makerId, site) {
+    let circleMissing = 0;
     try {
       // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
       let page = 1, consecutiveShort = 0, failCount = 0;
       while (true) {
         if (page > MAX_PAGES_PER_CIRCLE) {
           log.warn('[discovery] circleGap: ページ数上限に達したため打ち切り(maker_idフィルタ異常の可能性)', { makerId, site, page });
+          break;
+        }
+        if (circleMissing >= RUNAWAY_MISSING_THRESHOLD) {
+          log.warn('[discovery] circleGap: missing件数が異常なため早期打ち切り(maker_idフィルタ異常の可能性)', { makerId, site, page, circleMissing });
           break;
         }
 
@@ -489,6 +504,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
         if (missingOnPage.length) {
           const added = _upsert(missingOnPage, site, knownRjs);
           if (added > 0) {
+            circleMissing += added;
             missingByCircle[makerId] = (missingByCircle[makerId] ?? 0) + added;
             totalMissing += added;
             log.warn('[discovery] circleGap found missing works', { makerId, site, page, missing: added });
@@ -520,8 +536,28 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
 
     checked++;
     if (onProgress) onProgress({ checked, total: makerIds.length, totalMissing, makerId, site });
-    await sleep(RL);
   }
+
+  // work-stealing方式のワーカープール（detailFetcher.jsと同じパターン）。
+  // 1ワーカー=1サークルを丸ごと担当し、終わり次第キューから次のmaker_idを取る。
+  let nextIdx = 0;
+  async function worker() {
+    while (nextIdx < makerIds.length) {
+      const myIdx  = nextIdx++;
+      const makerId = makerIds[myIdx];
+      const site    = makerSites.get(makerId);
+      if (!site) { checked++; continue; }
+
+      await _scanOneCircle(makerId, site);
+
+      // 次に処理するサークルが残っている場合のみレート制限のsleepを挟む
+      if (nextIdx < makerIds.length) await sleep(RL);
+    }
+  }
+
+  const poolSize = Math.max(1, Math.min(config.fetch.concurrency ?? 1, makerIds.length));
+  log.info('[discovery] circleGapScan concurrency=' + poolSize);
+  await Promise.all(Array.from({ length: poolSize }, () => worker()));
 
   log.info('[discovery] circleGapScan done', {
     checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length, skippedInvalidSite,
