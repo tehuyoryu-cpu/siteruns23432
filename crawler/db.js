@@ -359,41 +359,66 @@ function runInTransaction(fn) {
 
 
 /**
- * Persist the in-memory DB to disk. Debounced.
+ * Persist the in-memory DB to disk. Debounced, and the actual disk write is
+ * asynchronous (non-blocking).
  *
- * 調査用: DBが35万件超の規模になると、sql.jsのexport()はDB全体を
- * 毎回シリアライズし直すコストがO(DB全体サイズ)で効いてくる。
- * 長時間の巡回(turbo/all)中は数秒おきにこれが繰り返されるため、
- * じわじわメモリ圧迫・スロー化・最悪クラッシュに繋がっている疑いがある。
- * 実際のexport+書き込み時間をログに残し、原因切り分けの材料にする。
- * あわせてデバウンス間隔を800ms→3000msに伸ばし、実行全体でのexport回数を
- * 減らす（クラッシュ時に失われるデータは最大3秒分になるが、価格トラッカー
- * としては許容範囲と判断）。
+ * 重大バグ修正: 実測ログで export() 自体は35〜120msと高速な一方、
+ * save全体としては最大12秒かかるケースがあった。原因は
+ * `fs.writeFileSync()` で150MB超のファイルを同期書き込みしていたこと。
+ * Node/Electronはシングルスレッドのため、この間はネットワークリクエストや
+ * 他のタイマー・巡回処理が完全に停止する。「巡回が途中で止まって見える」
+ * 症状の主因はこれだったと考えられる。fs.promises.writeFile による
+ * 非同期書き込みに変更し、書き込み中も他の処理をブロックしないようにした。
+ * また、書き込み中にクラッシュ/強制終了するとDBファイルが不完全な状態で
+ * 上書きされ全損しうるため、一時ファイルに書いてからrenameする方式
+ * （renameはファイルシステム上ほぼ原子的）に変更し、安全性も同時に高めた。
+ * 加えて、書き込み中に次のsaveが呼ばれても多重に走らないようガードする。
  */
-let _saveTimer  = null;
+let _saveTimer      = null;
+let _saveInProgress = false;
+let _savePending     = false;
+
 function _save() {
   if (_saveTimer) return;
   _saveTimer = setTimeout(() => {
     _saveTimer = null;
-    try {
-      const t0   = Date.now();
-      const data = _db.export();
-      const tExport = Date.now() - t0;
-      fs.writeFileSync(DB_PATH, Buffer.from(data));
-      const tTotal = Date.now() - t0;
-      if (tTotal > 1000) {
-        log.warn('[db] save slow:', tTotal + 'ms', `(export ${tExport}ms, size ${(data.length/1024/1024).toFixed(1)}MB)`);
-      }
-    } catch (e) { log.error('[db] save error:', e.message); }
+    _doSaveAsync();
   }, 3000);
 }
 
-/** 即時書き出し（終了時・バックアップ専用）*/
+async function _doSaveAsync() {
+  if (_saveInProgress) { _savePending = true; return; }
+  _saveInProgress = true;
+  try {
+    const t0   = Date.now();
+    const data = _db.export();
+    const tExport = Date.now() - t0;
+    const tmpPath = DB_PATH + '.tmp';
+    await fs.promises.writeFile(tmpPath, Buffer.from(data));
+    await fs.promises.rename(tmpPath, DB_PATH);
+    const tTotal = Date.now() - t0;
+    if (tTotal > 1000) {
+      log.warn('[db] save slow:', tTotal + 'ms', `(export ${tExport}ms, size ${(data.length/1024/1024).toFixed(1)}MB)`);
+    }
+  } catch (e) {
+    log.error('[db] save error:', e.message);
+  } finally {
+    _saveInProgress = false;
+    if (_savePending) {
+      _savePending = false;
+      _save();
+    }
+  }
+}
+
+/** 即時書き出し（起動時マイグレーション・終了時専用、同期・ブロッキング）*/
 function _saveNow() {
   if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
   try {
     const data = _db.export();
-    fs.writeFileSync(DB_PATH, Buffer.from(data));
+    const tmpPath = DB_PATH + '.tmp';
+    fs.writeFileSync(tmpPath, Buffer.from(data));
+    fs.renameSync(tmpPath, DB_PATH);
   } catch (e) { log.error('[db] saveNow error:', e.message); }
 }
 
