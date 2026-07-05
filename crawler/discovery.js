@@ -441,25 +441,18 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   if (onProgress) onProgress({ checked: 0, total: makerIds.length, totalMissing: 0, makerId: null, site: null });
   log.info('[discovery] circleGapScan targets', { total: makerIds.length, skippedInvalidSite });
 
-  // 1サークルあたりのページ数上限。通常のサークルは数ページ以内に収まるはずで、
-  // これを超える場合は maker_id フィルタがDLsite側で効いておらず、実質的に
-  // カタログ全体を返してしまっている(=1サークルのつもりがfullscan相当の
-  // 量になっている)可能性が高い。
-  const MAX_PAGES_PER_CIRCLE = 50; // per_page=100なので最大5000作品/サークルまで許容
-
-  // 効率化バグ修正: 以前は1サークルずつ完全に逐次処理しており(32,392サークルを
-  // 1件ずつ)、さらにmaker_idフィルタが効かない一部のサークルで50ページ分
-  // (2分前後)を毎回律儀に最後まで引いてしまっていたため、実行時間の大半を
-  // 少数の「暴走サークル」が占め、全体スキャンが実質いつまでも終わらなかった
-  // （ログの複数回の 'circleGapScan start' はいずれも一度も 'done' に到達していない
-  // ことから確認）。以下の2点で改善する:
-  //   ① detailFetcher.jsと同じワーカープール方式で複数サークルを並列処理
-  //     （config.fetch.concurrency に連動、work-stealing方式）
-  //   ② 1サークル内で「missing」件数が明らかに異常な水準に達したら
-  //     50ページを待たず早期に打ち切る（正常なサークルは数ページ以内に
-  //     数件〜数十件の欠落で収まるはずで、それを大きく超えて増え続ける場合は
-  //     フィルタ異常の可能性が極めて高い）
-  const RUNAWAY_MISSING_THRESHOLD = 150;
+  // 以前はここに「50ページ/missing150件で打ち切り」という上限があった。
+  // これはmaker_idフィルタが壊れている可能性を疑っての安全弁だったが、
+  // 直接検証(下記のmakerId不一致チェック)により実際にはフィルタは正常に
+  // 機能しており、上限に達していたサークル(RG01000107等)は本当にそれだけの
+  // 作品数を持つ実在の巨大サークルだったと確定した。
+  //
+  // circlegapは「待っていても二度と収集されない過去の取りこぼしを掘り起こす」
+  // ためのツールであり、巨大サークルほど取りこぼしが残りやすい。上限で
+  // 打ち切ってしまうとその目的に反するため撤廃し、真の無限ループ対策として
+  // 現実的にあり得ない水準の上限(1000ページ=10万作品/サークル)だけを
+  // 最終防波堤として残す。
+  const MAX_PAGES_PER_CIRCLE = 1000;
 
   async function _scanOneCircle(makerId, site) {
     let circleMissing = 0;
@@ -468,11 +461,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
       let page = 1, consecutiveShort = 0, failCount = 0;
       while (true) {
         if (page > MAX_PAGES_PER_CIRCLE) {
-          log.warn('[discovery] circleGap: ページ数上限に達したため打ち切り(maker_idフィルタ異常の可能性)', { makerId, site, page });
-          break;
-        }
-        if (circleMissing >= RUNAWAY_MISSING_THRESHOLD) {
-          log.warn('[discovery] circleGap: missing件数が異常なため早期打ち切り(maker_idフィルタ異常の可能性)', { makerId, site, page, circleMissing });
+          log.error('[discovery] circleGap: ページ数が異常上限(1000)に到達、打ち切り(要調査)', { makerId, site, page, circleMissing });
           break;
         }
 
