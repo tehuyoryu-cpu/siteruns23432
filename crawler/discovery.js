@@ -497,6 +497,21 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
         }
         failCount = 0;
 
+        // 検証: DLsiteのmaker_idフィルタが本当に効いているかを直接確認する。
+        // これまでは「missing件数が異常に多い」という間接的な兆候でしか
+        // フィルタ異常を疑えなかったが、parser.jsは各作品の実際のmakerIdも
+        // 返しているため、要求したmakerIdと実際のmakerIdを直接比較できる。
+        // 半数以上が別サークルの作品であれば、フィルタが機能しておらず
+        // 実質カタログ全体(またはそれに近いもの)を返していると確定できる。
+        const mismatched = items.filter(i => i.makerId && i.makerId !== makerId).length;
+        if (items.length > 0 && mismatched / items.length > 0.5) {
+          log.error('[discovery] circleGap: maker_idフィルタが機能していません(確定)。このサークルをスキップします', {
+            makerId, site, page, mismatched, totalOnPage: items.length,
+            sampleOtherMakerId: items.find(i => i.makerId && i.makerId !== makerId)?.makerId,
+          });
+          break;
+        }
+
         // バグ修正: 以前はサークル内の全ページを走査し終えてから最後にまとめて
         // _upsert していたため、途中で例外が起きるとそれまでのページ分の欠落発見が
         // 丸ごと失われていた。ページごとに即座に保存するようにする。
