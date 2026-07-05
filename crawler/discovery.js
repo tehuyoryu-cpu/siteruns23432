@@ -43,12 +43,28 @@ async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
   const tmpl = DISCOVERY_FSR[site];
   if (!tmpl) return 0;
 
-  let page = 1, count = 0, consecutiveShort = 0;
+  let page = 1, count = 0, consecutiveShort = 0, failCount = 0;
   while (true) {
     const pagePart = page === 1 ? '' : `/page/${page}`;
     const url = tmpl.replace('{date}', date).replace('{page}', pagePart);
     const items = await _fetchWithPrice(url);
-    if (!items.length) break;
+
+    if (!items.length) {
+      // 「本当に空」と「一時的な取得失敗」を区別し、失敗ならページを進めずに再試行する
+      if (items.failed) {
+        failCount++;
+        if (failCount >= 3) {
+          log.error('[discovery] monthly: 取得失敗が続いたため打ち切ります', { site, date, page, failCount });
+          break;
+        }
+        log.warn('[discovery] monthly: 取得失敗、同じページを再試行します', { site, date, page, failCount });
+        await sleep(config.fetch.rateLimit * 2);
+        continue;
+      }
+      break;
+    }
+    failCount = 0;
+
     count += _upsert(items, site, knownRjs);
     log.info('[discovery] monthly', { site, date, page, parsed: items.length, newAdded: count });
     // 100件未満は通常「最終ページ」の合図だが、一時的な取得失敗/パース漏れで
@@ -114,7 +130,7 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
     const baseUrl = sale ? urls.sale : urls.all;
     if (!baseUrl) continue;
 
-    let page = 1, siteTotal = 0, consecutiveShort = 0;
+    let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0;
 
     while (true) {
       if (maxPages > 0 && page > maxPages) break;
@@ -126,9 +142,24 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
       const items = await _fetchWithPrice(url);
 
       if (!items.length) {
+        // バグ修正: 「本当に空(=カタログの終わり)」と「一時的な取得失敗」を区別する。
+        // 失敗の場合はページを進めずに最大3回まで再試行し、それでもダメなら
+        // 諦めてそのサイトの巡回を打ち切る（誤って「完了」扱いにしないよう
+        // failedとして明示的にログを残す）。
+        if (items.failed) {
+          failCount++;
+          if (failCount >= 3) {
+            log.error('[discovery] fullScan: 取得失敗が続いたため打ち切ります', { site, page, failCount });
+            break;
+          }
+          log.warn('[discovery] fullScan: 取得失敗、同じページを再試行します', { site, page, failCount });
+          await sleep(RL * 2);
+          continue;   // page を進めずに同じURLを再取得
+        }
         log.info('[discovery] fullScan end', { site, page, reason: 'empty page' });
         break;
       }
+      failCount = 0;
 
       const added = _upsert(items, site, knownRjs);
       siteTotal += added;
@@ -191,18 +222,28 @@ async function _collectCircles(knownRjs) {
 
 // ─── fetch + parse ───────────────────────────────────────────────────────────
 
+// バグ修正: 従来は「本当にページが空(=カタログの終わり)」と「一時的な取得失敗
+// (ネットワーク断・リトライ枯渇等)」の両方を同じ空配列[]で返しており、呼び出し側は
+// 区別できなかった。多ページ走査の途中でこれが起きると、実際にはまだ続きがある
+// のに「終わり」と誤判定して巡回を打ち切ってしまう。配列に .failed フラグを
+// 付与することで、既存の「items.length で判定するだけ」の呼び出し元との
+// 後方互換を保ったまま、区別したい箇所だけ items.failed を見られるようにする。
 async function _fetchWithPrice(url) {
   try {
     const res = await fetchWithRetry(url);
     if (!res.ok) {
       log.warn('[discovery] fetch non-200', res.status, url);
-      return [];
+      const arr = [];
+      arr.failed = true;
+      return arr;
     }
     const html = await res.text();
-    return parser.parseWorkListWithPrice(html);
+    return parser.parseWorkListWithPrice(html);   // 成功時は .failed は undefined(falsy)
   } catch (e) {
     log.error('[discovery] fetch error', url, e.message);
-    return [];
+    const arr = [];
+    arr.failed = true;
+    return arr;
   }
 }
 
@@ -265,7 +306,7 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
     const baseUrl = urls.soon;
     if (!baseUrl) continue;
 
-    let page = 1, siteTotal = 0, consecutiveShort = 0;
+    let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0;
 
     while (true) {
       // page=1はURLに/page/1を含まないDLsiteの仕様に対応
@@ -275,9 +316,20 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
       const items = await _fetchWithPrice(url);
 
       if (!items.length) {
+        if (items.failed) {
+          failCount++;
+          if (failCount >= 3) {
+            log.error('[discovery] endingSoonScan: 取得失敗が続いたため打ち切ります', { site, page, failCount });
+            break;
+          }
+          log.warn('[discovery] endingSoonScan: 取得失敗、同じページを再試行します', { site, page, failCount });
+          await sleep(RL * 2);
+          continue;
+        }
         log.info('[discovery] endingSoonScan end', { site, page });
         break;
       }
+      failCount = 0;
 
       db.transaction(() => {
         for (const item of items) {
@@ -357,11 +409,19 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
 async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   log.info('[discovery] circleGapScan start', { limit: limit ?? 'all' });
 
-  const makerSites  = db.getMakerSiteMap();   // Map<maker_id, site_id>（無効なsite_idのサークルは含まれない）
-  const allMakerIds = db.getAllMakerIds();
+  // バグ修正: getMakerSiteMap()はconfig.dlsite.validSiteIds(5種、home/pro含む)基準で
+  // site_idの妥当性を見ているが、実際に年齢確認(warmUpSession)を通しているのは
+  // config.dlsite.sites(maniax/bl/girlsの3種)だけ。site_idが'home'/'pro'等の
+  // 未ウォームアップサイトになっているサークルをそのまま巡回すると、年齢確認未通過
+  // による空応答症状が再発しうる。実際に巡回可能なサイトだけに絞る。
+  const activeSites = new Set(config.dlsite.sites ?? ['maniax', 'girls', 'bl']);
+
+  const makerSitesRaw = db.getMakerSiteMap();   // Map<maker_id, site_id>（無効なsite_idのサークルは含まれない）
+  const allMakerIds   = db.getAllMakerIds();
+  const makerSites = new Map([...makerSitesRaw].filter(([, site]) => activeSites.has(site)));
   const skippedInvalidSite = allMakerIds.filter(m => !makerSites.has(m)).length;
   if (skippedInvalidSite > 0) {
-    log.warn('[discovery] circleGapScan: site_id不明のためスキップしたサークル', { count: skippedInvalidSite });
+    log.warn('[discovery] circleGapScan: site_id不明/巡回対象外のためスキップしたサークル', { count: skippedInvalidSite });
   }
 
   let makerIds = [...makerSites.keys()];
@@ -394,8 +454,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
 
     try {
       // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
-      let page = 1, consecutiveShort = 0;
-      const missingItems = [];
+      let page = 1, consecutiveShort = 0, failCount = 0;
       while (true) {
         if (page > MAX_PAGES_PER_CIRCLE) {
           log.warn('[discovery] circleGap: ページ数上限に達したため打ち切り(maker_idフィルタ異常の可能性)', { makerId, site, page });
@@ -405,10 +464,35 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
         const pagePart = page === 1 ? '' : `/page/${page}`;
         const url = `${BASE}/${site}/fsr/=/maker_id/${makerId}/order/release/per_page/100${pagePart}/show_type/1`;
         const items = await _fetchWithPrice(url);
-        if (!items.length) break;
 
-        for (const item of items) {
-          if (item.rjCode && !knownRjs.has(item.rjCode)) missingItems.push(item);
+        if (!items.length) {
+          // バグ修正: 「本当に空(=このサークルの最終ページ)」と「一時的な取得失敗」を
+          // 区別する。失敗の場合はページを進めずに最大3回まで再試行する。
+          if (items.failed) {
+            failCount++;
+            if (failCount >= 3) {
+              log.error('[discovery] circleGap: 取得失敗が続いたため打ち切ります', { makerId, site, page, failCount });
+              break;
+            }
+            log.warn('[discovery] circleGap: 取得失敗、同じページを再試行します', { makerId, site, page, failCount });
+            await sleep(RL * 2);
+            continue;
+          }
+          break;
+        }
+        failCount = 0;
+
+        // バグ修正: 以前はサークル内の全ページを走査し終えてから最後にまとめて
+        // _upsert していたため、途中で例外が起きるとそれまでのページ分の欠落発見が
+        // 丸ごと失われていた。ページごとに即座に保存するようにする。
+        const missingOnPage = items.filter(item => item.rjCode && !knownRjs.has(item.rjCode));
+        if (missingOnPage.length) {
+          const added = _upsert(missingOnPage, site, knownRjs);
+          if (added > 0) {
+            missingByCircle[makerId] = (missingByCircle[makerId] ?? 0) + added;
+            totalMissing += added;
+            log.warn('[discovery] circleGap found missing works', { makerId, site, page, missing: added });
+          }
         }
 
         // ページ単位の途中経過通知（サークル内訳: 現在何ページ目まで進んだか）
@@ -425,15 +509,6 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
         }
         page++;
         await sleep(RL);
-      }
-
-      if (missingItems.length) {
-        const added = _upsert(missingItems, site, knownRjs);
-        if (added > 0) {
-          missingByCircle[makerId] = added;
-          totalMissing += added;
-          log.warn('[discovery] circleGap found missing works', { makerId, site, missing: added });
-        }
       }
     } catch (err) {
       // バグ修正: 以前は1サークルの取得でエラー(ネットワーク断・リトライ枯渇等)が
