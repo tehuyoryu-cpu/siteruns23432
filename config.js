@@ -43,6 +43,7 @@ module.exports = {
     popular:       40,
     normal:        20,
     cold:           5,
+    delisted:       0,   // APIから恒常的に消失（削除/非公開等）と判定された作品
   },
 
   ui: {
