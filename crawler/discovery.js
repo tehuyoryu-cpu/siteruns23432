@@ -14,6 +14,20 @@ const { fetchWithRetry, sleep } = require('./queue');
 const BASE = config.dlsite.baseUrl;
 const RL   = config.fetch.rateLimit;
 
+// バグ修正: サークル単位の作品一覧取得に、これまで /fsr/=/maker_id/{id}/... という
+// 汎用検索エンドポイント(fsr)のURLを使っていたが、実際にDLsiteで検証したところ
+// fsrはmaker_idを filter として認識しておらず、指定したmaker_idに関係なく
+// サイトごとに同じ汎用一覧(新着順など)を返していた(circleGapScanのmaker_id
+// 不一致検証で確定)。正しくは /circle/profile/=/.../maker_id/{id}.html という
+// 専用のサークルプロフィールページを使う必要がある。実機で取得した正しい
+// ページネーションURLの構造をそのまま再現する。
+const _LANG_JP   = '%E6%97%A5%E6%9C%AC%E8%AA%9E';       // 日本語
+const _LANG_NONE = '%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81'; // 言語不要
+
+function _circleProfileUrl(site, makerId, page) {
+  return `${BASE}/${site}/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/${_LANG_JP}/lang_options%5B1%5D/${_LANG_NONE}/page/${page}/maker_id/${makerId}.html`;
+}
+
 // ─── 通常discovery ───────────────────────────────────────────────────────────
 
 // 今月リリース FSR URL テンプレート
@@ -208,8 +222,18 @@ async function _collectCircles(knownRjs) {
     const results = await Promise.all(
       chunk.flatMap(mid =>
         config.dlsite.sites.map(async site => {
-          const url   = `${BASE}/${site}/fsr/=/maker_id/${mid}/order/release/per_page/30/show_type/1`;
+          const url   = _circleProfileUrl(site, mid, 1);
           const items = await _fetchWithPrice(url);
+          // 検証: maker_idフィルタが本当に効いているか確認する(circleGapScanと同じ理由)。
+          // 効いていない場合、要求したサークルと無関係な一般カタログpage相当を
+          // 「このサークルの新着」として誤集計してしまうため、確定次第スキップする。
+          const mismatched = items.filter(it => it.makerId && it.makerId !== mid).length;
+          if (items.length > 0 && mismatched / items.length > 0.5) {
+            log.error('[discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします', {
+              makerId: mid, site, mismatched, totalOnPage: items.length,
+            });
+            return 0;
+          }
           return _upsert(items, site, knownRjs);
         })
       )
@@ -465,8 +489,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
           break;
         }
 
-        const pagePart = page === 1 ? '' : `/page/${page}`;
-        const url = `${BASE}/${site}/fsr/=/maker_id/${makerId}/order/release/per_page/100${pagePart}/show_type/1`;
+        const url = _circleProfileUrl(site, makerId, page);
         const items = await _fetchWithPrice(url);
 
         if (!items.length) {
