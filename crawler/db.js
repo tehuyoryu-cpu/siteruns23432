@@ -358,17 +358,34 @@ function runInTransaction(fn) {
 }
 
 
-/** Persist the in-memory DB to disk. Debounced — max once per 800ms. */
+/**
+ * Persist the in-memory DB to disk. Debounced.
+ *
+ * 調査用: DBが35万件超の規模になると、sql.jsのexport()はDB全体を
+ * 毎回シリアライズし直すコストがO(DB全体サイズ)で効いてくる。
+ * 長時間の巡回(turbo/all)中は数秒おきにこれが繰り返されるため、
+ * じわじわメモリ圧迫・スロー化・最悪クラッシュに繋がっている疑いがある。
+ * 実際のexport+書き込み時間をログに残し、原因切り分けの材料にする。
+ * あわせてデバウンス間隔を800ms→3000msに伸ばし、実行全体でのexport回数を
+ * 減らす（クラッシュ時に失われるデータは最大3秒分になるが、価格トラッカー
+ * としては許容範囲と判断）。
+ */
 let _saveTimer  = null;
 function _save() {
   if (_saveTimer) return;
   _saveTimer = setTimeout(() => {
     _saveTimer = null;
     try {
+      const t0   = Date.now();
       const data = _db.export();
+      const tExport = Date.now() - t0;
       fs.writeFileSync(DB_PATH, Buffer.from(data));
+      const tTotal = Date.now() - t0;
+      if (tTotal > 1000) {
+        log.warn('[db] save slow:', tTotal + 'ms', `(export ${tExport}ms, size ${(data.length/1024/1024).toFixed(1)}MB)`);
+      }
     } catch (e) { log.error('[db] save error:', e.message); }
-  }, 800);
+  }, 3000);
 }
 
 /** 即時書き出し（終了時・バックアップ専用）*/
