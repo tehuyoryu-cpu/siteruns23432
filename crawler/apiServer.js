@@ -346,7 +346,7 @@ async function handleRun(job, res) {
     } else if (job === 'circlegap') {
       // サークル単位の欠落診断: 既知の全サークルについてDLsite上の全作品ページを
       // 走査し、DBに存在しないRJコードを検出・登録する。
-      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      Object.assign(_progress, { job, page: 0, found: 0, totalPages: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await runCircleGapScan({
         onProgress: ({ checked, total, totalMissing, makerId, page }) => {
           Object.assign(_progress, { found: checked, totalPages: total, site: makerId, page: page ?? 0 });

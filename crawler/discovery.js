@@ -43,7 +43,7 @@ async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
   const tmpl = DISCOVERY_FSR[site];
   if (!tmpl) return 0;
 
-  let page = 1, count = 0;
+  let page = 1, count = 0, consecutiveShort = 0;
   while (true) {
     const pagePart = page === 1 ? '' : `/page/${page}`;
     const url = tmpl.replace('{date}', date).replace('{page}', pagePart);
@@ -51,7 +51,16 @@ async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
     if (!items.length) break;
     count += _upsert(items, site, knownRjs);
     log.info('[discovery] monthly', { site, date, page, parsed: items.length, newAdded: count });
-    if (items.length < 100) break;
+    // 100件未満は通常「最終ページ」の合図だが、一時的な取得失敗/パース漏れで
+    // 途中のページがたまたま短くなることがある。1回だけなら疑って継続し、
+    // 2回連続で短ければ本当に終わりと判断する。
+    if (items.length < 100) {
+      consecutiveShort++;
+      if (consecutiveShort >= 2) break;
+      log.warn('[discovery] monthly: 疑わしい短ページ、次ページで確認します', { site, date, page, parsed: items.length });
+    } else {
+      consecutiveShort = 0;
+    }
     page++;
     await sleep(config.fetch.rateLimit);
   }
@@ -105,7 +114,7 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
     const baseUrl = sale ? urls.sale : urls.all;
     if (!baseUrl) continue;
 
-    let page = 1, siteTotal = 0;
+    let page = 1, siteTotal = 0, consecutiveShort = 0;
 
     while (true) {
       if (maxPages > 0 && page > maxPages) break;
@@ -117,7 +126,7 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
       const items = await _fetchWithPrice(url);
 
       if (!items.length) {
-        log.info('[discovery] fullScan end', { site, page });
+        log.info('[discovery] fullScan end', { site, page, reason: 'empty page' });
         break;
       }
 
@@ -128,10 +137,21 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
       if (onProgress) onProgress({ site, page, found: added, total: siteTotal });
       log.info('[discovery] fullScan', { site, page, parsed: items.length, added, total: siteTotal });
 
-      // FSRは per_page=100 なので100件未満なら最終ページ
+      // バグ修正: 以前は100件未満のページに遭遇した瞬間に「最終ページ」と
+      // 断定して打ち切っていた。しかし一時的な取得失敗/パース漏れ/スロットリング
+      // で途中のページがたまたま100件未満になることがあり、そのまま巡回全体が
+      // 数十万件分残したまま停止してしまう（実際に15万件付近で止まる報告あり）。
+      // 100件未満は1回だけなら「疑わしい」として次ページで確認を続け、
+      // 2回連続で短ければ本当に最終ページと判断する。
       if (items.length < 100) {
-        log.info('[discovery] fullScan end', { site, page, reason: 'last page' });
-        break;
+        consecutiveShort++;
+        if (consecutiveShort >= 2) {
+          log.info('[discovery] fullScan end', { site, page, reason: 'confirmed short page x2' });
+          break;
+        }
+        log.warn('[discovery] fullScan: 疑わしい短ページを検出、次ページで確認します', { site, page, parsed: items.length });
+      } else {
+        consecutiveShort = 0;
       }
 
       page++;
@@ -245,7 +265,7 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
     const baseUrl = urls.soon;
     if (!baseUrl) continue;
 
-    let page = 1, siteTotal = 0;
+    let page = 1, siteTotal = 0, consecutiveShort = 0;
 
     while (true) {
       // page=1はURLに/page/1を含まないDLsiteの仕様に対応
@@ -300,10 +320,17 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
       if (onProgress) onProgress({ site, page, found: items.length, total: siteTotal });
       log.info('[discovery] endingSoonScan', { site, page, parsed: items.length, total: siteTotal });
 
-      // FSRは per_page=100 なので100件未満なら最終ページ
+      // 100件未満は1回だけなら疑って継続し、2回連続で短ければ最終ページと判断する
+      // (詳細は runFullScan 側の同様の修正コメント参照)
       if (items.length < 100) {
-        log.info('[discovery] endingSoonScan end', { site, page, reason: 'last page' });
-        break;
+        consecutiveShort++;
+        if (consecutiveShort >= 2) {
+          log.info('[discovery] endingSoonScan end', { site, page, reason: 'confirmed short page x2' });
+          break;
+        }
+        log.warn('[discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します', { site, page, parsed: items.length });
+      } else {
+        consecutiveShort = 0;
       }
 
       page++;
@@ -352,13 +379,14 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   // という2つの問題があった。ループ開始前に総数を即時通知し、ページ単位でも
   // 進捗を通知するようにする。
   if (onProgress) onProgress({ checked: 0, total: makerIds.length, totalMissing: 0, makerId: null, site: null });
+  log.info('[discovery] circleGapScan targets', { total: makerIds.length, skippedInvalidSite });
 
   for (const makerId of makerIds) {
     const site = makerSites.get(makerId);
     if (!site) { checked++; continue; }
 
     // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
-    let page = 1;
+    let page = 1, consecutiveShort = 0;
     const missingItems = [];
     while (true) {
       const pagePart = page === 1 ? '' : `/page/${page}`;
@@ -375,7 +403,13 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
         onProgress({ checked, total: makerIds.length, totalMissing, makerId, site, page });
       }
 
-      if (items.length < 100) break;   // 最終ページ
+      // 100件未満は1回だけなら疑って継続し、2回連続で短ければ最終ページと判断する
+      if (items.length < 100) {
+        consecutiveShort++;
+        if (consecutiveShort >= 2) break;
+      } else {
+        consecutiveShort = 0;
+      }
       page++;
       await sleep(RL);
     }
