@@ -985,6 +985,74 @@ function getSaleWorks(limit = 200) {
 
 
 
+// ─── export snapshot (exportShards.js 向け) ──────────────────────────────────
+// ブラウザ拡張機能配信用の軽量JSONを生成するために必要な集計クエリをまとめる。
+// _all/_get は本ファイル内のプライベートヘルパーのため、外部モジュールからは
+// これらの専用エクスポート経由でのみDBを参照させる(カプセル化を保つ)。
+
+/** cur_price が設定されている(=価格取得済みの)全ワークの基本情報 */
+function getExportBaseWorks() {
+  return _all(`
+    SELECT rj_code, maker_id,
+           cur_price AS price, cur_sale_price AS sale_price,
+           cur_discount_rate AS discount_rate,
+           is_on_sale, cur_is_point_only AS is_point_only
+    FROM works
+    WHERE cur_price IS NOT NULL
+  `);
+}
+
+/** 直近365日以内で is_on_sale=1 だった「日数」(同日重複は1回のみ) を rj_code 別に */
+function getDiscountDaysMap() {
+  const oneYearAgo = unixNow() - 365 * 86400;
+  const rows = _all(`
+    SELECT rj_code, COUNT(DISTINCT date(checked_at, 'unixepoch')) AS days
+    FROM price_history
+    WHERE is_on_sale = 1 AND checked_at >= ?
+    GROUP BY rj_code
+  `, [oneYearAgo]);
+  return new Map(rows.map(r => [r.rj_code, r.days]));
+}
+
+/** 全期間での実質最安値(セール価格優先、なければ定価) を rj_code 別に */
+function getLowestPriceMap() {
+  const rows = _all(`
+    SELECT rj_code, MIN(COALESCE(sale_price, price)) AS lowest
+    FROM price_history
+    WHERE COALESCE(sale_price, price) > 0
+    GROUP BY rj_code
+  `);
+  return new Map(rows.map(r => [r.rj_code, r.lowest]));
+}
+
+/**
+ * 直近 limit 件の実質価格ログ(新しい順)を rj_code 別に。
+ * sql.js の SQLite ビルドが window function 非対応の場合は例外を投げるので、
+ * 呼び出し側(exportShards.js)でフォールバック処理すること。
+ */
+function getRecentPriceLogMap(limit = 8) {
+  const rows = _all(`
+    WITH ranked AS (
+      SELECT rj_code, price, sale_price, checked_at,
+             ROW_NUMBER() OVER (PARTITION BY rj_code ORDER BY checked_at DESC) AS rn
+      FROM price_history
+    )
+    SELECT rj_code, price, sale_price, rn
+    FROM ranked
+    WHERE rn <= ?
+    ORDER BY rj_code, rn ASC
+  `, [limit]);
+
+  const map = new Map();
+  for (const r of rows) {
+    const val = r.sale_price ?? r.price;
+    if (val == null) continue;
+    if (!map.has(r.rj_code)) map.set(r.rj_code, []);
+    map.get(r.rj_code).push(val);
+  }
+  return map;
+}
+
 function unixNow() {
   return Math.floor(Date.now() / 1000);
 }
@@ -1036,4 +1104,8 @@ module.exports = {
   getSaleWorks,
   getAllRjCodes,
   unixNow,
+  getExportBaseWorks,
+  getDiscountDaysMap,
+  getLowestPriceMap,
+  getRecentPriceLogMap,
 };
