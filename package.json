@@ -10,6 +10,8 @@
     "status": "node main.js --mode=status",
     "discover": "node main.js --mode=discover",
     "fetch": "node main.js --mode=fetch",
+    "export-shards": "node main.js --mode=export-shards",
+    "export-shards:push": "node main.js --mode=export-shards --push=1",
     "dist": "electron-builder --win --x64"
   },
   "dependencies": {
