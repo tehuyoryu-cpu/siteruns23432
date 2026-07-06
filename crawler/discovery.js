@@ -255,6 +255,15 @@ async function _collectCircles(knownRjs) {
 async function _fetchWithPrice(url) {
   try {
     const res = await fetchWithRetry(url);
+    if (res.status === 404) {
+      // バグ修正: サークルプロフィールページ(/circle/profile/=/...)は、ページ番号が
+      // 実際の範囲を超えると200+空リストではなく404を返す仕様だった。これを
+      // 「取得失敗」として3回リトライしていたため、1ページで収まる大多数の
+      // サークルで毎回無駄なリトライ(数十秒)とERRORログが発生していた。
+      // 404は「確定的にもう先がない」ことを示す正常なシグナルとして扱う
+      // (.failedは付けない = 呼び出し側は空ページとして扱い、即座に完了と判断する)。
+      return [];
+    }
     if (!res.ok) {
       log.warn('[discovery] fetch non-200', res.status, url);
       const arr = [];
