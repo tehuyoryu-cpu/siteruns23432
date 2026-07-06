@@ -19,13 +19,20 @@ const RL   = config.fetch.rateLimit;
 // fsrはmaker_idを filter として認識しておらず、指定したmaker_idに関係なく
 // サイトごとに同じ汎用一覧(新着順など)を返していた(circleGapScanのmaker_id
 // 不一致検証で確定)。正しくは /circle/profile/=/.../maker_id/{id}.html という
-// 専用のサークルプロフィールページを使う必要がある。実機で取得した正しい
-// ページネーションURLの構造をそのまま再現する。
+// 専用のサークルプロフィールページを使う必要がある。
+//
+// 追加バグ修正: 上記で切り替えた専用ページも、2ページ目以降が取得できない
+// 不具合が発覚した。ユーザーが実機(スマホ版)で確認した実際のページ2の
+// URLと比較したところ、パラメータの並び順・構造自体は一致していたが、
+// サイトパス部分が `{site}` ではなく `{site}-touch` （モバイル版）だった。
+// デスクトップ版の /circle/profile/ は page パラメータを正しく反映しない
+// （または無視する）とみられ、モバイル版のエンドポイントが本来使うべき
+// 正しいURLだった。
 const _LANG_JP   = '%E6%97%A5%E6%9C%AC%E8%AA%9E';       // 日本語
 const _LANG_NONE = '%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81'; // 言語不要
 
 function _circleProfileUrl(site, makerId, page) {
-  return `${BASE}/${site}/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/${_LANG_JP}/lang_options%5B1%5D/${_LANG_NONE}/page/${page}/maker_id/${makerId}.html`;
+  return `${BASE}/${site}-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/${_LANG_JP}/lang_options%5B1%5D/${_LANG_NONE}/page/${page}/maker_id/${makerId}.html`;
 }
 
 // ─── 通常discovery ───────────────────────────────────────────────────────────
