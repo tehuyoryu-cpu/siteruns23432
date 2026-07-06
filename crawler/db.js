@@ -19,6 +19,7 @@
 const initSqlJs = require('sql.js');
 const fs         = require('fs');
 const path       = require('path');
+const crypto     = require('crypto');
 const config     = require('../config');
 const log        = require('./logger');
 
@@ -766,32 +767,140 @@ function getStats() {
 // âââ backup ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 /**
- * Save a timestamped copy of the DB file to ./backups/.
- * Called by the scheduler daily. Keeps last 30 backups.
+ * DBの世代管理付きバックアップ。
+ *
+ * 機能追加: 以前は単純に「直近30世代を残す」だけのフラットな保持だったため、
+ * 毎日バックアップしていると1ヶ月前より古い状態には一切戻れなかった。
+ * 以下の世代管理に変更する:
+ *   - 直近7日分     : 毎日分をすべて保持
+ *   - 直近8週間分   : 週1回分だけ保持（7日より古い分）
+ *   - 直近12ヶ月分  : 月1回分だけ保持（8週間より古い分）
+ *   - それ以上古い分: 削除
+ *
+ * また、バックアップごとに件数・チェックサム等のメタデータ(.meta.json)を
+ * 併せて保存する。復元時にファイルが壊れていないか、どの時点のスナップ
+ * ショットかを確認しやすくするため。
  */
 function backup() {
   if (!_db) return;
   try {
-    const dir     = path.resolve(path.dirname(DB_PATH), 'backups');
+    const dir = path.resolve(path.dirname(DB_PATH), 'backups');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const stamp   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const now     = new Date();
+    const stamp   = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const dest    = path.join(dir, `dlsite-${stamp}.db`);
-    const data    = _db.export();
-    fs.writeFileSync(dest, Buffer.from(data));
-    log.info('[db] backup saved', dest);
+    const metaDest = path.join(dir, `dlsite-${stamp}.meta.json`);
 
-    // keep only the 30 most recent backups
-    const files = fs.readdirSync(dir)
-      .filter(f => f.startsWith('dlsite-') && f.endsWith('.db'))
-      .sort()
-      .reverse();
-    for (const old of files.slice(30)) {
-      fs.unlinkSync(path.join(dir, old));
-      log.debug('[db] old backup removed', old);
-    }
+    const data = _db.export();
+    const buf  = Buffer.from(data);
+
+    // クラッシュ時に不完全なファイルで上書きされないよう、一時ファイル→rename
+    const tmpPath = dest + '.tmp';
+    fs.writeFileSync(tmpPath, buf);
+    fs.renameSync(tmpPath, dest);
+
+    const sha256 = crypto.createHash('sha256').update(buf).digest('hex');
+    const counts = {
+      works:        (_get('SELECT COUNT(*) AS n FROM works') ?? { n: 0 }).n,
+      priceHistory: (_get('SELECT COUNT(*) AS n FROM price_history') ?? { n: 0 }).n,
+      circles:      (_get('SELECT COUNT(*) AS n FROM circles') ?? { n: 0 }).n,
+    };
+    let appVersion = null;
+    try { appVersion = require('../package.json').version; } catch { /* ignore */ }
+
+    const meta = {
+      timestamp:  now.toISOString(),
+      dbFile:     path.basename(dest),
+      sizeBytes:  buf.length,
+      sha256,
+      counts,
+      appVersion,
+    };
+    fs.writeFileSync(metaDest, JSON.stringify(meta, null, 2));
+
+    log.info('[db] backup saved', dest, `(${(buf.length/1024/1024).toFixed(1)}MB, works=${counts.works})`);
+
+    _pruneBackups(dir);
   } catch (err) {
     log.error('[db] backup error', err.message);
+  }
+}
+
+/** バックアップファイル名 'dlsite-YYYY-MM-DDTHH-mm-ss.db' から日時を復元する。 */
+function _parseBackupDate(filename) {
+  const m = filename.match(/^dlsite-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})\.db$/);
+  if (!m) return null;
+  // 'YYYY-MM-DDTHH-mm-ss' → 'YYYY-MM-DDTHH:mm:ss' に戻してからパース
+  const iso = m[1].replace(/T(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3');
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** 日次/週次/月次の世代管理でバックアップを間引く。 */
+function _pruneBackups(dir) {
+  const DAY  = 86400000;
+  const WEEK = DAY * 7;
+  const now  = Date.now();
+
+  const files = fs.readdirSync(dir)
+    .filter(f => f.startsWith('dlsite-') && f.endsWith('.db'))
+    .map(f => ({ name: f, date: _parseBackupDate(f) }))
+    .filter(f => f.date)
+    .sort((a, b) => a.date - b.date); // 古い順
+
+  const keep = new Set();
+  const seenWeek  = new Set();
+  const seenMonth = new Set();
+
+  for (const f of files) {
+    const age = now - f.date.getTime();
+    if (age <= 7 * DAY) {
+      keep.add(f.name); // 直近7日はすべて保持
+    } else if (age <= 8 * WEEK) {
+      // ISO週相当のざっくりしたキー（年 + 経過週数）で週1回だけ保持
+      const weekKey = `${f.date.getUTCFullYear()}-${Math.floor(f.date.getTime() / WEEK)}`;
+      if (!seenWeek.has(weekKey)) { seenWeek.add(weekKey); keep.add(f.name); }
+    } else if (age <= 365 * DAY) {
+      const monthKey = `${f.date.getUTCFullYear()}-${f.date.getUTCMonth()}`;
+      if (!seenMonth.has(monthKey)) { seenMonth.add(monthKey); keep.add(f.name); }
+    }
+    // 365日超は keep に入らない = 削除対象
+  }
+
+  for (const f of files) {
+    if (keep.has(f.name)) continue;
+    try {
+      fs.unlinkSync(path.join(dir, f.name));
+      const metaPath = path.join(dir, f.name.replace(/\.db$/, '.meta.json'));
+      if (fs.existsSync(metaPath)) fs.unlinkSync(metaPath);
+      log.debug('[db] old backup removed', f.name);
+    } catch (e) {
+      log.warn('[db] backup prune failed', f.name, e.message);
+    }
+  }
+}
+
+/**
+ * バックアップファイルが破損していないか検証する。
+ * 対応する .meta.json のsha256とファイル実体のハッシュを比較する。
+ * @returns {{ok: boolean, reason?: string, meta?: object}}
+ */
+function verifyBackup(dbBackupPath) {
+  try {
+    const metaPath = dbBackupPath.replace(/\.db$/, '.meta.json');
+    if (!fs.existsSync(metaPath)) {
+      return { ok: false, reason: 'メタデータファイルが見つかりません（旧世代のバックアップの可能性）' };
+    }
+    const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    const buf  = fs.readFileSync(dbBackupPath);
+    const actualSha256 = crypto.createHash('sha256').update(buf).digest('hex');
+    if (actualSha256 !== meta.sha256) {
+      return { ok: false, reason: 'チェックサム不一致（ファイルが破損している可能性）', meta };
+    }
+    return { ok: true, meta };
+  } catch (e) {
+    return { ok: false, reason: e.message };
   }
 }
 
@@ -918,6 +1027,7 @@ module.exports = {
   getCircle,
   getStats,
   backup,
+  verifyBackup,
   transaction,
   transactionNoSave,
   save: _save,
