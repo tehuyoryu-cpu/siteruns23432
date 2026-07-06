@@ -4,3 +4,5 @@ node_modules/
 *.db-wal
 .env
 logs/
+data-export/
+.github-token
