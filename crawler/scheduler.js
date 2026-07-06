@@ -17,6 +17,7 @@ const db     = require('./db');
 const log    = require('./logger');
 const { runDiscovery, runFullScan } = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
+const { runExportShards } = require('./exportShards');
 
 // ─── discovery job ───────────────────────────────────────────────────────────
 
@@ -122,6 +123,28 @@ function _startBackupJob() {
   log.info('[scheduler] backup job scheduled (daily 03:00)');
 }
 
+// ─── 拡張機能向けシャードエクスポートジョブ ───────────────────────────────────
+// ブラウザ拡張(DLsite Score)へGitHub raw/jsDelivr経由で配信するスコアデータを
+// 1日1回生成する。ローカルファイル生成のみ(pushはトークンが設定されている
+// 場合のみ scripts/push-data-shards.js が行う。未設定なら安全にスキップされる)。
+function _startExportShardsJob() {
+  cron.schedule('30 4 * * *', async () => {
+    try {
+      const result = await runExportShards();
+      log.info('[scheduler] exportShards done', result);
+      try {
+        const { main: pushDataShards } = require('../scripts/push-data-shards');
+        await pushDataShards();
+      } catch (pushErr) {
+        log.error('[scheduler] push-data-shards error', pushErr.message);
+      }
+    } catch (err) {
+      log.error('[scheduler] exportShards error', err.message);
+    }
+  });
+  log.info('[scheduler] exportShards job scheduled (daily 04:30)');
+}
+
 // ─── 前月分フルスキャンジョブ ─────────────────────────────────────────────────
 // 毎月2日 04:00 に前月リリース分の FSR 全ページをスキャンする。
 // 通常の discovery は「今月分」だけを対象にしているため、月をまたいで
@@ -172,6 +195,7 @@ async function start() {
   _startSaleBoostJob();
   _startBackupJob();
   _startPrevMonthScanJob();
+  _startExportShardsJob();
 
   log.info('[scheduler] running initial passes on startup');
 
