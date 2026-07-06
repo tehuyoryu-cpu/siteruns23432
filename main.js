@@ -19,6 +19,7 @@ const scheduler = require('./crawler/scheduler');
 const { start: startApiServer } = require('./crawler/apiServer');
 const { runDiscovery }           = require('./crawler/discovery');
 const { runDetailFetch, fetchAndStore } = require('./crawler/detailFetcher');
+const { runExportShards }        = require('./crawler/exportShards');
 
 const args = Object.fromEntries(
   process.argv.slice(2).map(a => {
@@ -63,6 +64,17 @@ async function main() {
     const result = await runDetailFetch(50);
     log.info('[main] fetch result', result);
     _printStats();
+    db.close();
+    return;
+  }
+
+  if (mode === 'export-shards') {
+    const result = await runExportShards();
+    log.info('[main] export-shards result', result);
+    if (args.push) {
+      const { main: pushDataShards } = require('./scripts/push-data-shards');
+      await pushDataShards();
+    }
     db.close();
     return;
   }
