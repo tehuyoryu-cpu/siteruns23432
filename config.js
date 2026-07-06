@@ -51,6 +51,24 @@ module.exports = {
     host: '127.0.0.1',
   },
 
+  // ブラウザ拡張機能(DLsite Score)向け配信データのシャーディング設定。
+  // 詳細は crawler/exportShards.js のコメント参照。
+  shards: {
+    dataDir:       './data-export',
+    dataShards:    1024,  // maker_id(サークル)単位でハッシュ分散するバケツ数
+    idxShards:     64,    // RJコード→shard番号 索引のバケツ数
+    recentLogSize: 8,     // トレンド計算用の直近価格ログ件数
+  },
+
+  // GitHub への push (scripts/push-data-shards.js) 用設定。
+  // トークンはリポジトリに含めず、環境変数 GH_TOKEN か DLSITE_DATA_DIR 直下の
+  // .github-token ファイル(.gitignore済み)から読む。未設定ならpushはスキップされる。
+  github: {
+    owner:      'tehuyoryu-cpu',
+    repo:       'siteruns23432',
+    dataBranch: 'data',
+  },
+
   dlsite: {
     sites: ['maniax', 'bl', 'girls'],
 
