@@ -288,7 +288,9 @@ function createWindow() {
     title:     'DLsite Price Tracker',
     backgroundColor: '#f0f2f5',
     show:            false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false, // バグ修正: true だとAltキーを押すまでメニューバー自体が
+                             // 非表示になり、「ファイル→データベースの場所を開く」が
+                             // 「機能が無くなった」ように見えていた。常時表示に変更。
     webPreferences: {
       nodeIntegration:  false,
       contextIsolation: true,
@@ -321,6 +323,17 @@ function createWindow() {
 
 // ─── ネイティブメニューバー ────────────────────────────────────────────────────
 
+// メニューバーが(誤操作で隠されている等)見えない状況でも辿り着けるよう、
+// ファイルメニューとトレイメニュー両方から同じ処理を呼べるようにする。
+function _openDbLocation() {
+  const p = require('path');
+  const dbPath = p.resolve(
+    process.env.DLSITE_DATA_DIR || app.getPath('userData'),
+    require('./config').db.path
+  );
+  shell.showItemInFolder(dbPath);
+}
+
 function _buildAppMenu() {
   // ロック判定は apiServer.js の handleRun() に一本化（事前ロックしない）
   const runItem = (label, job, accel) => ({
@@ -344,14 +357,7 @@ function _buildAppMenu() {
       submenu: [
         {
           label: 'データベースの場所を開く',
-          click: () => {
-            const p = require('path');
-            const dbPath = p.resolve(
-              process.env.DLSITE_DATA_DIR || app.getPath('userData'),
-              require('./config').db.path
-            );
-            shell.showItemInFolder(dbPath);
-          },
+          click: _openDbLocation,
         },
         { type: 'separator' },
         { label: '終了', accelerator: 'Alt+F4', click: () => { app.isQuiting = true; app.quit(); } },
@@ -405,6 +411,10 @@ function createTray() {
     { label: '終了間近収集（24時間以内）', click: () => _execJobSafe('endingsoon') },
     { label: '全収集（時間がかかります）', click: () => _execJobSafe('fullscan') },
     { type: 'separator' },
+    {
+      label: 'データベースの場所を開く',
+      click: _openDbLocation,
+    },
     {
       label: 'ブラウザで開く',
       click: () => { const c = require('./config'); shell.openExternal(`http://${c.ui?.host ?? '127.0.0.1'}:${c.ui?.port ?? 7777}`); },
