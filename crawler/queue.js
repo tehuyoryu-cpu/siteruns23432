@@ -95,16 +95,23 @@ async function fetchWithRetry(url, opts = {}) {
       const ctrl = new AbortController();
       const tid  = setTimeout(() => ctrl.abort(), config.fetch.timeout);
 
-      // バグ修正: cache オプションを指定していなかったため、Electronの
-      // net.fetch（ChromiumのHTTPキャッシュ）が標準のキャッシュ挙動に従い、
-      // 同一URLへの再アクセス時に古い(場合によっては年齢確認未通過時の空応答)
-      // キャッシュを返すことがあった。価格トラッカーとして常に最新の応答が
-      // 必要なため、明示的にキャッシュを無効化する。診断ツールのように
-      // 毎回ほぼ同じURL（同じRJコードの組み合わせ）を叩くケースで特に顕著だった
-      // （本番の巡回はdue作品の組み合わせが毎回変わるため気づきにくかった）。
+      // バグ修正: `cache: 'no-store'` は fetch() 呼び出し元(ブラウザ/Electron側)の
+      // ローカルキャッシュポリシーを制御するだけで、DLsite側のCDN/エッジキャッシュや
+      // 経路上の中間プロキシには一切影響しない。そのため、CDN側が別クエリの
+      // レスポンスを誤って(または意図的に)使い回してしまうと、product/info/ajax が
+      // 「別バッチの結果」を返し続けることがある(観測例: 全く異なる複数のRJ群に対して
+      // 毎回同じ小さな固定キー集合しか返らない → recordApiMissingが誤発火し、
+      // 実際には削除されていない作品の優先度が delisted まで落ちてしまう)。
+      // 明示的な Cache-Control/Pragma ヘッダーでオリジン/CDN側にも
+      // キャッシュ利用禁止を伝える。
       const res = await _fetch(url, {
         ...opts,
-        headers: { ..._baseHeaders, ...opts.headers },
+        headers: {
+          ..._baseHeaders,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          ...opts.headers,
+        },
         cache: 'no-store',
         signal: ctrl.signal,
       });
