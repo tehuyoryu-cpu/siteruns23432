@@ -14,6 +14,13 @@ const { fetchWithRetry, sleep } = require('./queue');
 const BASE = config.dlsite.baseUrl;
 const RL   = config.fetch.rateLimit;
 
+// バグ修正: アプリ終了時に discovery ループを安全に止める手段が無かった。
+// detailFetcher.js の isAborted() と同じパターンで global._crawlerAbort.discovery を
+// 各ループの先頭でチェックする(electron-main.js の graceful shutdown から利用される)。
+function _discoveryAborted() {
+  return !!global._crawlerAbort?.discovery;
+}
+
 // バグ修正: サークル単位の作品一覧取得に、これまで /fsr/=/maker_id/{id}/... という
 // 汎用検索エンドポイント(fsr)のURLを使っていたが、実際にDLsiteで検証したところ
 // fsrはmaker_idを filter として認識しておらず、指定したmaker_idに関係なく
@@ -66,6 +73,7 @@ async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
 
   let page = 1, count = 0, consecutiveShort = 0, failCount = 0;
   while (true) {
+    if (_discoveryAborted()) { log.warn('[discovery] monthly aborted', { site, date, page }); break; }
     const pagePart = page === 1 ? '' : `/page/${page}`;
     const url = tmpl.replace('{date}', date).replace('{page}', pagePart);
     const items = await _fetchWithPrice(url);
@@ -148,12 +156,14 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
   const sites     = {};
 
   for (const [site, urls] of Object.entries(fsrUrls)) {
+    if (_discoveryAborted()) { log.warn('[discovery] fullScan aborted (before site)', { site }); break; }
     const baseUrl = sale ? urls.sale : urls.all;
     if (!baseUrl) continue;
 
     let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0;
 
     while (true) {
+      if (_discoveryAborted()) { log.warn('[discovery] fullScan aborted', { site, page }); break; }
       if (maxPages > 0 && page > maxPages) break;
 
       // page=1はURLに/page/1を含まないDLsiteの仕様に対応
@@ -225,6 +235,7 @@ async function _collectCircles(knownRjs) {
   let count = 0;
   // CONC 件ずつ並列フェッチ
   for (let i = 0; i < toCheck.length; i += CONC) {
+    if (_discoveryAborted()) { log.warn('[discovery] collectCircles aborted', { processed: i, total: toCheck.length }); break; }
     const chunk = toCheck.slice(i, i + CONC);
     const results = await Promise.all(
       chunk.flatMap(mid =>
@@ -343,12 +354,14 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
   const sites = {};
 
   for (const [site, urls] of Object.entries(fsrUrls)) {
+    if (_discoveryAborted()) { log.warn('[discovery] endingSoonScan aborted (before site)', { site }); break; }
     const baseUrl = urls.soon;
     if (!baseUrl) continue;
 
     let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0;
 
     while (true) {
+      if (_discoveryAborted()) { log.warn('[discovery] endingSoonScan aborted', { site, page }); break; }
       // page=1はURLに/page/1を含まないDLsiteの仕様に対応
       const url = page === 1
         ? baseUrl.replace(/\/page\/\{page\}/, '')
@@ -500,6 +513,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
       // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
       let page = 1, consecutiveShort = 0, failCount = 0;
       while (true) {
+        if (_discoveryAborted()) { log.warn('[discovery] circleGap aborted', { makerId, site, page }); break; }
         if (page > MAX_PAGES_PER_CIRCLE) {
           log.error('[discovery] circleGap: ページ数が異常上限(1000)に到達、打ち切り(要調査)', { makerId, site, page, circleMissing });
           break;
@@ -586,6 +600,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   let nextIdx = 0;
   async function worker() {
     while (nextIdx < makerIds.length) {
+      if (_discoveryAborted()) { log.warn('[discovery] circleGapScan worker aborted', { nextIdx, total: makerIds.length }); break; }
       const myIdx  = nextIdx++;
       const makerId = makerIds[myIdx];
       const site    = makerSites.get(makerId);
