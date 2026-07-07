@@ -197,6 +197,35 @@ async function _processBatch(works, site) {
     if (nopad !== upper) normalizedBody[nopad] = v;  // 例: RJ01234567 → RJ1234567 も登録
   }
 
+  // バグ修正: レスポンスに何らかのキーは含まれているが、リクエストした作品が
+  // 1件も含まれていないケースを検出する。これは「これらの作品が本当にAPIから
+  // 消えた(削除/非公開)」のではなく、CDN/中間プロキシが別バッチ向けの
+  // レスポンスを誤って返している(クエリ文字列を無視したキャッシュ等)可能性が
+  // 非常に高い。区別せずに処理すると、以下の per-work ループが
+  // db.recordApiMissing() を全件に対して呼んでしまい、実際には生きている
+  // 作品の優先度が徐々に delisted まで落ちてしまう(観測例: 全く異なる複数の
+  // RJ群に対して毎回同じ固定キー集合しか返らない)。
+  // この場合は「削除された」ではなく「取得に失敗した」として扱い、
+  // recordFetchError(intervalを延ばすのみ、priorityは下げない)に倒す。
+  const matchedCount = works.filter(w => {
+    const rj    = w.rj_code.toUpperCase();
+    const nopad = rj.replace(/^RJ0+/, 'RJ');
+    return rj in normalizedBody || nopad in normalizedBody;
+  }).length;
+
+  if (works.length > 0 && matchedCount === 0 && Object.keys(normalizedBody).length > 0) {
+    log.error('[detail] response mismatch (requested RJs not found at all, likely stale CDN/proxy cache) — treating as fetch error, not delisted', {
+      site,
+      requested: works.map(w => w.rj_code),
+      availableSample: Object.keys(normalizedBody).slice(0, 5),
+    });
+    db.transactionNoSave(() => {
+      for (const w of works) db.recordFetchError(w.rj_code);
+    });
+    result.errors += works.length;
+    return result;
+  }
+
   db.transactionNoSave(() => {
     for (const w of works) {
       try {
