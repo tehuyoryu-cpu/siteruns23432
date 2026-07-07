@@ -453,8 +453,51 @@ app.on('activate', () => { if (_win) _win.show(); });
 // 終了時に DB を確実にフラッシュする。
 // _save() は800msデバウンスされているため、何もせず終了すると
 // 直近の価格更新が最大800ms分失われる可能性がある。
-app.on('before-quit', () => {
-  try { db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
+//
+// バグ修正: 以前はジョブが実行中でも即座に db.close()(_db = null)していたため、
+// discovery/detailFetcher の非同期ループが再開した瞬間に
+// 「transaction() called but _db is null」でクラッシュしていた
+// (実際にログで確認: 巡回中にアプリを終了した際に発生)。
+// 実行中のジョブがあれば中断シグナル(global._crawlerAbort)を送り、
+// 一定時間(_QUIT_WAIT_MS)だけジョブの終了を待ってからDBを閉じる。
+// タイムアウトしても強制的に閉じて終了する(ハングでアプリが終了できなくなるのを防ぐ)。
+// (config.fetch.timeout=20秒のfetchが直前に飛んでいる可能性があるため、それより
+//  少し長めに設定して「タイムアウト→中断チェック」が間に合うようにする)
+const _QUIT_WAIT_MS = 22_000;
+let _quitFinalizing = false;
+
+function _isCrawlerBusy() {
+  const r = global._crawlerRunning || {};
+  return !!(r.discovery || r.detail || r.saleBoost || r.schedulerDetailRunning);
+}
+
+app.on('before-quit', (event) => {
+  if (_quitFinalizing) return; // 2回目以降(強制終了時)はそのまま通す
+  if (!_isCrawlerBusy()) {
+    try { db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
+    return;
+  }
+
+  event.preventDefault();
+  console.log('[electron] job running — aborting and waiting up to', _QUIT_WAIT_MS, 'ms before quit');
+  if (!global._crawlerAbort) global._crawlerAbort = {};
+  global._crawlerAbort.discovery = true;
+  global._crawlerAbort.detail    = true;
+
+  (async () => {
+    const start = Date.now();
+    while (_isCrawlerBusy() && Date.now() - start < _QUIT_WAIT_MS) {
+      await new Promise(r => setTimeout(r, 200));
+    }
+    if (_isCrawlerBusy()) {
+      console.warn('[electron] quit wait timed out, forcing close anyway');
+    }
+    global._crawlerAbort.discovery = false;
+    global._crawlerAbort.detail    = false;
+    try { db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
+    _quitFinalizing = true;
+    app.quit();
+  })();
 });
 
 // ─── tray icon ────────────────────────────────────────────────────────────────
