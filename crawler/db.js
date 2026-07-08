@@ -521,6 +521,84 @@ function recordApiMissing(rjCode) {
   `, [now, errs, interval, now + interval, priority, rjCode]);
 }
 
+function getSuspectDelistedRecoveryStats({ minErrors = 2, maxErrors = 3 } = {}) {
+  const priority = config.priority.delisted;
+  const count = (_get(`
+    SELECT COUNT(*) AS n
+    FROM works
+    WHERE priority = ?
+      AND consecutive_errors BETWEEN ? AND ?
+  `, [priority, minErrors, maxErrors]) ?? { n: 0 }).n;
+
+  const byErrors = _all(`
+    SELECT consecutive_errors AS errors, COUNT(*) AS n
+    FROM works
+    WHERE priority = ?
+      AND consecutive_errors BETWEEN ? AND ?
+    GROUP BY consecutive_errors
+    ORDER BY consecutive_errors
+  `, [priority, minErrors, maxErrors]);
+
+  const range = _get(`
+    SELECT MIN(last_checked) AS oldestChecked, MAX(last_checked) AS newestChecked
+    FROM works
+    WHERE priority = ?
+      AND consecutive_errors BETWEEN ? AND ?
+  `, [priority, minErrors, maxErrors]) ?? {};
+
+  const sample = _all(`
+    SELECT rj_code, title, consecutive_errors, last_checked
+    FROM works
+    WHERE priority = ?
+      AND consecutive_errors BETWEEN ? AND ?
+    ORDER BY last_checked DESC
+    LIMIT 10
+  `, [priority, minErrors, maxErrors]);
+
+  return { count, byErrors, sample, minErrors, maxErrors, ...range };
+}
+
+function recoverSuspectDelistedWorks({ minErrors = 2, maxErrors = 3 } = {}) {
+  const before = getSuspectDelistedRecoveryStats({ minErrors, maxErrors });
+  if (before.count <= 0) return { recovered: 0, before, backup: null };
+
+  const backupResult = backup({ reason: 'recover-suspect-delisted' });
+  if (!backupResult?.ok) {
+    throw new Error('DBバックアップに失敗したため復旧を中止しました: ' + (backupResult?.reason ?? 'unknown error'));
+  }
+  const now = unixNow();
+  transaction(() => {
+    _run(`
+      UPDATE works SET
+        priority            = CASE WHEN is_on_sale = 1 THEN ? ELSE ? END,
+        consecutive_errors  = 0,
+        check_interval      = ?,
+        next_check_at       = ?
+      WHERE priority = ?
+        AND consecutive_errors BETWEEN ? AND ?
+    `, [
+      config.priority.onSale,
+      config.priority.normal,
+      config.checkInterval.normal,
+      now,
+      config.priority.delisted,
+      minErrors,
+      maxErrors,
+    ]);
+  });
+  _saveNow();
+
+  const after = getSuspectDelistedRecoveryStats({ minErrors, maxErrors });
+  const recovered = before.count - after.count;
+  log.info('[db] recovered suspect delisted works', {
+    recovered,
+    minErrors,
+    maxErrors,
+    backup: backupResult?.dest ?? null,
+  });
+  return { recovered, before, after, backup: backupResult };
+}
+
 function getDueWorks(limit = 50) {
   const now = unixNow();
   // next_check_at にインデックスがあるため、計算式での全件スキャンより高速
@@ -781,8 +859,8 @@ function getStats() {
  * 併せて保存する。復元時にファイルが壊れていないか、どの時点のスナップ
  * ショットかを確認しやすくするため。
  */
-function backup() {
-  if (!_db) return;
+function backup(options = {}) {
+  if (!_db) return { ok: false, reason: 'DB is not initialized' };
   try {
     const dir = path.resolve(path.dirname(DB_PATH), 'backups');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -816,14 +894,17 @@ function backup() {
       sha256,
       counts,
       appVersion,
+      reason:     options.reason ?? 'scheduled',
     };
     fs.writeFileSync(metaDest, JSON.stringify(meta, null, 2));
 
     log.info('[db] backup saved', dest, `(${(buf.length/1024/1024).toFixed(1)}MB, works=${counts.works})`);
 
     _pruneBackups(dir);
+    return { ok: true, dest, metaDest, meta };
   } catch (err) {
     log.error('[db] backup error', err.message);
+    return { ok: false, reason: err.message };
   }
 }
 
@@ -1077,6 +1158,8 @@ module.exports = {
   markChecked,
   recordFetchError,
   recordApiMissing,
+  getSuspectDelistedRecoveryStats,
+  recoverSuspectDelistedWorks,
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,

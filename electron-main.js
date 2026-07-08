@@ -375,6 +375,68 @@ function _openDbLocation() {
   shell.showItemInFolder(dbPath);
 }
 
+async function _recoverSuspectDelistedFromMenu() {
+  if (_isCrawlerBusy()) {
+    await dialog.showMessageBox(_win, {
+      type: 'warning',
+      message: '巡回処理が実行中です',
+      detail: 'DB復旧は価格更新やRJ収集が止まっている状態で実行してください。',
+    });
+    return;
+  }
+
+  const stats = db.getSuspectDelistedRecoveryStats();
+  if (!stats.count) {
+    await dialog.showMessageBox(_win, {
+      type: 'info',
+      message: '復旧候補はありません',
+      detail: 'priority=delisted かつ consecutive_errors=2〜3 の作品は見つかりませんでした。',
+    });
+    return;
+  }
+
+  const fmtTime = ts => ts ? new Date(ts * 1000).toLocaleString('ja-JP') : 'なし';
+  const byErrors = stats.byErrors.map(r => `errors=${r.errors}: ${r.n}件`).join('\n');
+  const sample = stats.sample
+    .map(w => `${w.rj_code}${w.title ? ' / ' + w.title : ''}`)
+    .join('\n');
+
+  const confirm = await dialog.showMessageBox(_win, {
+    type: 'question',
+    buttons: ['復旧する', 'キャンセル'],
+    defaultId: 1,
+    cancelId: 1,
+    message: `${stats.count}件のdelisted候補を復旧しますか？`,
+    detail:
+      'CDN/プロキシの誤キャッシュでdelisted化した可能性がある作品を、通常優先度に戻して次回価格更新の対象にします。\n\n' +
+      `対象: priority=delisted, consecutive_errors=${stats.minErrors}〜${stats.maxErrors}\n` +
+      `最終チェック範囲: ${fmtTime(stats.oldestChecked)} 〜 ${fmtTime(stats.newestChecked)}\n\n` +
+      `内訳:\n${byErrors || 'なし'}\n\n` +
+      `サンプル:\n${sample || 'なし'}\n\n` +
+      '実行前にDBバックアップを作成します。',
+  });
+
+  if (confirm.response !== 0) return;
+
+  try {
+    const result = db.recoverSuspectDelistedWorks();
+    _win?.webContents.send('crawler:done', { job: 'recover-delisted', stats: db.getStats() });
+    await dialog.showMessageBox(_win, {
+      type: 'info',
+      message: `${result.recovered}件を復旧しました`,
+      detail:
+        `バックアップ: ${result.backup?.ok ? result.backup.dest : '作成に失敗または未作成'}\n` +
+        '復旧した作品は次回の価格更新で再チェックされます。',
+    });
+  } catch (err) {
+    await dialog.showMessageBox(_win, {
+      type: 'error',
+      message: '復旧処理に失敗しました',
+      detail: err.message,
+    });
+  }
+}
+
 function _buildAppMenu() {
   // ロック判定は apiServer.js の handleRun() に一本化（事前ロックしない）
   const runItem = (label, job, accel) => ({
@@ -399,6 +461,10 @@ function _buildAppMenu() {
         {
           label: 'データベースの場所を開く',
           click: _openDbLocation,
+        },
+        {
+          label: '誤delisted復旧...',
+          click: _recoverSuspectDelistedFromMenu,
         },
         { type: 'separator' },
         {
@@ -459,6 +525,7 @@ function createTray() {
     { label: '全収集（時間がかかります）', click: () => _execJobSafe('fullscan') },
     { type: 'separator' },
     { label: '設定（GitHub連携）', click: () => _openSettingsModal() },
+    { label: '誤delisted復旧...', click: _recoverSuspectDelistedFromMenu },
     {
       label: 'データベースの場所を開く',
       click: _openDbLocation,
