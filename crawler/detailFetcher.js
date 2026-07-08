@@ -207,15 +207,38 @@ async function _processBatch(works, site) {
   // RJ群に対して毎回同じ固定キー集合しか返らない)。
   // この場合は「削除された」ではなく「取得に失敗した」として扱い、
   // recordFetchError(intervalを延ばすのみ、priorityは下げない)に倒す。
+  // バグ修正: 以前は matchedCount === 0（1件も一致しない）の場合のみ
+  // 「レスポンス不一致＝別バッチ向けキャッシュ汚染」として扱っていた。
+  // しかし実運用ログでは、50件requestして実際には固定の1〜2件（大文字/ゼロ埋め
+  // なし版の重複を含むため実質1件のことが多い）だけが繰り返しキーとして返る
+  // 事例が大量発生していた。この場合 matchedCount は0にならないため上の判定を
+  // すり抜け、残りの数十件が「本当にAPIから消えた」と誤認されて
+  // recordApiMissing() が呼ばれてしまう ── 2回連続でこれが起きると
+  // priority=delisted(0) まで落ち、実際には生きている作品が巡回対象から
+  // 実質除外されてしまう重大なデータ破損につながっていた。
+  // 一致率が極端に低い場合も同じ「汚染されたレスポンス」として扱い、
+  // recordApiMissing ではなく recordFetchError（priorityは下げず、
+  // intervalのみ延長）に倒す。少数件バッチ(数件程度)はたまたま低一致率に
+  // なりうるため、ある程度まとまった件数のバッチのみを対象にする。
+  const MIN_BATCH_FOR_RATIO_CHECK = 4;   // これ未満の件数は対象外（誤検出防止）
+  const SUSPECT_MATCH_RATIO       = 0.3; // 一致率がこれ未満なら汚染を疑う
   const matchedCount = works.filter(w => {
     const rj    = w.rj_code.toUpperCase();
     const nopad = rj.replace(/^RJ0+/, 'RJ');
     return rj in normalizedBody || nopad in normalizedBody;
   }).length;
+  const matchRatio       = works.length > 0 ? matchedCount / works.length : 1;
+  const isFullMismatch   = matchedCount === 0 && Object.keys(normalizedBody).length > 0;
+  const isPartialSuspect = works.length >= MIN_BATCH_FOR_RATIO_CHECK
+    && matchedCount > 0
+    && matchRatio < SUSPECT_MATCH_RATIO;
 
-  if (works.length > 0 && matchedCount === 0 && Object.keys(normalizedBody).length > 0) {
-    log.error('[detail] response mismatch (requested RJs not found at all, likely stale CDN/proxy cache) — treating as fetch error, not delisted', {
+  if (works.length > 0 && (isFullMismatch || isPartialSuspect)) {
+    log.error('[detail] response mismatch (requested RJs mostly not found, likely stale CDN/proxy cache) — treating as fetch error, not delisted', {
       site,
+      requestedCount: works.length,
+      matchedCount,
+      matchRatio: matchRatio.toFixed(2),
       requested: works.map(w => w.rj_code),
       availableSample: Object.keys(normalizedBody).slice(0, 5),
     });
