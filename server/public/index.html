@@ -653,6 +653,11 @@ body {
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 5v3.5l2.5 1.5" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
     診断
   </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" id="btnSettings" onclick="showSettings()" title="設定 — GitHub連携" data-desc="拡張機能向けデータをGitHubへ自動配信するためのトークンを設定します">
+    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
+    設定
+  </button>
 </div>
 
 <!-- ボタン説明バー -->
@@ -780,6 +785,44 @@ body {
       <span class="modal-close" onclick="closeDiag()">✕</span>
     </div>
     <div class="modal-body" id="diagBody" style="font-family:monospace;font-size:12px;white-space:pre-wrap;user-select:text;cursor:text">実行中...</div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box" style="max-width:480px;height:auto">
+    <div class="modal-header">
+      ⚙️ 設定 — GitHub連携
+      <span class="modal-close" onclick="closeSettings()">✕</span>
+    </div>
+    <div class="modal-body" style="font-family:inherit;font-size:12px;white-space:normal;line-height:1.7;user-select:auto;cursor:default">
+      <p style="margin-bottom:8px;color:#555">
+        拡張機能向けの価格データを自動でGitHubへ配信(<span id="stRepo" style="font-family:monospace">–</span> の
+        <span id="stBranch" style="font-family:monospace">data</span> ブランチ)するには、
+        write権限のあるGitHubのPersonal Access Tokenが必要です。
+        ここで保存したトークンはローカルの <code id="stPath" style="font-family:monospace;font-size:11px">.github-token</code>
+        ファイルに書き込まれるだけで、アプリ本体には一切含まれません。
+      </p>
+
+      <div id="stCurrentStatus" style="margin-bottom:10px;padding:6px 8px;border-radius:3px;background:#f8f8f8;border:1px solid #e0e0e0;font-size:11px">
+        読み込み中...
+      </div>
+
+      <label style="display:block;font-size:11px;color:#555;margin-bottom:3px">GitHub Personal Access Token</label>
+      <input id="stTokenInput" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        style="width:100%;box-sizing:border-box;height:26px;border:1px solid #aaa;border-radius:2px;padding:0 6px;font-family:monospace;font-size:12px;margin-bottom:8px">
+
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="tb-btn" style="background:#0078d7;color:#fff;border-color:#005499" onclick="saveSettingsToken()">💾 保存</button>
+        <button class="tb-btn" id="stDeleteBtn" style="border-color:#cc0000;color:#cc0000;display:none" onclick="deleteSettingsToken()">🗑 削除</button>
+        <span id="stMsg" style="font-size:11px;color:#008800"></span>
+      </div>
+
+      <p style="margin-top:12px;font-size:10px;color:#999">
+        トークンは repo 権限（またはfine-grainedならContents: Read and write）があれば十分です。
+        保存後は特に再起動不要で、次回の自動配信(毎日04:30)またはツールバーからの手動pushで使われます。
+      </p>
+    </div>
   </div>
 </div>
 
@@ -1539,6 +1582,89 @@ async function showDiag() {
 }
 
 function closeDiag() { document.getElementById('diagModal').classList.remove('open'); }
+
+// ── 設定モーダル（GitHubトークン）─────────────────────────────────────────────
+async function showSettings() {
+  document.getElementById('settingsModal').classList.add('open');
+  document.getElementById('stMsg').textContent = '';
+  document.getElementById('stTokenInput').value = '';
+  await _refreshSettingsStatus();
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+
+async function _refreshSettingsStatus() {
+  const statusEl = document.getElementById('stCurrentStatus');
+  const delBtn   = document.getElementById('stDeleteBtn');
+  statusEl.textContent = '読み込み中...';
+  const s = await api('/api/settings');
+  if (!s) { statusEl.textContent = '取得に失敗しました'; return; }
+
+  document.getElementById('stRepo').textContent   = s.repo ?? '–';
+  document.getElementById('stBranch').textContent = s.dataBranch ?? 'data';
+  document.getElementById('stPath').textContent   = s.tokenPath ?? '.github-token';
+
+  if (s.githubTokenConfigured) {
+    statusEl.innerHTML = '✅ 設定済み — <span style="font-family:monospace">' + esc(s.githubTokenMasked) + '</span>';
+    statusEl.style.color = '#006600';
+    delBtn.style.display = '';
+  } else {
+    statusEl.textContent = '⚠ 未設定 — トークンを入力して保存してください';
+    statusEl.style.color = '#996600';
+    delBtn.style.display = 'none';
+  }
+}
+
+async function saveSettingsToken() {
+  const input = document.getElementById('stTokenInput');
+  const msg   = document.getElementById('stMsg');
+  const token = input.value.trim();
+  if (!token) { msg.style.color = '#cc0000'; msg.textContent = 'トークンを入力してください'; return; }
+
+  msg.style.color = '#555';
+  msg.textContent = '保存中...';
+  try {
+    const r = await fetch('/api/settings/github-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      msg.style.color = '#cc0000';
+      msg.textContent = '⚠ ' + (d.message || '保存に失敗しました');
+      return;
+    }
+    input.value = '';
+    msg.style.color = '#008800';
+    msg.textContent = d.formatWarning
+      ? '✓ 保存しました（トークンの形式が一般的なものと異なるようです。動作しない場合は再確認してください）'
+      : '✓ 保存しました';
+    await _refreshSettingsStatus();
+  } catch (e) {
+    msg.style.color = '#cc0000';
+    msg.textContent = 'エラー: ' + e.message;
+  }
+}
+
+async function deleteSettingsToken() {
+  if (!confirm('保存済みのGitHubトークンを削除しますか？(自動配信が無効になります)')) return;
+  const msg = document.getElementById('stMsg');
+  try {
+    const r = await fetch('/api/settings/github-token', { method: 'DELETE' });
+    const d = await r.json();
+    if (!d.ok) {
+      msg.style.color = '#cc0000';
+      msg.textContent = '⚠ ' + (d.message || '削除に失敗しました');
+      return;
+    }
+    msg.style.color = '#008800';
+    msg.textContent = '✓ 削除しました';
+    await _refreshSettingsStatus();
+  } catch (e) {
+    msg.style.color = '#cc0000';
+    msg.textContent = 'エラー: ' + e.message;
+  }
+}
 
 function copyModalText(id) {
   const el = document.getElementById(id);

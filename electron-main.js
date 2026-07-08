@@ -360,6 +360,12 @@ function _buildAppMenu() {
           click: _openDbLocation,
         },
         { type: 'separator' },
+        {
+          label: '設定（GitHub連携）',
+          accelerator: 'Ctrl+,',
+          click: () => _openSettingsModal(),
+        },
+        { type: 'separator' },
         { label: '終了', accelerator: 'Alt+F4', click: () => { app.isQuiting = true; app.quit(); } },
       ],
     },
@@ -411,6 +417,7 @@ function createTray() {
     { label: '終了間近収集（24時間以内）', click: () => _execJobSafe('endingsoon') },
     { label: '全収集（時間がかかります）', click: () => _execJobSafe('fullscan') },
     { type: 'separator' },
+    { label: '設定（GitHub連携）', click: () => _openSettingsModal() },
     {
       label: 'データベースの場所を開く',
       click: _openDbLocation,
@@ -428,6 +435,22 @@ function createTray() {
   _tray.on('double-click', () => {
     if (_win) { _win.show(); _win.focus(); }
   });
+}
+
+// メニュー/トレイから設定モーダルを直接開く。
+// ウィンドウがまだ無い/hideされている場合は表示してから、ページ内のJS関数を
+// 直接呼び出す（設定画面はダッシュボードHTML内のモーダルとして実装されている
+// ため、別ウィンドウを作らずrenderer側の関数を叩くだけで済む）。
+function _openSettingsModal() {
+  if (!_win) { createWindow(); }
+  _win.show();
+  _win.focus();
+  const inject = () => _win.webContents.executeJavaScript('window.showSettings && window.showSettings()').catch(() => {});
+  if (_win.webContents.isLoading()) {
+    _win.webContents.once('did-finish-load', inject);
+  } else {
+    inject();
+  }
 }
 
 // ロック判定は apiServer.js の handleRun() に一本化（事前ロックしない）

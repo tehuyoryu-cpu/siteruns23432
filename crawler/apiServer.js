@@ -13,6 +13,9 @@
  *   GET  /api/export/json          → full price_history JSON download
  *   GET  /api/export/csv           → full price_history CSV download
  *   GET  /api/run/status           → job running flags + progress
+ *   GET  /api/settings             → github token config status (masked)
+ *   POST /api/settings/github-token   → save github token (writes .github-token)
+ *   DELETE /api/settings/github-token → remove saved github token
  *   POST /api/run/discover         → immediate discovery run
  *   POST /api/run/fetch            → immediate detail fetch run
  *   POST /api/run/saleboost        → immediate sale-boost run
@@ -429,6 +432,63 @@ const _dbPath = require('path').resolve(
   config.db.path
 );
 
+// ─── GitHub トークン設定 (data-export push用) ─────────────────────────────────
+// scripts/push-data-shards.js の _resolveToken() と全く同じパス解決ロジック。
+// 設定画面から保存したトークンをそのままpushスクリプトが読めるようにするため、
+// パスは1文字も違わず一致させる必要がある。
+const _tokenPath = path.resolve(
+  process.env.DLSITE_DATA_DIR || process.cwd(),
+  '.github-token'
+);
+
+function handleSettingsGet() {
+  let configured = false;
+  let masked = null;
+  try {
+    const raw = fs.readFileSync(_tokenPath, 'utf8').trim().split('\n')[0];
+    if (raw) {
+      configured = true;
+      masked = raw.length > 8 ? raw.slice(0, 4) + '…' + raw.slice(-4) : '••••••';
+    }
+  } catch { /* ファイルなし = 未設定 */ }
+  return {
+    githubTokenConfigured: configured,
+    githubTokenMasked:     masked,
+    tokenPath:             _tokenPath,
+    dataBranch:            config.github?.dataBranch ?? 'data',
+    repo:                  `${config.github?.owner ?? '?'}/${config.github?.repo ?? '?'}`,
+  };
+}
+
+function handleSettingsSaveToken(body) {
+  const token = String(body?.token ?? '').trim();
+  if (!token) return { ok: false, message: 'トークンが空です' };
+  // ゆるいフォーマットチェック（ghp_/gho_/github_pat_ 等）。一致しなくても保存はする
+  // （GitHub側でトークン種別が増減しても弾かないようにするため、警告のみ）。
+  const looksValid = /^gh[a-z]*_[A-Za-z0-9_]{20,}$/.test(token) || /^github_pat_[A-Za-z0-9_]{20,}$/.test(token);
+  if (!looksValid) log.warn('[api] settings: token format looks unusual, saving anyway');
+  try {
+    fs.writeFileSync(_tokenPath, token + '\n', { mode: 0o600 });
+    log.info('[api] settings: github token saved to', _tokenPath);
+    return { ok: true, formatWarning: !looksValid };
+  } catch (e) {
+    log.error('[api] settings: token save failed', e.message);
+    return { ok: false, message: e.message };
+  }
+}
+
+function handleSettingsDeleteToken() {
+  try {
+    fs.unlinkSync(_tokenPath);
+    log.info('[api] settings: github token deleted');
+    return { ok: true };
+  } catch (e) {
+    if (e.code === 'ENOENT') return { ok: true };
+    log.error('[api] settings: token delete failed', e.message);
+    return { ok: false, message: e.message };
+  }
+}
+
 function handleStats() {
   const stats = db.getStats();
   stats.dbPath = _dbPath;
@@ -494,6 +554,25 @@ function createServer() {
       if (histMatch) return _json(res, handleHistory(histMatch[1].toUpperCase()));
 
       if (pathname === '/api/run/status') return _json(res, handleRunStatus());
+
+      if (pathname === '/api/settings' && req.method === 'GET') {
+        return _json(res, handleSettingsGet());
+      }
+
+      if (pathname === '/api/settings/github-token' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => { body += c; });
+        req.on('end', () => {
+          let parsed = {};
+          try { parsed = JSON.parse(body); } catch { /* keep {} */ }
+          _json(res, handleSettingsSaveToken(parsed));
+        });
+        return;
+      }
+
+      if (pathname === '/api/settings/github-token' && req.method === 'DELETE') {
+        return _json(res, handleSettingsDeleteToken());
+      }
 
       const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap)$/);
       if (runMatch) {
