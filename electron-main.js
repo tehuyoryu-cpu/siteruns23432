@@ -54,6 +54,7 @@ let db, apiServer, scheduler, discovery, detailFetcher;
 async function warmUpSession() {
   const { BrowserWindow, session } = require('electron');
   const config = require('./config');
+  const log    = require('./crawler/logger');
 
   const w = new BrowserWindow({
     show: false,
@@ -61,35 +62,73 @@ async function warmUpSession() {
   });
 
   const sites = config.dlsite.sites?.length ? config.dlsite.sites : ['maniax'];
+  // バグ修正: 以前はサイトごとの成功/失敗が console.log のみで、dlsite-tracker.log
+  // (dlsite-error.log) には一切残らなかった。product/info/ajax が HTTP 200 +
+  // 空オブジェクトを返す(≒年齢確認Cookie未取得)事象が起きても、後からログだけを
+  // 見ても warmUp が実際に成功していたのか判別できなかった。log.info/log.warn
+  // (logger.js経由、ファイル保存される方)で記録するようにする。
+  const results = {};
   for (const site of sites) {
-    await _warmUpOneSite(w, `https://www.dlsite.com/${site}/`);
+    results[site] = await _warmUpOneSite(w, `https://www.dlsite.com/${site}/`);
+  }
+  log.info('[warmUp] age-gate click results (per site)', results);
+  const failedSites = Object.entries(results).filter(([, r]) => !r.clicked).map(([s]) => s);
+  if (failedSites.length) {
+    log.warn('[warmUp] 年齢確認ボタンを検出/クリックできなかったサイト', failedSites,
+      '— DLsite側のページ構造が変わった可能性があります');
   }
 
   try {
     const cookies = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
-    console.log('[warmUp] cookies obtained:', cookies.map(c => c.name).join(', '));
-  } catch {}
+    const names = cookies.map(c => c.name);
+    log.info('[warmUp] cookies obtained:', names.join(', ') || '(none)');
+    // adultchecked/agecheck 系のCookieが実際に付与されているかを明示確認する。
+    // これが無いと product/info/ajax は HTTPエラーにならず、HTTP 200 + 空オブジェクト
+    // ({})を返すため、詳細取得側(_apiFetch)だけを見ていると原因特定に時間がかかる。
+    const hasAgeCookie = names.some(n => /adult|age/i.test(n));
+    if (!hasAgeCookie) {
+      log.warn('[warmUp] 年齢確認Cookieが見つかりません。product/info/ajax が空応答になる可能性があります', names);
+    }
+  } catch (e) {
+    log.warn('[warmUp] cookie確認に失敗', e.message);
+  }
 
   try { w.destroy(); } catch {}
 }
 
 // 1サイト分の年齢確認突破を試みる。did-finish-load/did-fail-load いずれかが
 // 発火するか、タイムアウトしたら resolve する。
+// 戻り値: { clicked: boolean, reason: string } — clicked は年齢確認ボタンの
+// クリックに成功したかどうか(呼び出し側のログ・診断用)。
 function _warmUpOneSite(w, url) {
+  const log = require('./crawler/logger');
   return new Promise(resolve => {
     let resolved = false;
-    const done = () => {
+    let clicked  = false;
+    const done = (reason) => {
       if (resolved) return;
       resolved = true;
       w.webContents.removeListener('did-finish-load', onFinish);
-      w.webContents.removeListener('did-fail-load', done);
-      resolve();
+      w.webContents.removeListener('did-fail-load', onFailLoad);
+      log.info('[warmUp] site done', { url, clicked, reason });
+      resolve({ clicked, reason });
+    };
+
+    // バグ修正: did-fail-load はメインフレームのナビゲーション失敗以外(広告/
+    // トラッカー等のサブリソース、中断されたリダイレクト(ERR_ABORTED)等)でも
+    // 頻繁に発火する。以前は isMainFrame を見ずに即座に done() していたため、
+    // メインページ自体は正常に読み込めているのに年齢確認クリックを一度も試さず
+    // 次のサイトへ進んでしまうケースがあった。isMainFrame===false のイベントは無視する。
+    const onFailLoad = (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      if (isMainFrame === false) return;
+      log.warn('[warmUp] did-fail-load (main frame)', { url, errorCode, errorDescription });
+      done('fail-load:' + errorCode);
     };
 
     const onFinish = async () => {
       try {
         // 年齢確認ボタン（複数のセレクタに対応）
-        await w.webContents.executeJavaScript(`
+        clicked = await w.webContents.executeJavaScript(`
           (function() {
             // CSS セレクタで特定できるボタンを先に試す
             const selectors = [
@@ -112,15 +151,17 @@ function _warmUpOneSite(w, url) {
             return false;
           })()
         `);
-      } catch {}
+      } catch (e) {
+        log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
+      }
 
       // 2秒後にCookie確立を待ってから次のサイトへ
-      setTimeout(done, 2000);
+      setTimeout(() => done('finish-load'), 2000);
     };
 
     w.webContents.once('did-finish-load', onFinish);
-    w.webContents.once('did-fail-load', done);
-    setTimeout(done, 10000); // サイトごとのタイムアウト。3サイト構成で最悪ケースでも合計30秒程度。
+    w.webContents.on('did-fail-load', onFailLoad);
+    setTimeout(() => done('timeout'), 10000); // サイトごとのタイムアウト。3サイト構成で最悪ケースでも合計30秒程度。
 
     w.loadURL(url);
   });
