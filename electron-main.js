@@ -115,20 +115,30 @@ function _warmUpOneSite(w, url) {
     };
 
     // バグ修正: did-fail-load はメインフレームのナビゲーション失敗以外(広告/
-    // トラッカー等のサブリソース、中断されたリダイレクト(ERR_ABORTED)等)でも
-    // 頻繁に発火する。以前は isMainFrame を見ずに即座に done() していたため、
-    // メインページ自体は正常に読み込めているのに年齢確認クリックを一度も試さず
-    // 次のサイトへ進んでしまうケースがあった。isMainFrame===false のイベントは無視する。
+    // トラッカー等のサブリソース、中断されたリダイレクト等)でも頻繁に発火する。
+    // 特に errorCode -3 (net::ERR_ABORTED) は、サーバー側リダイレクトの過程で
+    // 元のリクエストが中断される際にごく普通に発生するイベントで、実際には
+    // その直後にリダイレクト先で did-finish-load が正常に発火することが多い
+    // (実ログで bl/girls への遷移時に頻発することを確認済み)。
+    // 以前は isMainFrame のみを見て即座に done() していたため、リダイレクト先の
+    // 実際のページ(年齢確認ページ含む)に到達する前に諦めてしまい、一度も
+    // クリックを試さないまま次のサイトへ進んでしまっていた。
+    // ERR_ABORTED は無視して did-finish-load 側に処理を委ねる。
     const onFailLoad = (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
       if (isMainFrame === false) return;
+      if (errorCode === -3) {
+        log.info('[warmUp] did-fail-load ERR_ABORTED (リダイレクト中の想定内イベント、無視)', { url });
+        return;
+      }
       log.warn('[warmUp] did-fail-load (main frame)', { url, errorCode, errorDescription });
       done('fail-load:' + errorCode);
     };
 
     const onFinish = async () => {
+      let diag = null;
       try {
         // 年齢確認ボタン（複数のセレクタに対応）
-        clicked = await w.webContents.executeJavaScript(`
+        const evalResult = await w.webContents.executeJavaScript(`
           (function() {
             // CSS セレクタで特定できるボタンを先に試す
             const selectors = [
@@ -139,20 +149,37 @@ function _warmUpOneSite(w, url) {
             for (const sel of selectors) {
               try {
                 const el = document.querySelector(sel);
-                if (el) { el.click(); return true; }
+                if (el) { el.click(); return { clicked: true, via: 'selector:' + sel }; }
               } catch {}
             }
             // :contains は無効なので全 <a> をテキストで走査
             const keywords = ['はい', '入場する', '18歳以上', 'adult', 'enter', '同意'];
             for (const a of document.querySelectorAll('a, button')) {
               const txt = (a.textContent || '').trim();
-              if (keywords.some(k => txt.includes(k))) { a.click(); return true; }
+              if (keywords.some(k => txt.includes(k))) { a.click(); return { clicked: true, via: 'keyword:' + txt.slice(0, 20) }; }
             }
-            return false;
+            // 失敗時の診断用情報: 実際にどんなページに着地しているのか
+            // (年齢確認ページ自体が読み込めていないのか、既に通過済みで
+            // 別のセレクタ/文言に変わっているのかを切り分けるため)
+            return {
+              clicked: false,
+              diag: {
+                title: document.title,
+                url: location.href,
+                bodyTextSample: (document.body?.innerText || '').slice(0, 200).replace(/\\s+/g, ' '),
+                anchorTextsSample: Array.from(document.querySelectorAll('a')).slice(0, 15).map(a => (a.textContent||'').trim()).filter(Boolean),
+              },
+            };
           })()
         `);
+        clicked = !!evalResult?.clicked;
+        if (!clicked) diag = evalResult?.diag ?? null;
       } catch (e) {
         log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
+      }
+
+      if (!clicked && diag) {
+        log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
       }
 
       // 2秒後にCookie確立を待ってから次のサイトへ
