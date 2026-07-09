@@ -270,6 +270,9 @@ async function _collectCircles(knownRjs) {
 // のに「終わり」と誤判定して巡回を打ち切ってしまう。配列に .failed フラグを
 // 付与することで、既存の「items.length で判定するだけ」の呼び出し元との
 // 後方互換を保ったまま、区別したい箇所だけ items.failed を見られるようにする。
+const _404_CONFIRM_RETRIES = 2;      // 404を「確定終端」と判断するまでの再確認回数
+const _404_CONFIRM_DELAY   = 1500;   // 再確認の間隔(ms)。回数ごとに線形に伸ばす
+
 async function _fetchWithPrice(url) {
   try {
     const res = await fetchWithRetry(url);
@@ -280,7 +283,16 @@ async function _fetchWithPrice(url) {
       // サークルで毎回無駄なリトライ(数十秒)とERRORログが発生していた。
       // 404は「確定的にもう先がない」ことを示す正常なシグナルとして扱う
       // (.failedは付けない = 呼び出し側は空ページとして扱い、即座に完了と判断する)。
-      return [];
+      //
+      // 追加バグ修正: 上記は「範囲外は必ず404」という仕様を信頼した実装だったが、
+      // 単発の404を無条件に「確定終端」と信じてしまうと、一時的なサーバー不調や
+      // WAF等の瞬断でたまたま404が返ったケースまで「もう先がない」と誤判定し、
+      // 本来まだ存在するはずの後続ページ(=作品)を丸ごと欠落させたまま
+      // 正常終了扱いになってしまう(取得失敗とは違いエラーログにも残らないため
+      // 発覚しにくい)。少し間隔を空けて数回だけ再確認し、それでも404が続く
+      // 場合にのみ確定的な終端として扱う。再確認中にデータが返ってきた場合は
+      // 「一時的な404だった」とみなしそのデータを採用する。
+      return await _confirm404(url);
     }
     if (!res.ok) {
       log.warn('[discovery] fetch non-200', res.status, url);
@@ -297,6 +309,43 @@ async function _fetchWithPrice(url) {
     return arr;
   }
 }
+
+/**
+ * 404を受け取った際に、それが「本当に範囲外(確定終端)」なのか
+ * 「一時的な瞬断でたまたま404が返っただけ」なのかを短い間隔を空けて再確認する。
+ * - 再確認で404以外の応答が返れば、その結果をそのまま採用する(終端ではなかった)
+ * - 再確認でも404が続けば、確定終端として空配列(.failedなし)を返す
+ * - 再確認中にネットワークエラー等が起きた場合は「まだ確定していない」として
+ *   再確認を続け、全て試しても確証が得られなければ確定終端扱いにフォールバックする
+ *   (無限に粘り続けて巡回全体を止めてしまわないようにするため)
+ */
+async function _confirm404(url) {
+  for (let i = 0; i < _404_CONFIRM_RETRIES; i++) {
+    await sleep(_404_CONFIRM_DELAY * (i + 1));
+    let res;
+    try {
+      res = await fetchWithRetry(url);
+    } catch (e) {
+      log.warn('[discovery] 404confirm: retry fetch error, continuing to confirm', url, e.message);
+      continue;
+    }
+    if (res.status === 404) continue; // まだ404 → もう1回確認へ
+
+    // 404以外が返ってきた = 単発の瞬断だった可能性が高い
+    if (res.ok) {
+      log.warn('[discovery] 404 was transient, recovered on confirm retry', url);
+      const html = await res.text();
+      return parser.parseWorkListWithPrice(html);
+    }
+    log.warn('[discovery] 404confirm: non-404 non-ok response', res.status, url);
+    const arr = [];
+    arr.failed = true;
+    return arr;
+  }
+  log.info('[discovery] 404 confirmed after retries (end of pages)', url);
+  return [];
+}
+
 
 // ─── DB書き込み ──────────────────────────────────────────────────────────────
 
