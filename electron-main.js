@@ -96,6 +96,27 @@ async function warmUpSession() {
   try { w.destroy(); } catch {}
 }
 
+// ── 外部(detailFetcher.js等)から呼べるセッション再確立フック ──────────────────
+// 巡回中に「同一サイトへのAPIリクエストが空応答(≒セッション切れ)を何度も
+// 連続で返す」ことを検知した場合、detailFetcher.js はこの関数を呼んで
+// セッションの再確立を試みる(electron-main.jsを直接requireできない/したくない
+// detailFetcher.js側から、グローバル経由で疎結合に呼べるようにするため)。
+// warmUpSession()自体は毎回新しいBrowserWindowを開いて全サイト分の年齢確認を
+// やり直す比較的重い処理(最大45秒程度)なので、複数箇所からほぼ同時に
+// 呼ばれても実際には1回だけ実行し、呼び出し元は全員その1回の完了を待つ
+// (多重実行によるBrowserWindow乱立・二重の再ウォームアップを防ぐ)。
+let _reWarmInFlight = null;
+global._reWarmUpSession = () => {
+  if (!_reWarmInFlight) {
+    const log = require('./crawler/logger');
+    log.warn('[warmUp] re-warmup triggered externally (repeated empty responses detected)');
+    _reWarmInFlight = warmUpSession()
+      .catch(e => { log.error('[warmUp] re-warmup error', e.message); })
+      .finally(() => { _reWarmInFlight = null; });
+  }
+  return _reWarmInFlight;
+};
+
 // 1サイト分の年齢確認突破を試みる。did-finish-load/did-fail-load いずれかが
 // 発火するか、タイムアウトしたら resolve する。
 // 戻り値: { clicked: boolean, reason: string } — clicked は年齢確認ボタンの
@@ -188,7 +209,31 @@ function _warmUpOneSite(w, url) {
 
     w.webContents.once('did-finish-load', onFinish);
     w.webContents.on('did-fail-load', onFailLoad);
-    setTimeout(() => done('timeout'), 10000); // サイトごとのタイムアウト。3サイト構成で最悪ケースでも合計30秒程度。
+
+    // バグ修正: 診断用の情報取得(document.title等)はonFinish内にしか無く、
+    // did-finish-loadが一度も発火しないタイムアウトケースでは一切残らなかった
+    // (実際にmaniaxで毎回timeoutしていたが、原因調査に必要な情報が
+    // dlsite-error.logに何も出ていなかった)。タイムアウト時もページの
+    // 現在状態を可能な限り取得してログに残す。executeJavaScript自体が
+    // 使えない状態(ページコンテキスト未確立等)も起こり得るためtry/catchする。
+    setTimeout(async () => {
+      if (resolved) return;
+      try {
+        const diag = await w.webContents.executeJavaScript(`
+          ({
+            url: location.href,
+            title: document.title,
+            readyState: document.readyState,
+            bodyLen: (document.body && document.body.innerHTML || '').length,
+          })
+        `);
+        log.warn('[warmUp] timeout diagnostics', { url, ...diag, isLoading: w.webContents.isLoading() });
+      } catch (e) {
+        log.warn('[warmUp] timeout diagnostics failed (page context unavailable)',
+          { url, error: e.message, isLoading: w.webContents.isLoading() });
+      }
+      done('timeout');
+    }, 15000); // サイトごとのタイムアウト。10s→15sに緩和(3サイト構成で最悪ケースでも合計45秒程度)。
 
     w.loadURL(url);
   });

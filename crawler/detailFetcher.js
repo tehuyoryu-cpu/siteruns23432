@@ -349,6 +349,47 @@ async function _processBatch(works, site, depth = 0) {
   return result;
 }
 
+// ─── セッション健全性トラッキング ───────────────────────────────────────────
+// バグ修正: product/info/ajax がHTTP 200+空オブジェクトを返す事象(≒セッション/
+// 年齢確認Cookieが無効化された)が起きても、これまでは個々のリクエストが
+// 「取得失敗」として記録されるだけで、セッション自体の回復は一切試みられて
+// いなかった。起動時のwarmUpSession()は一度きりで、turbo/allのような
+// 高頻度リクエストの途中でDLsite側がセッションを無効化した場合、以降の
+// リクエストが全滅し続けたまま(originally入っていたと見られる「5回連続で
+// このサイトを打ち切る」という回避策も、根本原因であるセッション切れ自体は
+// 解消しないため、結果的にturbo/allが本来処理すべき件数よりずっと少ない
+// 件数で「due が尽きた」ように見えて早期終了する一因になっていたと考えられる)。
+// 空応答が一定回数連続したら、セッション再確立(warmUpSession)を試みてから
+// 続行する。Electron以外(CLI等)ではフックが存在しないため何もしない。
+const _EMPTY_STREAK_THRESHOLD = 5;
+const _REWARM_COOLDOWN_MS     = 60_000; // 再ウォームアップの最短間隔(連発防止)
+const _siteEmptyStreak = {};
+let   _lastRewarmAt    = 0;
+
+async function _maybeRewarmSession(site) {
+  _siteEmptyStreak[site] = 0; // 再ウォーム後にもう一度チャンスを与える(ストリークリセット)
+
+  const now = Date.now();
+  if (now - _lastRewarmAt < _REWARM_COOLDOWN_MS) {
+    log.warn('[detail] session re-warmup skipped (cooldown)', site,
+      `${Math.ceil((_REWARM_COOLDOWN_MS - (now - _lastRewarmAt)) / 1000)}s残り`);
+    return;
+  }
+  _lastRewarmAt = now;
+
+  if (typeof global._reWarmUpSession !== 'function') {
+    log.warn('[detail] no re-warmup hook available (non-Electron context?)', site);
+    return;
+  }
+  log.error(`[detail] ${site}: 空応答が${_EMPTY_STREAK_THRESHOLD}回連続 — セッション再確立を試みます`);
+  try {
+    await global._reWarmUpSession();
+    log.info('[detail] session re-warmup completed, resuming', site);
+  } catch (e) {
+    log.error('[detail] session re-warmup failed', site, e.message);
+  }
+}
+
 // ─── API fetch ────────────────────────────────────────────────────────────────
 
 async function _apiFetch(works, site) {
@@ -369,8 +410,13 @@ async function _apiFetch(works, site) {
     if (returnedKeys === 0) {
       log.warn('[detail] API returned empty object', site, `requested ${works.length}件`,
         'sample:', works.slice(0,2).map(w=>w.rj_code).join(','));
+      _siteEmptyStreak[site] = (_siteEmptyStreak[site] ?? 0) + 1;
+      if (_siteEmptyStreak[site] >= _EMPTY_STREAK_THRESHOLD) {
+        await _maybeRewarmSession(site);
+      }
       return null;
     }
+    _siteEmptyStreak[site] = 0; // 成功(部分成功含む)したのでストリークをリセット
     if (returnedKeys < works.length * 0.5) {
       log.warn('[detail] API returned partial data', site,
         `got ${returnedKeys} / requested ${works.length}`);
