@@ -521,84 +521,6 @@ function recordApiMissing(rjCode) {
   `, [now, errs, interval, now + interval, priority, rjCode]);
 }
 
-function getSuspectDelistedRecoveryStats({ minErrors = 2, maxErrors = 3 } = {}) {
-  const priority = config.priority.delisted;
-  const count = (_get(`
-    SELECT COUNT(*) AS n
-    FROM works
-    WHERE priority = ?
-      AND consecutive_errors BETWEEN ? AND ?
-  `, [priority, minErrors, maxErrors]) ?? { n: 0 }).n;
-
-  const byErrors = _all(`
-    SELECT consecutive_errors AS errors, COUNT(*) AS n
-    FROM works
-    WHERE priority = ?
-      AND consecutive_errors BETWEEN ? AND ?
-    GROUP BY consecutive_errors
-    ORDER BY consecutive_errors
-  `, [priority, minErrors, maxErrors]);
-
-  const range = _get(`
-    SELECT MIN(last_checked) AS oldestChecked, MAX(last_checked) AS newestChecked
-    FROM works
-    WHERE priority = ?
-      AND consecutive_errors BETWEEN ? AND ?
-  `, [priority, minErrors, maxErrors]) ?? {};
-
-  const sample = _all(`
-    SELECT rj_code, title, consecutive_errors, last_checked
-    FROM works
-    WHERE priority = ?
-      AND consecutive_errors BETWEEN ? AND ?
-    ORDER BY last_checked DESC
-    LIMIT 10
-  `, [priority, minErrors, maxErrors]);
-
-  return { count, byErrors, sample, minErrors, maxErrors, ...range };
-}
-
-function recoverSuspectDelistedWorks({ minErrors = 2, maxErrors = 3 } = {}) {
-  const before = getSuspectDelistedRecoveryStats({ minErrors, maxErrors });
-  if (before.count <= 0) return { recovered: 0, before, backup: null };
-
-  const backupResult = backup({ reason: 'recover-suspect-delisted' });
-  if (!backupResult?.ok) {
-    throw new Error('DBバックアップに失敗したため復旧を中止しました: ' + (backupResult?.reason ?? 'unknown error'));
-  }
-  const now = unixNow();
-  transaction(() => {
-    _run(`
-      UPDATE works SET
-        priority            = CASE WHEN is_on_sale = 1 THEN ? ELSE ? END,
-        consecutive_errors  = 0,
-        check_interval      = ?,
-        next_check_at       = ?
-      WHERE priority = ?
-        AND consecutive_errors BETWEEN ? AND ?
-    `, [
-      config.priority.onSale,
-      config.priority.normal,
-      config.checkInterval.normal,
-      now,
-      config.priority.delisted,
-      minErrors,
-      maxErrors,
-    ]);
-  });
-  _saveNow();
-
-  const after = getSuspectDelistedRecoveryStats({ minErrors, maxErrors });
-  const recovered = before.count - after.count;
-  log.info('[db] recovered suspect delisted works', {
-    recovered,
-    minErrors,
-    maxErrors,
-    backup: backupResult?.dest ?? null,
-  });
-  return { recovered, before, after, backup: backupResult };
-}
-
 function getDueWorks(limit = 50) {
   const now = unixNow();
   // next_check_at にインデックスがあるため、計算式での全件スキャンより高速
@@ -859,8 +781,8 @@ function getStats() {
  * 併せて保存する。復元時にファイルが壊れていないか、どの時点のスナップ
  * ショットかを確認しやすくするため。
  */
-function backup(options = {}) {
-  if (!_db) return { ok: false, reason: 'DB is not initialized' };
+function backup() {
+  if (!_db) return;
   try {
     const dir = path.resolve(path.dirname(DB_PATH), 'backups');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -894,17 +816,14 @@ function backup(options = {}) {
       sha256,
       counts,
       appVersion,
-      reason:     options.reason ?? 'scheduled',
     };
     fs.writeFileSync(metaDest, JSON.stringify(meta, null, 2));
 
     log.info('[db] backup saved', dest, `(${(buf.length/1024/1024).toFixed(1)}MB, works=${counts.works})`);
 
     _pruneBackups(dir);
-    return { ok: true, dest, metaDest, meta };
   } catch (err) {
     log.error('[db] backup error', err.message);
-    return { ok: false, reason: err.message };
   }
 }
 
@@ -1138,6 +1057,57 @@ function unixNow() {
   return Math.floor(Date.now() / 1000);
 }
 
+/**
+ * CDN/プロキシのキャッシュ汚染により誤って priority=delisted まで落とされた
+ * 疑いのある作品を検出・復旧する（1回限りのDBメンテナンス用）。
+ *
+ * recordApiMissing() は consecutive_errors が2に達した時点で priority を
+ * config.priority.delisted まで落とす。誤検出(CDN汚染)によるものは通常
+ * 2〜3回程度でこの状態に達しているはずで、本当に長期間削除され続けている
+ * 作品はこれよりずっと多い consecutive_errors を持つ傾向がある
+ * (recordApiMissing は毎回 interval を延ばすため、真の delisted 作品は
+ * 巡回のたびに errs が積み上がっていく)。
+ * そのため consecutive_errors が低い(=最近delistedになったばかりの)作品だけを
+ * 対象にすることで、長期間確認済みの本当のdelisted作品を誤って復旧しない
+ * ようにする。
+ *
+ * 復旧された作品が本当に削除済みだった場合でも、次回チェック時には
+ * detailFetcher.js 側で強化済みの汚染判定によって正しく再度delistedに
+ * なるため、安全に実行できる。
+ */
+function countSuspectedDelisted(minErrors = 2, maxErrors = 3) {
+  const row = _get(`
+    SELECT COUNT(*) AS n FROM works
+    WHERE priority = ? AND consecutive_errors BETWEEN ? AND ?
+  `, [config.priority.delisted, minErrors, maxErrors]);
+  return row?.n ?? 0;
+}
+
+function recoverSuspectedDelisted(minErrors = 2, maxErrors = 3) {
+  const now = unixNow();
+  _run(`
+    UPDATE works SET
+      priority            = ?,
+      consecutive_errors  = 0,
+      check_interval       = ?,
+      next_check_at         = ?
+    WHERE priority = ? AND consecutive_errors BETWEEN ? AND ?
+  `, [
+    config.priority.normal,
+    config.checkInterval.normal,
+    now,
+    config.priority.delisted,
+    minErrors,
+    maxErrors,
+  ]);
+  const affected = _db.getRowsModified();
+  if (affected > 0) {
+    log.info('[db] recoverSuspectedDelisted:', affected, '件を通常優先度に復旧', { minErrors, maxErrors });
+    _save();
+  }
+  return affected;
+}
+
 /** å¨RJã³ã¼ããSetã§è¿ãï¼discoveryé«éç§åç¨ï¼ */
 // rj_code の全件取得は discovery が6時間毎に呼ぶため、インメモリキャッシュで高速化する。
 // upsertWork が呼ばれたときにキャッシュを無効化する（次回 getAllRjCodes() 時に再構築）。
@@ -1158,8 +1128,6 @@ module.exports = {
   markChecked,
   recordFetchError,
   recordApiMissing,
-  getSuspectDelistedRecoveryStats,
-  recoverSuspectDelistedWorks,
   getDueWorks,
   getWorkByRj,
   getAllMakerIds,
@@ -1191,4 +1159,6 @@ module.exports = {
   getDiscountDaysMap,
   getLowestPriceMap,
   getRecentPriceLogMap,
+  countSuspectedDelisted,
+  recoverSuspectedDelisted,
 };
