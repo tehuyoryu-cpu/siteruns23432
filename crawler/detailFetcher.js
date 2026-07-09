@@ -14,9 +14,48 @@ const { fetchWithRetry, sleep } = require('./queue');
 const BASE  = config.dlsite.baseUrl;
 const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Info API 上限
 
+// ─── サーキットブレーカー ────────────────────────────────────────────────────
+// バグ修正: product/info/ajax がHTTP 200 + 完全な空オブジェクトを返す状態
+// (年齢確認セッション未確立等、サイト全体に影響する系統的な失敗)になると、
+// 従来の _processBatch は失敗のたびに際限なく再分割(50→25→13→7→4→2→1)を
+// 繰り返し、1つの50件バッチの失敗が最大63回もの個別リクエストに膨れ上がって
+// いた。根本原因(セッション等)が直らない限りこの分割は絶対に成功しないため、
+// 無駄なリクエスト・ログ肥大化・DLsiteへの負荷を生むだけだった。
+// 同一サイトで「バッチ全体が空応答」という失敗が短時間に連続した場合、
+// そのサイトへのリクエストを今回の runDetailFetch() 呼び出し中だけ打ち切り、
+// 残りは(ネットワークを叩かずに)recordFetchError のみ記録する。
+// 次回の巡回では自動的に再試行される(このフラグは実行ごとにリセットされる)。
+const CIRCUIT_BREAKER_THRESHOLD = 5;
+let _consecutiveEmptyBySite = {};
+let _circuitOpenBySite      = {};
+
+function _resetCircuitBreaker() {
+  _consecutiveEmptyBySite = {};
+  _circuitOpenBySite      = {};
+}
+function _recordEmptyResult(site) {
+  _consecutiveEmptyBySite[site] = (_consecutiveEmptyBySite[site] ?? 0) + 1;
+  if (_consecutiveEmptyBySite[site] >= CIRCUIT_BREAKER_THRESHOLD && !_circuitOpenBySite[site]) {
+    _circuitOpenBySite[site] = true;
+    log.error(`[detail] ${site}: 空応答(または取得失敗)が${CIRCUIT_BREAKER_THRESHOLD}回連続 — ` +
+      `セッション/年齢確認が失敗している疑いが強いため、このサイトへのリクエストを今回の巡回では打ち切ります` +
+      `(次回の巡回で自動的に再試行されます)`);
+  }
+}
+function _recordNonEmptyResult(site) {
+  _consecutiveEmptyBySite[site] = 0;
+}
+function _isCircuitOpen(site) {
+  return !!_circuitOpenBySite[site];
+}
+
 // ─── public ──────────────────────────────────────────────────────────────────
 
 async function runDetailFetch(limit = 300, { onProgress } = {}) {
+  // 実行ごとにサーキットブレーカーをリセット（前回の巡回で打ち切ったサイトも
+  // 今回はまず1回試す）
+  _resetCircuitBreaker();
+
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
   const result = { processed: 0, priceChanges: 0, errors: 0, total: 0 };
@@ -154,11 +193,22 @@ function saveDiscoveredPrice(rjCode, priceData) {
 
 // ─── バッチ処理 ───────────────────────────────────────────────────────────────
 
-async function _processBatch(works, site) {
+async function _processBatch(works, site, depth = 0) {
   const result = { processed: 0, priceChanges: 0, errors: 0 };
+
+  // サーキットブレーカーが開いていれば、ネットワークを叩かずに即座に
+  // fetchError扱いにする（priorityは下げない・intervalのみ延長）。
+  if (_isCircuitOpen(site)) {
+    db.transactionNoSave(() => {
+      for (const w of works) db.recordFetchError(w.rj_code);
+    });
+    result.errors += works.length;
+    return result;
+  }
+
   let body = await _apiFetch(works, site);
 
-  // 失敗→バイナリ分割（半分ずつ）→1件まで再帰して個別エラー記録
+  // 失敗→バイナリ分割（半分ずつ、最大1段階まで）→個別エラー記録
   // SUB=10 固定にすると works.length < SUB の場合に無限ループするため halving を使う
   //
   // 以前は Promise.all で両半分を無条件に並列実行しており、失敗した50件バッチが
@@ -167,12 +217,21 @@ async function _processBatch(works, site) {
   // (2026-07-03のログで2秒間に100件超のリクエストバーストを確認、直後に
   //  ERR_HTTP2_PING_FAILED / ERR_CONNECTION_TIMED_OUT が多発した原因と推測される)。
   // 分割時は逐次実行にし、間に短い待機を挟んでバーストを防ぐ。
-  if (!body && works.length > 1) {
+  //
+  // バグ修正: セッション/年齢確認の失敗のようにサイト全体に影響する系統的な
+  // 失敗の場合、何段階再分割しても絶対に成功しない。以前は再帰の底(1件)まで
+  // 無制限に分割し続けており、1つの50件バッチの失敗が最大63回もの個別
+  // リクエストに膨れ上がっていた。分割は診断的価値のある最初の1段階だけに
+  // 制限し(バッチサイズに起因する一時的な問題の切り分けは残しつつ)、
+  // それでも失敗する場合は録fetchErrorに倒してこれ以上分割しない。
+  // 系統的な失敗の検出・抑制はサーキットブレーカー(_recordEmptyResult等)が担う。
+  const MAX_SPLIT_DEPTH = 1;
+  if (!body && works.length > 1 && depth < MAX_SPLIT_DEPTH) {
     log.warn('[detail] batch fail, splitting', works.length);
     const mid = Math.ceil(works.length / 2);
-    const r1 = await _processBatch(works.slice(0, mid), site);
+    const r1 = await _processBatch(works.slice(0, mid), site, depth + 1);
     await sleep(Math.max(config.fetch.rateLimit ?? 0, 300));
-    const r2 = await _processBatch(works.slice(mid), site);
+    const r2 = await _processBatch(works.slice(mid), site, depth + 1);
     result.processed    += r1.processed    + r2.processed;
     result.priceChanges += r1.priceChanges + r2.priceChanges;
     result.errors       += r1.errors       + r2.errors;
@@ -180,6 +239,7 @@ async function _processBatch(works, site) {
   }
 
   if (!body) {
+    _recordEmptyResult(site);
     // 1件でも失敗 — まとめて記録するが、保存は呼び出し元(runDetailFetch)が間引いて行う
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
@@ -187,6 +247,8 @@ async function _processBatch(works, site) {
     result.errors += works.length;
     return result;
   }
+
+  _recordNonEmptyResult(site);
 
   // APIレスポンスのキーを正規化: 大文字版 + ゼロ埋めなし版の両方をインデックス
   const normalizedBody = {};
