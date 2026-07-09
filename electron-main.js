@@ -375,65 +375,50 @@ function _openDbLocation() {
   shell.showItemInFolder(dbPath);
 }
 
-async function _recoverSuspectDelistedFromMenu() {
-  if (_isCrawlerBusy()) {
-    await dialog.showMessageBox(_win, {
-      type: 'warning',
-      message: '巡回処理が実行中です',
-      detail: 'DB復旧は価格更新やRJ収集が止まっている状態で実行してください。',
-    });
+// CDN/プロキシキャッシュ汚染により誤って priority=delisted に落とされた疑いのある
+// 作品を、通常優先度に戻す1回限りのDBメンテナンス。詳細は db.js の
+// recoverSuspectedDelisted() のコメント参照。
+// consecutive_errors が低い(=最近delistedになったばかりの)作品だけを対象にする
+// ことで、長期間確認済みの本当のdelisted作品を誤って復旧しないようにする。
+const _DELISTED_MIN_ERRORS = 2;
+const _DELISTED_MAX_ERRORS = 3;
+
+function _recoverDelisted() {
+  if (!db) {
+    dialog.showMessageBox(_win, { message: 'DBが初期化されていません。しばらく待ってから再度お試しください。', type: 'warning' });
     return;
   }
-
-  const stats = db.getSuspectDelistedRecoveryStats();
-  if (!stats.count) {
-    await dialog.showMessageBox(_win, {
+  let before;
+  try {
+    before = db.countSuspectedDelisted(_DELISTED_MIN_ERRORS, _DELISTED_MAX_ERRORS);
+  } catch (e) {
+    dialog.showMessageBox(_win, { message: `件数確認に失敗しました: ${e.message}`, type: 'error' });
+    return;
+  }
+  if (before === 0) {
+    dialog.showMessageBox(_win, {
+      message: '対象の作品は見つかりませんでした（誤delistedの疑いがある作品は0件です）。',
       type: 'info',
-      message: '復旧候補はありません',
-      detail: 'priority=delisted かつ consecutive_errors=2〜3 の作品は見つかりませんでした。',
     });
     return;
   }
-
-  const fmtTime = ts => ts ? new Date(ts * 1000).toLocaleString('ja-JP') : 'なし';
-  const byErrors = stats.byErrors.map(r => `errors=${r.errors}: ${r.n}件`).join('\n');
-  const sample = stats.sample
-    .map(w => `${w.rj_code}${w.title ? ' / ' + w.title : ''}`)
-    .join('\n');
-
-  const confirm = await dialog.showMessageBox(_win, {
+  const choice = dialog.showMessageBoxSync(_win, {
     type: 'question',
-    buttons: ['復旧する', 'キャンセル'],
+    buttons: ['実行', 'キャンセル'],
     defaultId: 1,
     cancelId: 1,
-    message: `${stats.count}件のdelisted候補を復旧しますか？`,
-    detail:
-      'CDN/プロキシの誤キャッシュでdelisted化した可能性がある作品を、通常優先度に戻して次回価格更新の対象にします。\n\n' +
-      `対象: priority=delisted, consecutive_errors=${stats.minErrors}〜${stats.maxErrors}\n` +
-      `最終チェック範囲: ${fmtTime(stats.oldestChecked)} 〜 ${fmtTime(stats.newestChecked)}\n\n` +
-      `内訳:\n${byErrors || 'なし'}\n\n` +
-      `サンプル:\n${sample || 'なし'}\n\n` +
-      '実行前にDBバックアップを作成します。',
+    message:
+      `priority=delisted（連続エラー${_DELISTED_MIN_ERRORS}〜${_DELISTED_MAX_ERRORS}回、` +
+      `誤判定の疑いあり）の作品が ${before} 件見つかりました。\n` +
+      `通常優先度に戻し、次回の巡回で再チェックします。実行しますか？\n\n` +
+      `※本当に削除済みの作品は、再チェック時の強化済み判定で正しく再びdelistedになるため安全です。`,
   });
-
-  if (confirm.response !== 0) return;
-
+  if (choice !== 0) return;
   try {
-    const result = db.recoverSuspectDelistedWorks();
-    _win?.webContents.send('crawler:done', { job: 'recover-delisted', stats: db.getStats() });
-    await dialog.showMessageBox(_win, {
-      type: 'info',
-      message: `${result.recovered}件を復旧しました`,
-      detail:
-        `バックアップ: ${result.backup?.ok ? result.backup.dest : '作成に失敗または未作成'}\n` +
-        '復旧した作品は次回の価格更新で再チェックされます。',
-    });
-  } catch (err) {
-    await dialog.showMessageBox(_win, {
-      type: 'error',
-      message: '復旧処理に失敗しました',
-      detail: err.message,
-    });
+    const recovered = db.recoverSuspectedDelisted(_DELISTED_MIN_ERRORS, _DELISTED_MAX_ERRORS);
+    dialog.showMessageBox(_win, { message: `復旧完了: ${recovered}件を通常優先度に戻しました。`, type: 'info' });
+  } catch (e) {
+    dialog.showMessageBox(_win, { message: `復旧処理に失敗しました: ${e.message}`, type: 'error' });
   }
 }
 
@@ -462,9 +447,10 @@ function _buildAppMenu() {
           label: 'データベースの場所を開く',
           click: _openDbLocation,
         },
+        { type: 'separator' },
         {
-          label: '誤delisted復旧...',
-          click: _recoverSuspectDelistedFromMenu,
+          label: '誤delisted作品を復旧（1回限りのメンテナンス）',
+          click: _recoverDelisted,
         },
         { type: 'separator' },
         {
@@ -525,7 +511,6 @@ function createTray() {
     { label: '全収集（時間がかかります）', click: () => _execJobSafe('fullscan') },
     { type: 'separator' },
     { label: '設定（GitHub連携）', click: () => _openSettingsModal() },
-    { label: '誤delisted復旧...', click: _recoverSuspectDelistedFromMenu },
     {
       label: 'データベースの場所を開く',
       click: _openDbLocation,
