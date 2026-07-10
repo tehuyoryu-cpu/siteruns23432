@@ -14,47 +14,107 @@ const { fetchWithRetry, sleep } = require('./queue');
 const BASE  = config.dlsite.baseUrl;
 const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Info API 上限
 
-// ─── サーキットブレーカー ────────────────────────────────────────────────────
-// バグ修正: product/info/ajax がHTTP 200 + 完全な空オブジェクトを返す状態
-// (年齢確認セッション未確立等、サイト全体に影響する系統的な失敗)になると、
-// 従来の _processBatch は失敗のたびに際限なく再分割(50→25→13→7→4→2→1)を
-// 繰り返し、1つの50件バッチの失敗が最大63回もの個別リクエストに膨れ上がって
-// いた。根本原因(セッション等)が直らない限りこの分割は絶対に成功しないため、
-// 無駄なリクエスト・ログ肥大化・DLsiteへの負荷を生むだけだった。
-// 同一サイトで「バッチ全体が空応答」という失敗が短時間に連続した場合、
-// そのサイトへのリクエストを今回の runDetailFetch() 呼び出し中だけ打ち切り、
-// 残りは(ネットワークを叩かずに)recordFetchError のみ記録する。
-// 次回の巡回では自動的に再試行される(このフラグは実行ごとにリセットされる)。
-const CIRCUIT_BREAKER_THRESHOLD = 5;
-let _consecutiveEmptyBySite = {};
-let _circuitOpenBySite      = {};
+// ─── セッション健全性トラッキング（サーキットブレーカー + 自動再ウォームアップ）──
+// バグ修正の経緯:
+//   1. product/info/ajax がHTTP 200 + 完全な空オブジェクトを返す状態(年齢確認
+//      セッション未確立等、サイト全体に影響する系統的な失敗)になると、
+//      _processBatch は失敗のたびに際限なく再分割(50→25→13→7→4→2→1)を
+//      繰り返し、1つの50件バッチの失敗が最大63回もの個別リクエストに
+//      膨れ上がっていた。→ サーキットブレーカーを追加し、同一サイトで空応答が
+//      連続したらそのサイトへのリクエストを今回の実行中は打ち切るようにした。
+//   2. しかしサーキットブレーカーだけでは、根本原因(セッション切れ)自体は
+//      何も解消しないため、turbo/allのような1回のジョブでセッションが
+//      無効化されると、以降のリクエストが全滅し続けたまま早期終了して
+//      しまっていた。→ 空応答streakが閾値に達したら warmUpSession() の
+//      再実行(セッション再確立)を試みるフックを追加した。
+//   3. ただし上記2つを別々のカウンタ(_consecutiveEmptyBySite と
+//      _siteEmptyStreak)で独立に追跡していたため、(a) 分割によって
+//      _apiFetch と _recordEmptyResult の呼び出し回数が食い違い閾値到達
+//      タイミングがずれる、(b) 再ウォームアップが成功しても
+//      _circuitOpenBySite は別カウンタなのでリセットされず、同一実行内では
+//      二度とリクエストが送られない、という構造的な不具合があった
+//      (再ウォームアップが成功しても実質何も改善しない)。
+//   → ストリーク追跡・サーキット開閉・再ウォームアップ実行を単一の状態と
+//      単一の判定フローに統合する。
+const EMPTY_STREAK_THRESHOLD = 5;
+const REWARM_COOLDOWN_MS     = 60_000; // 再ウォームアップの最短間隔(連発防止)
 
-function _resetCircuitBreaker() {
-  _consecutiveEmptyBySite = {};
-  _circuitOpenBySite      = {};
+const _siteEmptyStreak       = {};  // site -> 連続空応答回数
+const _circuitOpenBySite     = {};  // site -> このrunDetailFetch()呼び出し中は打ち切り中か
+const _rewarmInProgressBySite = {}; // site -> 再ウォームアップ実行中か(重複起動防止)
+let   _lastRewarmAt          = 0;   // runDetailFetch()をまたいでもクールダウンを維持する
+
+function _resetSessionHealthState() {
+  // circuit/streak は実行ごとにリセットする(前回打ち切ったサイトも今回はまず
+  // 試す)。_lastRewarmAt はクールダウンの実効性を保つため実行をまたいで維持する。
+  for (const site of Object.keys(_siteEmptyStreak))   delete _siteEmptyStreak[site];
+  for (const site of Object.keys(_circuitOpenBySite)) delete _circuitOpenBySite[site];
 }
-function _recordEmptyResult(site) {
-  _consecutiveEmptyBySite[site] = (_consecutiveEmptyBySite[site] ?? 0) + 1;
-  if (_consecutiveEmptyBySite[site] >= CIRCUIT_BREAKER_THRESHOLD && !_circuitOpenBySite[site]) {
+
+/** _processBatch がこのサイトへのリクエストを送るべきでないか(circuit開放中 or 再ウォーム中) */
+function _shouldSkipRequest(site) {
+  return !!_circuitOpenBySite[site] || !!_rewarmInProgressBySite[site];
+}
+
+/** 成功(部分成功含む)を記録し、ストリーク・サーキットともにクリアする */
+function _recordApiSuccess(site) {
+  _siteEmptyStreak[site]   = 0;
+  _circuitOpenBySite[site] = false;
+}
+
+/**
+ * 空応答を記録し、閾値に達していたら判定フロー(再ウォームアップ試行 →
+ * 失敗/クールダウン中ならサーキットを開いて今回の実行では諦める)を実行する。
+ * 複数ワーカーが並行して呼んでも、再ウォームアップの多重起動は
+ * _rewarmInProgressBySite で防止される。
+ */
+async function _recordApiEmptyAndMaybeRecover(site) {
+  _siteEmptyStreak[site] = (_siteEmptyStreak[site] ?? 0) + 1;
+  if (_siteEmptyStreak[site] < EMPTY_STREAK_THRESHOLD) return;
+  if (_circuitOpenBySite[site] || _rewarmInProgressBySite[site]) return; // 既に対処中/対処済み
+
+  if (typeof global._reWarmUpSession !== 'function') {
+    log.warn('[detail] no re-warmup hook available (non-Electron context?)', site);
     _circuitOpenBySite[site] = true;
-    log.error(`[detail] ${site}: 空応答(または取得失敗)が${CIRCUIT_BREAKER_THRESHOLD}回連続 — ` +
-      `セッション/年齢確認が失敗している疑いが強いため、このサイトへのリクエストを今回の巡回では打ち切ります` +
-      `(次回の巡回で自動的に再試行されます)`);
+    return;
   }
-}
-function _recordNonEmptyResult(site) {
-  _consecutiveEmptyBySite[site] = 0;
-}
-function _isCircuitOpen(site) {
-  return !!_circuitOpenBySite[site];
+
+  const now = Date.now();
+  if (now - _lastRewarmAt < REWARM_COOLDOWN_MS) {
+    log.warn('[detail] session re-warmup skipped (cooldown)', site,
+      `${Math.ceil((REWARM_COOLDOWN_MS - (now - _lastRewarmAt)) / 1000)}s残り`);
+    _circuitOpenBySite[site] = true;
+    log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続、再ウォームアップはクールダウン中 — ` +
+      `このサイトへのリクエストを今回の巡回では打ち切ります(次回の巡回で自動的に再試行されます)`);
+    return;
+  }
+
+  _rewarmInProgressBySite[site] = true;
+  _lastRewarmAt = now;
+  log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続 — セッション再確立を試みます`);
+  try {
+    await global._reWarmUpSession();
+    log.info('[detail] session re-warmup completed, resuming', site);
+    // 再ウォームアップ成功: ストリーク・サーキットともにクリアして
+    // もう一度チャンスを与える(ここが従来の構造的不具合の修正点)。
+    _siteEmptyStreak[site]   = 0;
+    _circuitOpenBySite[site] = false;
+  } catch (e) {
+    log.error('[detail] session re-warmup failed', site, e.message);
+    _circuitOpenBySite[site] = true;
+    log.error(`[detail] ${site}: セッション再確立に失敗 — ` +
+      `このサイトへのリクエストを今回の巡回では打ち切ります(次回の巡回で自動的に再試行されます)`);
+  } finally {
+    _rewarmInProgressBySite[site] = false;
+  }
 }
 
 // ─── public ──────────────────────────────────────────────────────────────────
 
 async function runDetailFetch(limit = 300, { onProgress } = {}) {
-  // 実行ごとにサーキットブレーカーをリセット（前回の巡回で打ち切ったサイトも
-  // 今回はまず1回試す）
-  _resetCircuitBreaker();
+  // 実行ごとにサーキット/ストリークをリセット（前回の巡回で打ち切ったサイトも
+  // 今回はまず1回試す。再ウォームアップのクールダウンは実行をまたいで維持する）
+  _resetSessionHealthState();
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
@@ -196,9 +256,9 @@ function saveDiscoveredPrice(rjCode, priceData) {
 async function _processBatch(works, site, depth = 0) {
   const result = { processed: 0, priceChanges: 0, errors: 0 };
 
-  // サーキットブレーカーが開いていれば、ネットワークを叩かずに即座に
+  // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
   // fetchError扱いにする（priorityは下げない・intervalのみ延長）。
-  if (_isCircuitOpen(site)) {
+  if (_shouldSkipRequest(site)) {
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
     });
@@ -223,8 +283,10 @@ async function _processBatch(works, site, depth = 0) {
   // 無制限に分割し続けており、1つの50件バッチの失敗が最大63回もの個別
   // リクエストに膨れ上がっていた。分割は診断的価値のある最初の1段階だけに
   // 制限し(バッチサイズに起因する一時的な問題の切り分けは残しつつ)、
-  // それでも失敗する場合は録fetchErrorに倒してこれ以上分割しない。
-  // 系統的な失敗の検出・抑制はサーキットブレーカー(_recordEmptyResult等)が担う。
+  // それでも失敗する場合は recordFetchError に倒してこれ以上分割しない。
+  // 系統的な失敗の検出・抑制と再ウォームアップの起動は _apiFetch 内の
+  // _recordApiEmptyAndMaybeRecover() に一元化されている(分割の深さに
+  // かかわらず _apiFetch 呼び出しごとに正しくカウントされる)。
   const MAX_SPLIT_DEPTH = 1;
   if (!body && works.length > 1 && depth < MAX_SPLIT_DEPTH) {
     log.warn('[detail] batch fail, splitting', works.length);
@@ -239,16 +301,14 @@ async function _processBatch(works, site, depth = 0) {
   }
 
   if (!body) {
-    _recordEmptyResult(site);
     // 1件でも失敗 — まとめて記録するが、保存は呼び出し元(runDetailFetch)が間引いて行う
+    // (ストリーク/サーキット/再ウォームアップの記録は _apiFetch 側で既に完了している)
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
     });
     result.errors += works.length;
     return result;
   }
-
-  _recordNonEmptyResult(site);
 
   // APIレスポンスのキーを正規化: 大文字版 + ゼロ埋めなし版の両方をインデックス
   const normalizedBody = {};
@@ -349,47 +409,6 @@ async function _processBatch(works, site, depth = 0) {
   return result;
 }
 
-// ─── セッション健全性トラッキング ───────────────────────────────────────────
-// バグ修正: product/info/ajax がHTTP 200+空オブジェクトを返す事象(≒セッション/
-// 年齢確認Cookieが無効化された)が起きても、これまでは個々のリクエストが
-// 「取得失敗」として記録されるだけで、セッション自体の回復は一切試みられて
-// いなかった。起動時のwarmUpSession()は一度きりで、turbo/allのような
-// 高頻度リクエストの途中でDLsite側がセッションを無効化した場合、以降の
-// リクエストが全滅し続けたまま(originally入っていたと見られる「5回連続で
-// このサイトを打ち切る」という回避策も、根本原因であるセッション切れ自体は
-// 解消しないため、結果的にturbo/allが本来処理すべき件数よりずっと少ない
-// 件数で「due が尽きた」ように見えて早期終了する一因になっていたと考えられる)。
-// 空応答が一定回数連続したら、セッション再確立(warmUpSession)を試みてから
-// 続行する。Electron以外(CLI等)ではフックが存在しないため何もしない。
-const _EMPTY_STREAK_THRESHOLD = 5;
-const _REWARM_COOLDOWN_MS     = 60_000; // 再ウォームアップの最短間隔(連発防止)
-const _siteEmptyStreak = {};
-let   _lastRewarmAt    = 0;
-
-async function _maybeRewarmSession(site) {
-  _siteEmptyStreak[site] = 0; // 再ウォーム後にもう一度チャンスを与える(ストリークリセット)
-
-  const now = Date.now();
-  if (now - _lastRewarmAt < _REWARM_COOLDOWN_MS) {
-    log.warn('[detail] session re-warmup skipped (cooldown)', site,
-      `${Math.ceil((_REWARM_COOLDOWN_MS - (now - _lastRewarmAt)) / 1000)}s残り`);
-    return;
-  }
-  _lastRewarmAt = now;
-
-  if (typeof global._reWarmUpSession !== 'function') {
-    log.warn('[detail] no re-warmup hook available (non-Electron context?)', site);
-    return;
-  }
-  log.error(`[detail] ${site}: 空応答が${_EMPTY_STREAK_THRESHOLD}回連続 — セッション再確立を試みます`);
-  try {
-    await global._reWarmUpSession();
-    log.info('[detail] session re-warmup completed, resuming', site);
-  } catch (e) {
-    log.error('[detail] session re-warmup failed', site, e.message);
-  }
-}
-
 // ─── API fetch ────────────────────────────────────────────────────────────────
 
 async function _apiFetch(works, site) {
@@ -410,13 +429,14 @@ async function _apiFetch(works, site) {
     if (returnedKeys === 0) {
       log.warn('[detail] API returned empty object', site, `requested ${works.length}件`,
         'sample:', works.slice(0,2).map(w=>w.rj_code).join(','));
-      _siteEmptyStreak[site] = (_siteEmptyStreak[site] ?? 0) + 1;
-      if (_siteEmptyStreak[site] >= _EMPTY_STREAK_THRESHOLD) {
-        await _maybeRewarmSession(site);
-      }
+      // ストリーク記録・サーキット開閉・再ウォームアップの起動判定は
+      // すべて _recordApiEmptyAndMaybeRecover に一元化されている(冒頭の
+      // 「セッション健全性トラッキング」セクション参照)。
+      await _recordApiEmptyAndMaybeRecover(site);
       return null;
     }
-    _siteEmptyStreak[site] = 0; // 成功(部分成功含む)したのでストリークをリセット
+    // 成功(部分成功含む)したのでストリーク・サーキットともにクリアする
+    _recordApiSuccess(site);
     if (returnedKeys < works.length * 0.5) {
       log.warn('[detail] API returned partial data', site,
         `got ${returnedKeys} / requested ${works.length}`);
