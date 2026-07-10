@@ -117,33 +117,27 @@ global._reWarmUpSession = () => {
   return _reWarmInFlight;
 };
 
-// 1サイト分の年齢確認突破を試みる。did-finish-load/did-fail-load いずれかが
-// 発火するか、タイムアウトしたら resolve する。
-// 戻り値: { clicked: boolean, reason: string } — clicked は年齢確認ボタンの
-// クリックに成功したかどうか(呼び出し側のログ・診断用)。
-function _warmUpOneSite(w, url) {
+// ページ遷移を1回行い、did-finish-load/did-fail-load/タイムアウトのいずれかで
+// 解決する低レベルヘルパー。年齢確認ボタンのクリック等は一切行わない
+// (それは _tryClickAgeGate に分離)。2段階遷移(トップページ→商品ページ)で
+// 同じナビゲーション待ちロジックを2回使うために切り出した。
+function _navigateAndWait(w, url, timeoutMs) {
   const log = require('./crawler/logger');
   return new Promise(resolve => {
     let resolved = false;
-    let clicked  = false;
     const done = (reason) => {
       if (resolved) return;
       resolved = true;
       w.webContents.removeListener('did-finish-load', onFinish);
       w.webContents.removeListener('did-fail-load', onFailLoad);
-      log.info('[warmUp] site done', { url, clicked, reason });
-      resolve({ clicked, reason });
+      resolve({ reason });
     };
 
     // バグ修正: did-fail-load はメインフレームのナビゲーション失敗以外(広告/
     // トラッカー等のサブリソース、中断されたリダイレクト等)でも頻繁に発火する。
     // 特に errorCode -3 (net::ERR_ABORTED) は、サーバー側リダイレクトの過程で
     // 元のリクエストが中断される際にごく普通に発生するイベントで、実際には
-    // その直後にリダイレクト先で did-finish-load が正常に発火することが多い
-    // (実ログで bl/girls への遷移時に頻発することを確認済み)。
-    // 以前は isMainFrame のみを見て即座に done() していたため、リダイレクト先の
-    // 実際のページ(年齢確認ページ含む)に到達する前に諦めてしまい、一度も
-    // クリックを試さないまま次のサイトへ進んでしまっていた。
+    // その直後にリダイレクト先で did-finish-load が正常に発火することが多い。
     // ERR_ABORTED は無視して did-finish-load 側に処理を委ねる。
     const onFailLoad = (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
       if (isMainFrame === false) return;
@@ -154,68 +148,14 @@ function _warmUpOneSite(w, url) {
       log.warn('[warmUp] did-fail-load (main frame)', { url, errorCode, errorDescription });
       done('fail-load:' + errorCode);
     };
-
-    const onFinish = async () => {
-      let diag = null;
-      try {
-        // 年齢確認ボタン（複数のセレクタに対応）
-        const evalResult = await w.webContents.executeJavaScript(`
-          (function() {
-            // CSS セレクタで特定できるボタンを先に試す
-            const selectors = [
-              'a.btn_yes', 'a[href*="adult=1"]', '.btn_adult',
-              'a[href*="age_check"]', 'input[value*="はい"]',
-              '.age_check_yes', 'a[href*="adultchecked"]'
-            ];
-            for (const sel of selectors) {
-              try {
-                const el = document.querySelector(sel);
-                if (el) { el.click(); return { clicked: true, via: 'selector:' + sel }; }
-              } catch {}
-            }
-            // :contains は無効なので全 <a> をテキストで走査
-            const keywords = ['はい', '入場する', '18歳以上', 'adult', 'enter', '同意'];
-            for (const a of document.querySelectorAll('a, button')) {
-              const txt = (a.textContent || '').trim();
-              if (keywords.some(k => txt.includes(k))) { a.click(); return { clicked: true, via: 'keyword:' + txt.slice(0, 20) }; }
-            }
-            // 失敗時の診断用情報: 実際にどんなページに着地しているのか
-            // (年齢確認ページ自体が読み込めていないのか、既に通過済みで
-            // 別のセレクタ/文言に変わっているのかを切り分けるため)
-            return {
-              clicked: false,
-              diag: {
-                title: document.title,
-                url: location.href,
-                bodyTextSample: (document.body?.innerText || '').slice(0, 200).replace(/\\s+/g, ' '),
-                anchorTextsSample: Array.from(document.querySelectorAll('a')).slice(0, 15).map(a => (a.textContent||'').trim()).filter(Boolean),
-              },
-            };
-          })()
-        `);
-        clicked = !!evalResult?.clicked;
-        if (!clicked) diag = evalResult?.diag ?? null;
-      } catch (e) {
-        log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
-      }
-
-      if (!clicked && diag) {
-        log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
-      }
-
-      // 2秒後にCookie確立を待ってから次のサイトへ
-      setTimeout(() => done('finish-load'), 2000);
-    };
+    const onFinish = () => done('finish-load');
 
     w.webContents.once('did-finish-load', onFinish);
     w.webContents.on('did-fail-load', onFailLoad);
 
-    // バグ修正: 診断用の情報取得(document.title等)はonFinish内にしか無く、
-    // did-finish-loadが一度も発火しないタイムアウトケースでは一切残らなかった
-    // (実際にmaniaxで毎回timeoutしていたが、原因調査に必要な情報が
-    // dlsite-error.logに何も出ていなかった)。タイムアウト時もページの
-    // 現在状態を可能な限り取得してログに残す。executeJavaScript自体が
-    // 使えない状態(ページコンテキスト未確立等)も起こり得るためtry/catchする。
+    // タイムアウト時もページの現在状態を可能な限り取得してログに残す
+    // (診断コードがonFinish内にしか無いと、did-finish-loadが一度も
+    // 発火しないタイムアウトケースで一切の手がかりが残らなかった)。
     setTimeout(async () => {
       if (resolved) return;
       try {
@@ -233,10 +173,116 @@ function _warmUpOneSite(w, url) {
           { url, error: e.message, isLoading: w.webContents.isLoading() });
       }
       done('timeout');
-    }, 15000); // サイトごとのタイムアウト。10s→15sに緩和(3サイト構成で最悪ケースでも合計45秒程度)。
+    }, timeoutMs);
 
     w.loadURL(url);
   });
+}
+
+// 現在ロード済みのページ上で年齢確認ボタンを探してクリックする。
+// 見つからなかった場合は診断用に title/URL/本文抜粋/リンク文言を返す。
+async function _tryClickAgeGate(w, url) {
+  const log = require('./crawler/logger');
+  try {
+    const evalResult = await w.webContents.executeJavaScript(`
+      (function() {
+        const selectors = [
+          'a.btn_yes', 'a[href*="adult=1"]', '.btn_adult',
+          'a[href*="age_check"]', 'input[value*="はい"]',
+          '.age_check_yes', 'a[href*="adultchecked"]'
+        ];
+        for (const sel of selectors) {
+          try {
+            const el = document.querySelector(sel);
+            if (el) { el.click(); return { clicked: true, via: 'selector:' + sel }; }
+          } catch {}
+        }
+        const keywords = ['はい', '入場する', '18歳以上', 'adult', 'enter', '同意'];
+        for (const a of document.querySelectorAll('a, button')) {
+          const txt = (a.textContent || '').trim();
+          if (keywords.some(k => txt.includes(k))) { a.click(); return { clicked: true, via: 'keyword:' + txt.slice(0, 20) }; }
+        }
+        return {
+          clicked: false,
+          diag: {
+            title: document.title,
+            url: location.href,
+            bodyTextSample: (document.body?.innerText || '').slice(0, 200).replace(/\\s+/g, ' '),
+            anchorTextsSample: Array.from(document.querySelectorAll('a')).slice(0, 15).map(a => (a.textContent||'').trim()).filter(Boolean),
+          },
+        };
+      })()
+    `);
+    const clicked = !!evalResult?.clicked;
+    if (!clicked && evalResult?.diag) {
+      log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...evalResult.diag });
+    }
+    return clicked;
+  } catch (e) {
+    log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
+    return false;
+  }
+}
+
+// 1サイト分の年齢確認突破を試みる。
+// 戻り値: { clicked: boolean, reason: string } — clicked は年齢確認ボタンの
+// クリックに成功したかどうか(呼び出し側のログ・診断用)。
+//
+// バグ修正: 従来はトップページ(https://www.dlsite.com/{site}/)上でだけ
+// 年齢確認ボタンを探していたが、実機診断の結果、DLsiteは(全年齢+成人混在の)
+// トップページ自体では年齢確認を要求せず、個別の成人向け作品詳細ページに
+// 直接アクセスした時だけ年齢確認ゲートを表示する仕様と判明した
+// (診断ログでmaniaxのトップページのtitle/リンク一覧を確認したところ、
+// 通常のストア画面がそのまま表示され、年齢確認ボタンがそもそも存在
+// しなかった)。これによりwarmUpSession()はdid-finish-loadの発火自体は
+// 成功していても、クリックすべきボタンが存在しないページを開いているだけ
+// で、年齢確認Cookieを一切取得できていなかった可能性が高い。
+// トップページでボタンが見つからない場合、ページ内の実商品リンクを1件
+// 拾ってそこへ遷移し、そこで改めて年齢確認ボタンを探す2段階方式に変更。
+// トップページで直接ボタンが見つかるサイト(従来通り動いていた場合)は
+// 1段階目で完結するため、既存の動作を壊さない。
+async function _warmUpOneSite(w, url) {
+  const log = require('./crawler/logger');
+
+  const rootNav = await _navigateAndWait(w, url, 15000);
+  if (rootNav.reason !== 'finish-load') {
+    log.info('[warmUp] site done', { url, clicked: false, reason: rootNav.reason });
+    return { clicked: false, reason: rootNav.reason };
+  }
+
+  let clicked = await _tryClickAgeGate(w, url);
+  if (clicked) {
+    await new Promise(r => setTimeout(r, 2000)); // Cookie確立待ち
+    log.info('[warmUp] site done', { url, clicked: true, reason: 'finish-load(root)' });
+    return { clicked: true, reason: 'finish-load(root)' };
+  }
+
+  let productUrl = null;
+  try {
+    productUrl = await w.webContents.executeJavaScript(
+      `(function(){ const a = document.querySelector('a[href*="/product_id/RJ"]'); return a ? a.href : null; })()`
+    );
+  } catch (e) {
+    log.warn('[warmUp] product link scan failed', { url, error: e.message });
+  }
+
+  if (!productUrl) {
+    log.warn('[warmUp] 年齢確認ボタンが見つからず、商品リンクも見つからなかったため断念', { url });
+    return { clicked: false, reason: 'no-age-gate-no-product-link' };
+  }
+
+  log.info('[warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行', { url, productUrl });
+  const productNav = await _navigateAndWait(w, productUrl, 15000);
+  if (productNav.reason !== 'finish-load') {
+    log.info('[warmUp] site done', { url, clicked: false, reason: 'product-page-' + productNav.reason });
+    return { clicked: false, reason: 'product-page-' + productNav.reason };
+  }
+
+  clicked = await _tryClickAgeGate(w, productUrl);
+  await new Promise(r => setTimeout(r, 2000)); // Cookie確立待ち
+  const reason = clicked ? 'finish-load(product)' : 'no-button-on-product-page';
+  log.info('[warmUp] site done', { url, clicked, reason });
+  return { clicked, reason };
 }
 async function startBackend() {
   console.log('[startup] requiring modules...');
