@@ -106,6 +106,10 @@ async function warmUpSession() {
     results[site].cookieObtained = await _checkAgeCookie(session, site);
   }
   log.info('[warmUp] age-gate results (per site)', results);
+  // 診断パネル(apiServer.js _runDiagnostics)がログファイルを漁らずに直接
+  // 参照できるよう、最新の実行結果(title/本文抜粋/リンク文言を含む)を
+  // グローバルに保持しておく。
+  global._lastWarmUpDiag = { at: new Date().toISOString(), results };
   const failedSites = Object.entries(results).filter(([, r]) => !r.cookieObtained).map(([s]) => s);
   if (failedSites.length) {
     log.warn('[warmUp] 年齢確認Cookieを取得できなかったサイト', failedSites,
@@ -287,6 +291,14 @@ function _navigateAndWait(w, url, timeoutMs) {
 
 // 現在ロード済みのページ上で年齢確認ボタンを探してクリックする。
 // 見つからなかった場合は診断用に title/URL/本文抜粋/リンク文言を返す。
+//
+// バグ修正: 以前は診断情報(title/bodyTextSample/anchorTextsSample)を
+// log.warn()でファイルに書き出すだけで、呼び出し元には捨てていた。
+// 「地域ブロックページなのか、単に年齢確認ページのセレクタが変わっただけ
+// なのか」を判別するには実際のページ内容を見る必要があるが、そのたびに
+// ユーザーにログファイルを探して貼ってもらう往復が発生していた。
+// diag情報を戻り値に含め、呼び出し元(warmUpSession)がグローバルに保持して
+// 診断パネルから直接読めるようにする。
 async function _tryClickAgeGate(w, url) {
   const log = require('./crawler/logger');
   try {
@@ -313,20 +325,21 @@ async function _tryClickAgeGate(w, url) {
           diag: {
             title: document.title,
             url: location.href,
-            bodyTextSample: (document.body?.innerText || '').slice(0, 200).replace(/\\s+/g, ' '),
+            bodyTextSample: (document.body?.innerText || '').slice(0, 300).replace(/\\s+/g, ' '),
             anchorTextsSample: Array.from(document.querySelectorAll('a')).slice(0, 15).map(a => (a.textContent||'').trim()).filter(Boolean),
           },
         };
       })()
     `);
     const clicked = !!evalResult?.clicked;
-    if (!clicked && evalResult?.diag) {
-      log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...evalResult.diag });
+    const diag = evalResult?.diag ?? null;
+    if (!clicked && diag) {
+      log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
     }
-    return clicked;
+    return { clicked, diag };
   } catch (e) {
     log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
-    return false;
+    return { clicked: false, diag: { error: e.message } };
   }
 }
 
@@ -381,11 +394,11 @@ async function _warmUpOneSite(w, url) {
     return { clicked: false, reason: rootNav.reason };
   }
 
-  let clicked = await _tryClickAgeGate(w, url);
-  if (clicked) {
+  let r = await _tryClickAgeGate(w, url);
+  if (r.clicked) {
     const navigated = await _waitAfterClick(w);
     log.info('[warmUp] site done', { url, clicked: true, reason: 'finish-load(root)', navigatedAfterClick: navigated });
-    return { clicked: true, reason: 'finish-load(root)' };
+    return { clicked: true, reason: 'finish-load(root)', diag: r.diag };
   }
 
   let productUrl = null;
@@ -399,21 +412,21 @@ async function _warmUpOneSite(w, url) {
 
   if (!productUrl) {
     log.warn('[warmUp] 年齢確認ボタンが見つからず、商品リンクも見つからなかったため断念', { url });
-    return { clicked: false, reason: 'no-age-gate-no-product-link' };
+    return { clicked: false, reason: 'no-age-gate-no-product-link', diag: r.diag };
   }
 
   log.info('[warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行', { url, productUrl });
   const productNav = await _navigateAndWait(w, productUrl, 15000);
   if (productNav.reason !== 'finish-load') {
     log.info('[warmUp] site done', { url, clicked: false, reason: 'product-page-' + productNav.reason });
-    return { clicked: false, reason: 'product-page-' + productNav.reason };
+    return { clicked: false, reason: 'product-page-' + productNav.reason, diag: r.diag };
   }
 
-  clicked = await _tryClickAgeGate(w, productUrl);
+  r = await _tryClickAgeGate(w, productUrl);
   const navigated = await _waitAfterClick(w);
-  const reason = clicked ? 'finish-load(product)' : 'no-button-on-product-page';
-  log.info('[warmUp] site done', { url, clicked, reason, navigatedAfterClick: navigated });
-  return { clicked, reason };
+  const reason = r.clicked ? 'finish-load(product)' : 'no-button-on-product-page';
+  log.info('[warmUp] site done', { url, clicked: r.clicked, reason, navigatedAfterClick: navigated });
+  return { clicked: r.clicked, reason, diag: r.diag };
 }
 async function startBackend() {
   console.log('[startup] requiring modules...');
