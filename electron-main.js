@@ -145,7 +145,7 @@ function _navigateAndWait(w, url, timeoutMs) {
     const cleanup = () => {
       w.webContents.removeListener('did-finish-load', onFinish);
       w.webContents.removeListener('did-fail-load', onFailLoad);
-      if (pollTimer)  { clearInterval(pollTimer);  pollTimer  = null; }
+      if (pollTimer)  { clearTimeout(pollTimer);  pollTimer  = null; }
       if (startTimer) { clearTimeout(startTimer);  startTimer = null; }
     };
 
@@ -188,26 +188,49 @@ function _navigateAndWait(w, url, timeoutMs) {
     // ナビゲーション直後は前のページのreadyStateがまだ残っている可能性が
     // あるため、少し待ってからポーリングを開始し、location.hrefが
     // about:blank でないことも合わせて確認する(誤検知防止)。
+    //
+    // バグ修正: 当初 setInterval(500ms) で実装していたが、レンダラーが
+    // 一時的に応答しない状態(ページが実際には裏で読み込み中、あるいは
+    // システムスリープ明け等)になると、前回の executeJavaScript 呼び出しが
+    // まだ完了していないのに次のティックが容赦なく積み重なり、レンダラーが
+    // 復帰した瞬間に溜まっていた呼び出しが一斉に解決して同一ミリ秒に
+    // 十数〜二十件の重複ログが出る事象が実機で確認された(done()自体は
+    // resolved フラグで冪等なため実害としての多重resolveは防げていたが、
+    // ログ出力とexecuteJavaScript呼び出し自体が無駄に何度も発生していた)。
+    // setInterval をやめ、「前回のポーリングが完了してから次を予約する」
+    // 自己再スケジュール方式の setTimeout に変更し、常に高々1件の
+    // executeJavaScript 呼び出ししか同時に飛ばないようにする。
     const POLL_START_DELAY = 800;
     const POLL_INTERVAL    = 500;
-    startTimer = setTimeout(() => {
-      startTimer = null;
+
+    const schedulePoll = () => {
       if (resolved) return;
-      pollTimer = setInterval(async () => {
+      pollTimer = setTimeout(async () => {
+        pollTimer = null;
         if (resolved) return;
         try {
           const state = await w.webContents.executeJavaScript(
             '({ readyState: document.readyState, href: location.href })'
           );
+          // await の間に did-finish-load 等、別経路で既に解決している
+          // かもしれないため、ログ出力・done() 呼び出し前に再確認する。
+          if (resolved) return;
           if (state?.readyState === 'complete' && state.href && state.href !== 'about:blank') {
             log.warn('[warmUp] did-finish-loadが発火しないため readyState ポーリングで検出',
               { url, href: state.href });
             done('finish-load');
+            return;
           }
         } catch {
           // ページ遷移中で一時的にJS実行不可なことがある。次のポーリングに任せる。
         }
+        schedulePoll();
       }, POLL_INTERVAL);
+    };
+
+    startTimer = setTimeout(() => {
+      startTimer = null;
+      schedulePoll();
     }, POLL_START_DELAY);
 
     // タイムアウト時もページの現在状態を可能な限り取得してログに残す
