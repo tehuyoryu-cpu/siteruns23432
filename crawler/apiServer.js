@@ -721,6 +721,44 @@ async function _runDiagnostics() {
     tests: [],
   };
 
+  // テスト0: 年齢確認Cookieの現状確認
+  // バグ修正の経緯: これまで「product/info/ajaxが0件を返す」原因がセッション切れ
+  // (年齢確認Cookie未取得)なのか別要因なのかを切り分けるには、dlsite-tracker.log
+  // 内の[warmUp]ログを手動で探す必要があり、診断ボタン1つで完結しなかった。
+  // ここでCookie保有状況を直接確認し、無ければその場でwarmUp再実行を試みてから
+  // 以降のAPIテストに進む(=診断ボタンが「現状確認」だけでなく「その場で自己修復」
+  // も兼ねるようにする)。
+  try {
+    const { session } = require('electron');
+    const before = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
+    const hasAgeCookieBefore = before.some(c => /adult|age/i.test(c.name));
+    const cookieTest = {
+      name: '年齢確認Cookie保有状況',
+      ok: hasAgeCookieBefore,
+      cookiesBefore: before.map(c => c.name),
+    };
+    if (!hasAgeCookieBefore && typeof global._reWarmUpSession === 'function') {
+      cookieTest.note = 'Cookie未検出のためセッション再確立を試みます...';
+      try {
+        await global._reWarmUpSession();
+        const after = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
+        const hasAgeCookieAfter = after.some(c => /adult|age/i.test(c.name));
+        cookieTest.rewarmAttempted = true;
+        cookieTest.ok = hasAgeCookieAfter;
+        cookieTest.cookiesAfter = after.map(c => c.name);
+        cookieTest.note = hasAgeCookieAfter
+          ? 'セッション再確立に成功しました'
+          : 'セッション再確立を試みましたが、年齢確認Cookieを取得できませんでした（DLsite側のページ構造変更の可能性）';
+      } catch (e) {
+        cookieTest.rewarmAttempted = true;
+        cookieTest.error = 're-warmup failed: ' + e.message;
+      }
+    }
+    result.tests.push(cookieTest);
+  } catch (e) {
+    result.tests.push({ name: '年齢確認Cookie保有状況', ok: null, error: e.message });
+  }
+
   // テスト1: DLsite新着ページ取得（page=1はURLに /page/1 を含まない）
   const testUrl = 'https://www.dlsite.com/maniax/new/=/per_page/30.html';
   try {
