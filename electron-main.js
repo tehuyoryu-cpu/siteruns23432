@@ -51,10 +51,22 @@ let db, apiServer, scheduler, discovery, detailFetcher;
 // そのため config.dlsite.sites に設定された girls/bl の product/info/ajax が
 // 常に空応答({})を返し、診断ツールでも実際の巡回でも取得できずにいた。
 // config.dlsite.sites の全サイトを順番に開いて年齢確認するように変更。
+//
+// バグ修正(本丸・長期未修正だった根本原因): 上記の対応後も、実際に開いていた
+// URLは各サイトの「ルートページ」(https://www.dlsite.com/{site}/)のままだった。
+// DLsiteの年齢確認ゲートはサイトルートではなく、個別の商品詳細ページ
+// (/{site}/work/=/product_id/{RJ}.html)にアクセスしたときにのみ表示される
+// 仕様であることが確認できた(ルートページは年齢確認なしで閲覧できる通常の
+// ストア画面をそのまま返すため、_tryClickAgeGate は毎回クリック対象を
+// 見つけられず、結果としてCookieも一切付与されないまま「クリック試行はした
+// ことになっている」空振り状態が続いていた)。DB内に実在するRJコードを1件
+// 拝借して商品詳細ページへ遷移するように変更する(DBが空の初回起動時は
+// フォールバックでルートページを開く)。
 async function warmUpSession() {
   const { BrowserWindow, session } = require('electron');
   const config = require('./config');
   const log    = require('./crawler/logger');
+  const db     = require('./crawler/db');
 
   const w = new BrowserWindow({
     show: false,
@@ -76,7 +88,21 @@ async function warmUpSession() {
   // サイトごとに直後でCookie保有状況を確認するようにする。
   const results = {};
   for (const site of sites) {
-    results[site] = await _warmUpOneSite(w, `https://www.dlsite.com/${site}/`);
+    let targetUrl = `https://www.dlsite.com/${site}/`;
+    let rjUsed = null;
+    try {
+      rjUsed = db.getSampleRjForSite(site);
+    } catch (e) {
+      log.warn('[warmUp] getSampleRjForSite failed', site, e.message);
+    }
+    if (rjUsed) {
+      targetUrl = `https://www.dlsite.com/${site}/work/=/product_id/${rjUsed}.html`;
+    } else {
+      log.warn('[warmUp] DB内に', site, '向けの実在RJコードが無いためサイトルートで代用します(年齢確認ゲートが表示されない可能性が高い、初回起動時は正常)');
+    }
+    results[site] = await _warmUpOneSite(w, targetUrl);
+    results[site].targetUrl = targetUrl;
+    results[site].rjUsed = rjUsed;
     results[site].cookieObtained = await _checkAgeCookie(session, site);
   }
   log.info('[warmUp] age-gate results (per site)', results);
