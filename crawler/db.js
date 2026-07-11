@@ -1120,6 +1120,21 @@ function getAllRjCodes() {
   return _rjCodesCache;
 }
 
+/**
+ * ウォームアップ用: 指定サイトファミリー内で実在する作品RJコードを1件返す。
+ * DLsiteの年齢確認ゲートはサイトルートではなく商品詳細ページでのみ表示される
+ * ため、warmUpSession()が実際にクリック可能な年齢確認ページへ到達するには
+ * サイトごとの実在RJコードが必要。DBが空(初回起動)の場合はnullを返し、
+ * 呼び出し側はサイトルートへのフォールバックで対応する。
+ */
+function getSampleRjForSite(siteId) {
+  const row = _get(
+    'SELECT rj_code FROM works WHERE site_id = ? ORDER BY last_checked DESC LIMIT 1',
+    [siteId]
+  );
+  return row?.rj_code ?? null;
+}
+
 module.exports = {
   init,
   close,
@@ -1161,4 +1176,5 @@ module.exports = {
   getRecentPriceLogMap,
   countSuspectedDelisted,
   recoverSuspectedDelisted,
+  getSampleRjForSite,
 };
