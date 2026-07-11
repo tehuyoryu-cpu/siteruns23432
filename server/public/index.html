@@ -1572,6 +1572,9 @@ async function showDiag() {
       if (t.returnedKeys != null) out += `  APIキー数: ${t.returnedKeys}件\n`;
       if (t.contentType)  out += `  Content-Type: ${t.contentType}\n`;
       if (t.testedCodes) out += `  テスト対象: ${t.testedCodes.join(', ')}\n`;
+      if (t.cookiesBefore) out += `  Cookie(前): ${t.cookiesBefore.join(', ') || '(なし)'}\n`;
+      if (t.rewarmAttempted) out += `  再ウォームアップ: 実行しました\n`;
+      if (t.cookiesAfter) out += `  Cookie(後): ${t.cookiesAfter.join(', ') || '(なし)'}\n`;
       if (t.error)    out += `  エラー: ${t.error}\n`;
       if (t.note)     out += `  メモ: ${t.note}\n`;
     }
