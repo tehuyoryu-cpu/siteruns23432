@@ -759,8 +759,38 @@ async function _runDiagnostics() {
     result.tests.push({ name: '年齢確認Cookie保有状況', ok: null, error: e.message });
   }
 
+  // テスト0.5: warmUp時に実際に開いたページの中身(タイトル/本文抜粋/リンク文言)
+  // バグ修正の経緯: 「年齢確認ゲートのセレクタが古い」のか「地域ブロック等で
+  // そもそも別のページが返っている」のかは、実際のページ内容を見ないと
+  // 判別できない。electron-main.js の warmUpSession() がサイトごとに
+  // global._lastWarmUpDiag へ記録するようになったので、それをそのまま
+  // 診断パネルに出す(ログファイルを探しに行かせない)。
+  if (global._lastWarmUpDiag?.results) {
+    for (const [site, r] of Object.entries(global._lastWarmUpDiag.results)) {
+      const d = r.diag;
+      result.tests.push({
+        name: `warmUp実行内容 [${site}]`,
+        ok: r.clicked === true ? true : (r.clicked === false ? false : null),
+        note: `対象URL: ${r.targetUrl ?? '(不明)'}${r.rjUsed ? ' (RJ: ' + r.rjUsed + ')' : ''} / clicked=${r.clicked} / reason=${r.reason}`
+          + (d?.title != null ? `\n  ページタイトル: ${d.title}`  : '')
+          + (d?.url   != null ? `\n  実際のURL: ${d.url}` : '')
+          + (d?.bodyTextSample ? `\n  本文抜粋: ${d.bodyTextSample}` : '')
+          + (d?.anchorTextsSample?.length ? `\n  リンク文言: ${d.anchorTextsSample.join(' / ')}` : '')
+          + (d?.error ? `\n  取得エラー: ${d.error}` : ''),
+      });
+    }
+  } else {
+    result.tests.push({ name: 'warmUp実行内容', ok: null, note: 'まだ記録がありません（上のCookieテストで再ウォームアップが走らなかった場合など）' });
+  }
+
   // テスト1: DLsite新着ページ取得（page=1はURLに /page/1 を含まない）
-  const testUrl = 'https://www.dlsite.com/maniax/new/=/per_page/30.html';
+  // バグ修正: 応答時間27ms・バイト数が実行のたびに完全一致という不自然な
+  // 結果が続いていた(962,717 bytes固定)。これは962KBのページが物理的に
+  // ありえない速度で返っていることを意味し、electron.net.fetch側のHTTP
+  // キャッシュ(または経路上のCDNキャッシュ)が「現在のセッション状態」ではなく
+  // 古いレスポンスをそのまま返している可能性が高い。診断の信頼性を担保する
+  // ため、キャッシュキーに影響するクエリパラメータでキャッシュバスティングする。
+  const testUrl = 'https://www.dlsite.com/maniax/new/=/per_page/30.html?_diag=' + Date.now();
   try {
     const t0   = Date.now();
     const res  = await fetchWithRetry(testUrl);
