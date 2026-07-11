@@ -111,6 +111,33 @@ function _startSaleBoostJob() {
   log.info('[scheduler] saleBoost job scheduled', config.cron.saleBoost);
 }
 
+// ─── セッション定期再ウォームアップジョブ ─────────────────────────────────────
+// バグ修正: warmUpSession()は起動時に1回だけ実行され、以降は
+// detailFetcher.js の空応答サーキットブレーカー(5回連続空応答)が
+// 発火したときだけ再実行される「事後対応」しか無かった。
+// アプリを長時間起動しっぱなしにするとDLsite側の年齢確認Cookieが
+// サイレントに失効することがあり、その場合は次に巡回ジョブが走るまで
+// 誰も気づけず、診断ツールで手動確認して初めて発覚する(実際の事例:
+// product/info/ajax が HTTP 200 + 空オブジェクトを返し続けていた)。
+// 巡回の成否に関係なく、6時間ごとに無条件でセッションを再確立する
+// 予防的ジョブを追加する。
+function _startSessionRewarmJob() {
+  cron.schedule('15 */6 * * *', async () => {
+    if (typeof global._reWarmUpSession !== 'function') {
+      log.warn('[scheduler] sessionRewarm skipped (no re-warmup hook, non-Electron context?)');
+      return;
+    }
+    log.info('[scheduler] sessionRewarm start (periodic, preventive)');
+    try {
+      await global._reWarmUpSession();
+      log.info('[scheduler] sessionRewarm done');
+    } catch (err) {
+      log.error('[scheduler] sessionRewarm error', err.message);
+    }
+  });
+  log.info('[scheduler] sessionRewarm job scheduled (every 6h at :15)');
+}
+
 // ─── daily backup job ────────────────────────────────────────────────────────
 
 function _startBackupJob() {
@@ -196,6 +223,7 @@ async function start() {
   _startBackupJob();
   _startPrevMonthScanJob();
   _startExportShardsJob();
+  _startSessionRewarmJob();
 
   log.info('[scheduler] running initial passes on startup');
 
