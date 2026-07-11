@@ -96,9 +96,13 @@ async function _checkAgeCookie(session, label) {
   const log = require('./crawler/logger');
   try {
     const cookies = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
-    const names = cookies.map(c => c.name);
-    const hasAgeCookie = names.some(n => /adult|age/i.test(n));
-    log.info(`[warmUp] cookie check (${label})`, { hasAgeCookie, cookies: names });
+    const ageCookies = cookies.filter(c => /adult|age/i.test(c.name));
+    const hasAgeCookie = ageCookies.length > 0;
+    log.info(`[warmUp] cookie check (${label})`, {
+      hasAgeCookie,
+      ageCookies: ageCookies.map(c => `${c.name}=${c.value}`),
+      allCookieNames: cookies.map(c => c.name),
+    });
     return hasAgeCookie;
   } catch (e) {
     log.warn(`[warmUp] cookie check failed (${label})`, e.message);
@@ -399,20 +403,31 @@ global._notifyPriceChange = (count) => {
 async function startCrawlerBackground() {
   await new Promise(r => setTimeout(r, 500));
 
-  // 1. 必須 Cookie を事前注入（年齢確認・ロケール）
+  // 1. 必須 Cookie を事前注入（ロケールのみ）
+  //
+  // バグ修正(重要): 以前は adultchecked=1 / agecheck=1 も静的に注入していた。
+  // これは実際にDLsiteサーバー側が発行した年齢確認Cookieではない、こちらが
+  // 決め打ちで書き込んだ「偽物」で、しかも _checkAgeCookie() の判定条件
+  // (/adult|age/i にCookie名がマッチするか)がこの偽Cookieにもマッチして
+  // しまうため、本物の年齢確認が実際には失敗していても常に
+  // hasAgeCookie:true と誤判定される状態になっていた
+  // (実機の「新着ページ取得」診断では年齢確認ページが検出されていたにも
+  // 関わらず、cookie check側は毎回「成功」と報告していたのはこのため)。
+  // これにより failedSites が常に空になり、再ウォームアップの自動発火
+  // 条件(_checkAgeCookie失敗の検出)が一度も満たされなくなっていた。
+  // adultchecked/agecheckの静的注入自体をやめ、_warmUpOneSite()の実際の
+  // ナビゲーション+クリックで得られる本物のCookieだけを見るようにする。
   try {
     const { session } = require('electron');
     const ses = session.defaultSession;
     const base = { url: 'https://www.dlsite.com', domain: '.dlsite.com', path: '/', httpOnly: false };
     for (const [name, value] of [
-      ['locale',        'ja-jp'],
-      ['adultchecked',  '1'],
-      ['agecheck',      '1'],
+      ['locale', 'ja-jp'],
     ]) {
       await ses.cookies.set({ ...base, name, value })
         .catch(e => console.warn('[cookie] set failed', name, e.message));
     }
-    console.log('[startBackend] cookies pre-injected');
+    console.log('[startBackend] cookies pre-injected (locale only)');
   } catch(e) { console.warn('[cookie] session not ready', e.message); }
 
   // 2. DLsite セッションウォームアップ（バックグラウンド、ウィンドウ表示に影響しない）
