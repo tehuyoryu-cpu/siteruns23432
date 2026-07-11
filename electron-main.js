@@ -67,33 +67,43 @@ async function warmUpSession() {
   // 空オブジェクトを返す(≒年齢確認Cookie未取得)事象が起きても、後からログだけを
   // 見ても warmUp が実際に成功していたのか判別できなかった。log.info/log.warn
   // (logger.js経由、ファイル保存される方)で記録するようにする。
+  //
+  // バグ修正: 以前は「クリックできたか(clicked)」だけを見ており、Cookieが実際に
+  // 付与されたかは全サイト処理後に1回まとめて確認していた。これだと
+  // (a) どのサイトのクリックが実際にCookie取得につながったのか個別に分からない、
+  // (b) クリック自体は"成功"していても(例: 無関係な要素をキーワード一致で誤クリック)
+  // 実際にはCookieが付与されていないケースを見逃す、という問題があった。
+  // サイトごとに直後でCookie保有状況を確認するようにする。
   const results = {};
   for (const site of sites) {
     results[site] = await _warmUpOneSite(w, `https://www.dlsite.com/${site}/`);
+    results[site].cookieObtained = await _checkAgeCookie(session, site);
   }
-  log.info('[warmUp] age-gate click results (per site)', results);
-  const failedSites = Object.entries(results).filter(([, r]) => !r.clicked).map(([s]) => s);
+  log.info('[warmUp] age-gate results (per site)', results);
+  const failedSites = Object.entries(results).filter(([, r]) => !r.cookieObtained).map(([s]) => s);
   if (failedSites.length) {
-    log.warn('[warmUp] 年齢確認ボタンを検出/クリックできなかったサイト', failedSites,
-      '— DLsite側のページ構造が変わった可能性があります');
-  }
-
-  try {
-    const cookies = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
-    const names = cookies.map(c => c.name);
-    log.info('[warmUp] cookies obtained:', names.join(', ') || '(none)');
-    // adultchecked/agecheck 系のCookieが実際に付与されているかを明示確認する。
-    // これが無いと product/info/ajax は HTTPエラーにならず、HTTP 200 + 空オブジェクト
-    // ({})を返すため、詳細取得側(_apiFetch)だけを見ていると原因特定に時間がかかる。
-    const hasAgeCookie = names.some(n => /adult|age/i.test(n));
-    if (!hasAgeCookie) {
-      log.warn('[warmUp] 年齢確認Cookieが見つかりません。product/info/ajax が空応答になる可能性があります', names);
-    }
-  } catch (e) {
-    log.warn('[warmUp] cookie確認に失敗', e.message);
+    log.warn('[warmUp] 年齢確認Cookieを取得できなかったサイト', failedSites,
+      '— DLsite側のページ構造が変わった、またはクリックが実際のCookie取得に繋がっていない可能性があります');
   }
 
   try { w.destroy(); } catch {}
+}
+
+// 指定サイト向けの年齢確認Cookie(adult/age系)が現時点で付与されているかを確認する。
+// warmUpSession() のループ内でサイトごとに呼び、クリックの成否とCookie取得の成否を
+// 個別に突き合わせられるようにする(クリック成功≠Cookie取得成功のケースを検出するため)。
+async function _checkAgeCookie(session, label) {
+  const log = require('./crawler/logger');
+  try {
+    const cookies = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
+    const names = cookies.map(c => c.name);
+    const hasAgeCookie = names.some(n => /adult|age/i.test(n));
+    log.info(`[warmUp] cookie check (${label})`, { hasAgeCookie, cookies: names });
+    return hasAgeCookie;
+  } catch (e) {
+    log.warn(`[warmUp] cookie check failed (${label})`, e.message);
+    return false;
+  }
 }
 
 // ── 外部(detailFetcher.js等)から呼べるセッション再確立フック ──────────────────
@@ -224,6 +234,31 @@ async function _tryClickAgeGate(w, url) {
   }
 }
 
+// 年齢確認ボタンをクリックした直後の待機。
+// バグ修正: 以前は固定2秒の setTimeout のみで、クリックが実際にページ遷移/
+// リダイレクトを伴うケース(フォーム送信等でCookieがリダイレクト完了後にしか
+// 反映されない場合)に2秒で足りているか全く検証していなかった。
+// クリック後に did-finish-load が発火するかを最大 maxMs まで待ち、発火したら
+// Cookie反映の猶予を少し追加する。発火しない場合(AJAXのみでCookieを設定する
+// ケース等)は最低 minMs だけ待つ。
+function _waitAfterClick(w, minMs = 2000, maxMs = 6000) {
+  return new Promise(resolve => {
+    let settled = false;
+    const onFinish = () => {
+      if (settled) return;
+      settled = true;
+      setTimeout(() => resolve(true), 500); // ナビゲーション後のCookie反映猶予
+    };
+    w.webContents.once('did-finish-load', onFinish);
+    setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      w.webContents.removeListener('did-finish-load', onFinish);
+      resolve(false);
+    }, Math.max(minMs, maxMs));
+  });
+}
+
 // 1サイト分の年齢確認突破を試みる。
 // 戻り値: { clicked: boolean, reason: string } — clicked は年齢確認ボタンの
 // クリックに成功したかどうか(呼び出し側のログ・診断用)。
@@ -252,8 +287,8 @@ async function _warmUpOneSite(w, url) {
 
   let clicked = await _tryClickAgeGate(w, url);
   if (clicked) {
-    await new Promise(r => setTimeout(r, 2000)); // Cookie確立待ち
-    log.info('[warmUp] site done', { url, clicked: true, reason: 'finish-load(root)' });
+    const navigated = await _waitAfterClick(w);
+    log.info('[warmUp] site done', { url, clicked: true, reason: 'finish-load(root)', navigatedAfterClick: navigated });
     return { clicked: true, reason: 'finish-load(root)' };
   }
 
@@ -279,9 +314,9 @@ async function _warmUpOneSite(w, url) {
   }
 
   clicked = await _tryClickAgeGate(w, productUrl);
-  await new Promise(r => setTimeout(r, 2000)); // Cookie確立待ち
+  const navigated = await _waitAfterClick(w);
   const reason = clicked ? 'finish-load(product)' : 'no-button-on-product-page';
-  log.info('[warmUp] site done', { url, clicked, reason });
+  log.info('[warmUp] site done', { url, clicked, reason, navigatedAfterClick: navigated });
   return { clicked, reason };
 }
 async function startBackend() {
