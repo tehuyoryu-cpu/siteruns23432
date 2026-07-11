@@ -134,12 +134,21 @@ global._reWarmUpSession = () => {
 function _navigateAndWait(w, url, timeoutMs) {
   const log = require('./crawler/logger');
   return new Promise(resolve => {
-    let resolved = false;
+    let resolved  = false;
+    let pollTimer = null;
+    let startTimer = null;
+
+    const cleanup = () => {
+      w.webContents.removeListener('did-finish-load', onFinish);
+      w.webContents.removeListener('did-fail-load', onFailLoad);
+      if (pollTimer)  { clearInterval(pollTimer);  pollTimer  = null; }
+      if (startTimer) { clearTimeout(startTimer);  startTimer = null; }
+    };
+
     const done = (reason) => {
       if (resolved) return;
       resolved = true;
-      w.webContents.removeListener('did-finish-load', onFinish);
-      w.webContents.removeListener('did-fail-load', onFailLoad);
+      cleanup();
       resolve({ reason });
     };
 
@@ -162,6 +171,40 @@ function _navigateAndWait(w, url, timeoutMs) {
 
     w.webContents.once('did-finish-load', onFinish);
     w.webContents.on('did-fail-load', onFailLoad);
+
+    // バグ修正(本丸): タイムアウト診断ログで readyState:"complete",
+    // bodyLen:580000超(=ページは完全に読み込まれている)にも関わらず
+    // did-finish-load が一度も発火せず、15秒のタイムアウトを毎回まるまる
+    // 浪費していることが判明した。原因はElectron側の何らかの事情
+    // (サブフレームやservice worker絡み等)でイベントが正しく届いていない
+    // ことにあると見られるが、実害としては「ページは読めているのに
+    // 年齢確認ボタンをクリックする機会を得られない」ことなので、
+    // did-finish-loadだけに依存せず document.readyState をポーリングして
+    // 'complete' を検知した時点でも解決できるようにする。
+    // ナビゲーション直後は前のページのreadyStateがまだ残っている可能性が
+    // あるため、少し待ってからポーリングを開始し、location.hrefが
+    // about:blank でないことも合わせて確認する(誤検知防止)。
+    const POLL_START_DELAY = 800;
+    const POLL_INTERVAL    = 500;
+    startTimer = setTimeout(() => {
+      startTimer = null;
+      if (resolved) return;
+      pollTimer = setInterval(async () => {
+        if (resolved) return;
+        try {
+          const state = await w.webContents.executeJavaScript(
+            '({ readyState: document.readyState, href: location.href })'
+          );
+          if (state?.readyState === 'complete' && state.href && state.href !== 'about:blank') {
+            log.warn('[warmUp] did-finish-loadが発火しないため readyState ポーリングで検出',
+              { url, href: state.href });
+            done('finish-load');
+          }
+        } catch {
+          // ページ遷移中で一時的にJS実行不可なことがある。次のポーリングに任せる。
+        }
+      }, POLL_INTERVAL);
+    }, POLL_START_DELAY);
 
     // タイムアウト時もページの現在状態を可能な限り取得してログに残す
     // (診断コードがonFinish内にしか無いと、did-finish-loadが一度も
