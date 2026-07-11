@@ -474,19 +474,33 @@ function recordFetchError(rjCode) {
   const w = getWorkByRj(rjCode);
   if (!w) return;
   const errs = (w.consecutive_errors ?? 0) + 1;
-  // 5åé£ç¶ã¨ã©ã¼â72h, 10åâ7æ¥ ã§ã»ã¼åæ­¢
+  // 5回連続エラー→72h, 10回→7日 でほぼ停止
   const interval = errs >= 10 ? 7 * 86400
                  : errs >=  5 ? 3 * 86400
                  : w.check_interval ?? 86400;
+  // バグ修正: recordFetchError は check_interval だけを延ばし priority を
+  // 一切下げていなかった。recordApiMissing(APIキー自体が存在しない)とは
+  // 区別して「一時的なCDN不一致かもしれない」と保守的に扱う設計自体は妥当だが、
+  // 一度 priority=100(セール中)等で壊れた作品は、CDN不一致が続く限り
+  // 永久にその高優先度のまま ORDER BY priority DESC の先頭に居座り続け、
+  // due キューと診断ツールのサンプルを無駄に消費し続けるバグがあった
+  // (実際に同じ3件のRJコードが診断のたびに毎回選ばれ続けていたことで発覚)。
+  // 15回連続失敗(=中断込みで数日〜1週間分の試行)してもなお解決しない場合は、
+  // 「本当に消えた」とまでは断定しない(recordApiMissingのdelistedには落とさない)
+  // が、優先度だけは normal まで下げて他の正常な作品の巡回を妨げないようにする。
+  const priority = errs >= 15 && w.priority > config.priority.normal
+    ? config.priority.normal
+    : w.priority;
   const now = unixNow();
   _run(`
     UPDATE works SET
-      last_checked       = ?,
-      consecutive_errors = ?,
-      check_interval     = ?,
-      next_check_at       = ?
+      last_checked        = ?,
+      consecutive_errors  = ?,
+      check_interval      = ?,
+      next_check_at       = ?,
+      priority             = ?
     WHERE rj_code = ?
-  `, [now, errs, interval, now + interval, rjCode]);
+  `, [now, errs, interval, now + interval, priority, rjCode]);
 }
 
 /**
