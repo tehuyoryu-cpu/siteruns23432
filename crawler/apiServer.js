@@ -819,10 +819,23 @@ async function _runDiagnostics() {
   // product/info/ajax はサイトファミリー(maniax/girls/bl等)ごとにパスが異なるため、
   // サンプルがmaniax以外の作品だと正常に動いていてもAPIキー数0件(=偽陽性)になる。
   // サンプルを実際のsite_idごとにグループ化し、サイトごとに正しいURLでテストする。
+  //
+  // バグ修正: sort:'priority' の上位12件をそのまま使っていたため、恒久的に
+  // 削除/存在しなくなった作品(consecutive_errorsが積み上がっているのに
+  // priority=100等のまま張り付いているもの、recordFetchErrorのpriority減衰が
+  // 効くまでの間)が毎回同じサンプルとして選ばれ続け、「セッションが壊れている」
+  // ように見える偽陽性を引き起こしていた(実際は数件の削除済み作品固有の問題で、
+  // 全体のクロールは正常に進行していた)。母集団を広めに取り、
+  // consecutive_errors が高い(=繰り返し失敗が確定している)作品を除外してから
+  // サンプリングすることで、診断結果が全体の健全性をより正しく反映するようにする。
   let sampleWorks = [];
   try {
-    const rows = db.searchWorks({ q: '', sort: 'priority', page: 1, limit: 12 });
-    sampleWorks = rows.works ?? [];
+    const rows = db.searchWorks({ q: '', sort: 'priority', page: 1, limit: 60 });
+    sampleWorks = (rows.works ?? []).filter(w => (w.consecutive_errors ?? 0) < 3).slice(0, 12);
+    if (sampleWorks.length === 0) {
+      // 全滅(=上位60件が軒並みエラー持ち)の場合は健全性シグナルとしてそのまま使う
+      sampleWorks = (rows.works ?? []).slice(0, 12);
+    }
   } catch (e) {
     log.warn('[diag] failed to get sample works:', e.message);
   }
