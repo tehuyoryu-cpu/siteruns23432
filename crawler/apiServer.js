@@ -768,10 +768,12 @@ async function _runDiagnostics() {
   if (global._lastWarmUpDiag?.results) {
     for (const [site, r] of Object.entries(global._lastWarmUpDiag.results)) {
       const d = r.diag;
+      const ci = d?.clickedInfo;
       result.tests.push({
         name: `warmUp実行内容 [${site}]`,
         ok: r.clicked === true ? true : (r.clicked === false ? false : null),
         note: `対象URL: ${r.targetUrl ?? '(不明)'}${r.rjUsed ? ' (RJ: ' + r.rjUsed + ')' : ''} / clicked=${r.clicked} / reason=${r.reason}`
+          + (ci ? `\n  ★実際にクリックした要素: <${ci.tag}> "${ci.text}" (${ci.via}) href=${ci.href ?? '(なし)'}` : '')
           + (d?.title != null ? `\n  ページタイトル: ${d.title}`  : '')
           + (d?.url   != null ? `\n  実際のURL: ${d.url}` : '')
           + (d?.bodyTextSample ? `\n  本文抜粋: ${d.bodyTextSample}` : '')
