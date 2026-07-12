@@ -769,10 +769,21 @@ async function _runDiagnostics() {
     for (const [site, r] of Object.entries(global._lastWarmUpDiag.results)) {
       const d = r.diag;
       const ci = d?.clickedInfo;
+      // バグ修正: clicked===false を無条件に失敗(❌)扱いしていたが、
+      // これは「クリックできなかった」であって「セッションが壊れている」の
+      // 直接証拠ではない。cookieObtained===true (=実際に年齢確認Cookieを
+      // 保有している)なら、そもそもゲートが表示されずクリック不要だった
+      // だけの正常ケースである可能性が高い(実際に確認待ち0件までクロールが
+      // 進み、cookieObtained:trueが確認できた状態でもclicked:falseになる
+      // ケースが多数観測された)。cookieObtainedを最優先の判定材料にする。
+      const ok = r.cookieObtained === true ? true
+               : r.cookieObtained === false ? false
+               : (r.clicked === true ? true : (r.clicked === false ? false : null));
       result.tests.push({
         name: `warmUp実行内容 [${site}]`,
-        ok: r.clicked === true ? true : (r.clicked === false ? false : null),
-        note: `対象URL: ${r.targetUrl ?? '(不明)'}${r.rjUsed ? ' (RJ: ' + r.rjUsed + ')' : ''} / clicked=${r.clicked} / reason=${r.reason}`
+        ok,
+        note: `対象URL: ${r.targetUrl ?? '(不明)'}${r.rjUsed ? ' (RJ: ' + r.rjUsed + ')' : ''} / clicked=${r.clicked} / cookieObtained=${r.cookieObtained} / reason=${r.reason}`
+          + (r.cookieObtained === true && r.clicked === false ? '\n  ※クリック不要でした（既に年齢確認Cookieを保有しているため、ゲート自体が表示されなかったと考えられます）' : '')
           + (ci ? `\n  ★実際にクリックした要素: <${ci.tag}> "${ci.text}" (${ci.via}) href=${ci.href ?? '(なし)'}` : '')
           + (d?.title != null ? `\n  ページタイトル: ${d.title}`  : '')
           + (d?.url   != null ? `\n  実際のURL: ${d.url}` : '')
