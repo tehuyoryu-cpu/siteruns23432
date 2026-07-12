@@ -22,6 +22,7 @@
  *   POST /api/run/all              → run all jobs immediately
  *   POST /api/run/fullscan         → FSR full-collection scan
  *   POST /api/run/fullscan_sale    → FSR sale-only scan
+ *   POST /api/run/pushdata         → generate export shards + push to GitHub data branch
  *   GET  /api/log-stream           → SSE real-time log stream
  *   GET  /api/log                  → last 200 lines of log file
  */
@@ -35,6 +36,8 @@ const log    = require('./logger');
 const config = require('../config');
 const { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan } = require('./discovery');
 const detailFetcher = require('./detailFetcher');
+const { runExportShards } = require('./exportShards');
+const { main: pushDataShards } = require('../scripts/push-data-shards');
 
 // ─── SSE ────────────────────────────────────────────────────────────────────
 
@@ -76,7 +79,7 @@ setTimeout(() => {
 const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
   fullscan: false, fullscan_sale: false, all: false, turbo: false,
-  endingsoon: false, circlegap: false,
+  endingsoon: false, circlegap: false, pushdata: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -96,6 +99,7 @@ const _JOB_LABELS = {
   turbo:         'ぶっ飛ばし',
   endingsoon:    '終了間近収集',
   circlegap:     'サークル欠落診断',
+  pushdata:      'データPush',
 };
 
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
@@ -364,6 +368,35 @@ async function handleRun(job, res) {
       _sseSend(result.totalMissing > 0 ? 'change' : 'log', `サークル欠落診断完了 — ${gapSummary}`);
       log.info('[api] circleGapScan done', result);
 
+    } else if (job === 'pushdata') {
+      // 手動pushボタン: 日次04:30スケジューラー(runExportShards → push-data-shards.main())
+      // と全く同じパイプラインをオンデマンドで実行する。
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+
+      _sseSend('log', '配信データを生成中...');
+      const exportResult = await runExportShards();
+      _sseSend('log',
+        `エクスポート完了 — ${exportResult?.works ?? 0}作品 / shard:${exportResult?.dataShardFiles ?? 0}件 / index:${exportResult?.idxShardFiles ?? 0}件`);
+      Object.assign(_progress, { found: exportResult?.works ?? 0 });
+
+      _sseSend('log', 'GitHub dataブランチへpush中...');
+      const pushResult = await pushDataShards();
+
+      if (pushResult?.ok) {
+        _lastResult[job] = { ok: true, ...pushResult, exportResult, finishedAt: Date.now() };
+        _sseSend('change', `GitHub push完了 — ${pushResult.files}ファイル / commit:${(pushResult.commit ?? '').slice(0, 7)}`);
+        log.info('[api] pushdata done', { exportResult, pushResult });
+      } else {
+        // トークン未設定・出力なし等の意図的なスキップは「失敗」ではないが、
+        // 手動ボタンから押した以上はユーザーに理由が見えないと意味がないため
+        // 明示的に warn として可視化する（従来のスケジューラー任せの
+        // log.info()化バグの再発防止）。
+        _lastResult[job] = { ok: false, skipped: !!pushResult?.skipped, error: pushResult?.message ?? 'push失敗', exportResult, finishedAt: Date.now() };
+        _sseSend('warn', `GitHub pushスキップ/失敗 — ${pushResult?.message ?? '不明なエラー'}`);
+        log.warn('[api] pushdata skipped/failed', pushResult);
+      }
+      Object.assign(_progress, { done: true });
+
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
       Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
@@ -574,7 +607,7 @@ function createServer() {
         return _json(res, handleSettingsDeleteToken());
       }
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);

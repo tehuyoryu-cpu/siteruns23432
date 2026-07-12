@@ -654,6 +654,11 @@ body {
     診断
   </button>
   <div class="tb-sep"></div>
+  <button class="tb-btn" id="btnPushdata" onclick="runJob('pushdata')" data-desc="配信データ(shards/index)を生成し、GitHubのdataブランチへ即座にpushします（04:30の自動pushと同じ処理）" title="今すぐPush — 配信データをGitHubへ手動反映" style="color:#0055aa;font-weight:bold">
+    <svg viewBox="0 0 16 16"><path d="M8 11V3M5 6l3-3 3 3" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.5 11v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V11" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+    今すぐPush
+  </button>
+  <div class="tb-sep"></div>
   <button class="tb-btn" id="btnSettings" onclick="showSettings()" title="設定 — GitHub連携" data-desc="拡張機能向けデータをGitHubへ自動配信するためのトークンを設定します">
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
     設定
@@ -1327,6 +1332,7 @@ function _showJobResult(job, status) {
   else if (job === 'all')    setStatus('全て巡回完了 — 新規: ' + (r.discovered ?? 0) + '件 / 価格更新: ' + (r.processed ?? 0) + '件 / 変動: ' + (r.priceChanges ?? 0) + '件');
   else if (job?.startsWith('fullscan')) setStatus('全収集完了 — ' + (status.fullScanProgress?.grandTotal ?? 0) + ' 件');
   else if (job === 'circlegap') setStatus('サークル欠落診断完了 — チェック: ' + (r.checked ?? 0) + 'サークル / 発見した欠落: ' + (r.totalMissing ?? 0) + '件');
+  else if (job === 'pushdata') setStatus('GitHub push完了 — ' + (r.files ?? 0) + 'ファイル (' + (r.exportResult?.works ?? 0) + '作品) / commit:' + (r.commit ?? '').slice(0, 7));
   else setStatus((_JOB_LABELS[job] ?? job) + ' 完了');
 }
 
@@ -1341,6 +1347,7 @@ const _JOB_LABELS = {
   turbo:         'ぶっ飛ばし',
   endingsoon:    '終了間近収集',
   circlegap:     'サークル欠落診断',
+  pushdata:      '今すぐPush',
 };
 
 // ── ボタン説明バーの hover 制御 ──
@@ -1428,7 +1435,7 @@ async function _waitJobDone(job, btn) {
     _spShow(true);
     _spStartSSE();
     _spLog((_JOB_LABELS[job] ?? job) + ' 開始...');
-  } else if (job === 'discover' || job.startsWith('fullscan')) {
+  } else if (job === 'discover' || job.startsWith('fullscan') || job === 'pushdata') {
     _spScanned = 0; _spTotal = 0; _spChanges = 0;
     _spUpdate();
     _spShow(true);

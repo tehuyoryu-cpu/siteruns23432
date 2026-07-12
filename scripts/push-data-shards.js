@@ -61,6 +61,20 @@ https://cdn.jsdelivr.net/gh/${OWNER}/${REPO}@${BRANCH}/shards/{shard}.json
 shard番号の算出方法(FNV-1a 32bit)は \`crawler/exportShards.js\` の \`fnv1a()\` を参照。
 `;
 
+/**
+ * @returns {Promise<{
+ *   ok: boolean,
+ *   skipped?: boolean,
+ *   reason?: string,
+ *   message?: string,
+ *   files?: number,
+ *   commit?: string,
+ *   branch?: string,
+ * }>}
+ *   ok:true         — push成功（files/commit/branchが入る）
+ *   ok:false,skipped — 意図的なスキップ（トークン未設定・出力なし等）。エラーではない。
+ *   ok:false         — 実際の失敗はここには来ず throw する（呼び出し側の catch に委ねる）
+ */
 async function main() {
   const token = _resolveToken();
   if (!token) {
@@ -72,24 +86,28 @@ async function main() {
     // いた(exportShards自体は正常完了するため、エラーとしては一切見えない)。
     // 意図した自動化が実質的に無効化されているのは重大な問題のため、
     // 明示的に警告として残す。
-    log.warn('[push-data-shards] GitHubトークン未設定のためpushをスキップしました。' +
-      'ダッシュボードの「⚙️ 設定」からトークンを保存すると次回から自動pushされます。');
-    return;
+    const message = 'GitHubトークン未設定のためpushをスキップしました。' +
+      'ダッシュボードの「⚙️ 設定」からトークンを保存すると次回から自動pushされます。';
+    log.warn('[push-data-shards] ' + message);
+    return { ok: false, skipped: true, reason: 'no-token', message };
   }
   if (!fs.existsSync(OUT_DIR)) {
+    const message = 'エクスポート出力(data-export/)が見つかりません。先にエクスポートを実行してください';
     log.warn('[push-data-shards] output dir not found, run exportShards first', OUT_DIR);
-    return;
+    return { ok: false, skipped: true, reason: 'no-output', message };
   }
   if (!OWNER || !REPO) {
+    const message = 'config.github.owner/repo が未設定です';
     log.error('[push-data-shards] config.github.owner/repo not set');
-    return;
+    return { ok: false, skipped: true, reason: 'no-config', message };
   }
 
   const files = _collectFiles(OUT_DIR);
   files.push({ path: 'README.md', content: README_CONTENT });
   if (!files.length) {
+    const message = '書き出すファイルがありません';
     log.warn('[push-data-shards] no files to push');
-    return;
+    return { ok: false, skipped: true, reason: 'no-files', message };
   }
 
   log.info('[push-data-shards] start', { branch: BRANCH, files: files.length });
@@ -156,6 +174,7 @@ async function main() {
   }
 
   log.info('[push-data-shards] done', { files: files.length, commit: commitSha });
+  return { ok: true, files: files.length, commit: commitSha, branch: BRANCH };
 }
 
 function _resolveToken() {
@@ -184,10 +203,14 @@ function _collectFiles(dir, base = dir, acc = []) {
 }
 
 if (require.main === module) {
-  main().catch(err => {
-    log.error('[push-data-shards] fatal', err.message);
-    process.exitCode = 1;
-  });
+  main()
+    .then(result => {
+      if (!result?.ok) process.exitCode = result?.skipped ? 0 : 1;
+    })
+    .catch(err => {
+      log.error('[push-data-shards] fatal', err.message);
+      process.exitCode = 1;
+    });
 }
 
 module.exports = { main };
