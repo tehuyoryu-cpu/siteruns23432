@@ -290,7 +290,8 @@ function _navigateAndWait(w, url, timeoutMs) {
 }
 
 // 現在ロード済みのページ上で年齢確認ボタンを探してクリックする。
-// 見つからなかった場合は診断用に title/URL/本文抜粋/リンク文言を返す。
+// 見つかった/見つからなかったに関わらず、診断用に title/URL/本文抜粋/
+// リンク文言・実際にクリックした要素の情報を返す。
 //
 // バグ修正: 以前は診断情報(title/bodyTextSample/anchorTextsSample)を
 // log.warn()でファイルに書き出すだけで、呼び出し元には捨てていた。
@@ -299,11 +300,28 @@ function _navigateAndWait(w, url, timeoutMs) {
 // ユーザーにログファイルを探して貼ってもらう往復が発生していた。
 // diag情報を戻り値に含め、呼び出し元(warmUpSession)がグローバルに保持して
 // 診断パネルから直接読めるようにする。
+//
+// バグ修正(本丸): 以前のキーワード一致リストに 'adult'・'enter' という
+// 単語部分一致(.includes())が含まれており、これはDLsite通常ページ内の
+// 無関係なリンク(例: 「アダルト」カテゴリフィルタ、"Enter"を含む英語UI文言等)
+// にも一致してしまう。診断で毎回 clicked:true になるにも関わらず年齢確認
+// Cookieが一切取得できない状態が続いていたのは、この誤クリックが原因だった
+// 可能性が高い。年齢確認ボタン特有の、より具体的な文言のみに絞り込む。
+// あわせて、実際に何をクリックしたか(文言・タグ・href)を必ず記録する。
 async function _tryClickAgeGate(w, url) {
   const log = require('./crawler/logger');
   try {
     const evalResult = await w.webContents.executeJavaScript(`
       (function() {
+        function collectDiag(clickedInfo) {
+          return {
+            title: document.title,
+            url: location.href,
+            bodyTextSample: (document.body?.innerText || '').slice(0, 300).replace(/\\s+/g, ' '),
+            anchorTextsSample: Array.from(document.querySelectorAll('a')).slice(0, 15).map(a => (a.textContent||'').trim()).filter(Boolean),
+            clickedInfo: clickedInfo || null,
+          };
+        }
         const selectors = [
           'a.btn_yes', 'a[href*="adult=1"]', '.btn_adult',
           'a[href*="age_check"]', 'input[value*="はい"]',
@@ -312,27 +330,40 @@ async function _tryClickAgeGate(w, url) {
         for (const sel of selectors) {
           try {
             const el = document.querySelector(sel);
-            if (el) { el.click(); return { clicked: true, via: 'selector:' + sel }; }
+            if (el) {
+              const info = { via: 'selector:' + sel, tag: el.tagName, text: (el.textContent||'').trim().slice(0,40), href: el.href || null };
+              el.click();
+              return { clicked: true, diag: collectDiag(info) };
+            }
           } catch {}
         }
-        const keywords = ['はい', '入場する', '18歳以上', 'adult', 'enter', '同意'];
+        // バグ修正: 'adult'・'enter' 等の単語部分一致は通常ページ内の無関係な
+        // リンク(カテゴリフィルタ等)に誤爆するため除去。年齢確認ボタン特有の
+        // 完結したフレーズのみに絞る。
+        const keywords = ['はい、18歳以上', 'はい18歳以上', '18歳以上です', '18歳以上のみ', '入場する', '同意して入場', 'I am over 18', 'Yes, I am 18'];
         for (const a of document.querySelectorAll('a, button')) {
           const txt = (a.textContent || '').trim();
-          if (keywords.some(k => txt.includes(k))) { a.click(); return { clicked: true, via: 'keyword:' + txt.slice(0, 20) }; }
+          if (keywords.some(k => txt.includes(k))) {
+            const info = { via: 'keyword:' + txt.slice(0, 30), tag: a.tagName, text: txt.slice(0,40), href: a.href || null };
+            a.click();
+            return { clicked: true, diag: collectDiag(info) };
+          }
         }
-        return {
-          clicked: false,
-          diag: {
-            title: document.title,
-            url: location.href,
-            bodyTextSample: (document.body?.innerText || '').slice(0, 300).replace(/\\s+/g, ' '),
-            anchorTextsSample: Array.from(document.querySelectorAll('a')).slice(0, 15).map(a => (a.textContent||'').trim()).filter(Boolean),
-          },
-        };
+        // 完全一致ではなく緩い「はい」単体のボタンも拾うが、他候補が無かった場合のみの最終手段とする
+        for (const a of document.querySelectorAll('a, button')) {
+          const txt = (a.textContent || '').trim();
+          if (txt === 'はい' || txt === 'YES' || txt === 'Yes') {
+            const info = { via: 'exact-fallback:' + txt, tag: a.tagName, text: txt, href: a.href || null };
+            a.click();
+            return { clicked: true, diag: collectDiag(info) };
+          }
+        }
+        return { clicked: false, diag: collectDiag(null) };
       })()
     `);
     const clicked = !!evalResult?.clicked;
     const diag = evalResult?.diag ?? null;
+    log.info('[warmUp] クリック試行結果', { url, clicked, clickedInfo: diag?.clickedInfo ?? null });
     if (!clicked && diag) {
       log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
     }
