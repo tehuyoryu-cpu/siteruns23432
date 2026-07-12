@@ -64,7 +64,16 @@ shard番号の算出方法(FNV-1a 32bit)は \`crawler/exportShards.js\` の \`fn
 async function main() {
   const token = _resolveToken();
   if (!token) {
-    log.info('[push-data-shards] no GitHub token configured, skipping push');
+    // バグ修正: 従来はlog.info()で、通常ログファイルにしか残らず
+    // dlsite-error.log にもダッシュボードのライブログにも一切出ていなかった。
+    // 実際にこれが原因で「dataブランチへの日次自動push」が初回の手動テスト
+    // (npm run export-shards:push)以来ずっとサイレントにスキップされ続け、
+    // 何日経ってもdataブランチが更新されないという不具合を静かに引き起こして
+    // いた(exportShards自体は正常完了するため、エラーとしては一切見えない)。
+    // 意図した自動化が実質的に無効化されているのは重大な問題のため、
+    // 明示的に警告として残す。
+    log.warn('[push-data-shards] GitHubトークン未設定のためpushをスキップしました。' +
+      'ダッシュボードの「⚙️ 設定」からトークンを保存すると次回から自動pushされます。');
     return;
   }
   if (!fs.existsSync(OUT_DIR)) {
