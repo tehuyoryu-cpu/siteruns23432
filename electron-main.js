@@ -16,6 +16,16 @@ const {
   shell, ipcMain, dialog,
 } = require('electron');
 
+// バグ修正(起動不能の主要因と推定): GPUプロセスがクラッシュ→再起動を繰り返すと
+// Windows環境(特にRDP/リモートデスクトップ、VM、古い/相性の悪いGPUドライバ)では
+// Electronのブラウザプロセスごと巻き添えで終了することがある。この場合ウィンドウは
+// 一度も表示されず、JS側には例外もエラーイベントも一切発生しないため、これまで
+// 「エラーログが何もないまま数秒で終了する」という原因不明の不具合として現れていた。
+// app.whenReady() より前にハードウェアアクセラレーションを無効化することで
+// GPUプロセス自体を起動させず、この種の相性問題を根本から回避する。
+// (ダッシュボードはただのHTML/CSSでGPU描画に依存しないため、体感の影響は無い)
+app.disableHardwareAcceleration();
+
 // ─── data dir ────────────────────────────────────────────────────────────────
 // PORTABLE_EXECUTABLE_DIR がTEMPディレクトリを指す場合があるため検証してから使用する。
 // TEMPなら app.getPath('userData') にフォールバックする。
@@ -36,6 +46,25 @@ const {
   process.env.DLSITE_DATA_DIR = dataDir;
   console.log('[main] data dir:', dataDir, portableDir ? `(PORTABLE_EXECUTABLE_DIR: ${portableDir})` : '');
 }
+
+// バグ修正(診断の盲点): 以前は起動シーケンスの breadcrumb ログ([startup] ...)が
+// console.log() のみで、パッケージ化されたGUI exe(コンソール非表示)では
+// dlsite-tracker.log にも画面にも一切残らなかった。「エラーが何も出ていない」の
+// 本当の意味は「エラーが起きていない」ではなく「見えていない」だった可能性が高い。
+// 以後はファイルに残る log.info/log.error 経由で記録する(console.log/errorにも
+// 同時出力されるため npm start でのdev視認性は変わらない)。
+// また、Promiseチェーン(app.whenReady().then(...))やプロセス全体で
+// キャッチされていない例外/rejectionが発生した場合、従来は完全に無言のまま
+// プロセスが終了する可能性があった。ここで確実にログへ書き出すようにする。
+const log = require('./crawler/logger');
+
+process.on('uncaughtException', (err) => {
+  log.error('[electron] uncaughtException (process about to exit)', err.message, err.stack);
+});
+process.on('unhandledRejection', (reason) => {
+  const msg = reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
+  log.error('[electron] unhandledRejection', msg);
+});
 
 // ─── backend ──────────────────────────────────────────────────────────────────
 
@@ -460,19 +489,19 @@ async function _warmUpOneSite(w, url) {
   return { clicked: r.clicked, reason, diag: r.diag };
 }
 async function startBackend() {
-  console.log('[startup] requiring modules...');
+  log.info('[startup] requiring modules...');
   db            = require('./crawler/db');
   apiServer     = require('./crawler/apiServer');
   scheduler     = require('./crawler/scheduler');
   discovery     = require('./crawler/discovery');
   detailFetcher = require('./crawler/detailFetcher');
-  console.log('[startup] modules loaded, starting db.init()...');
+  log.info('[startup] modules loaded, starting db.init()...');
 
   await db.init();
-  console.log('[startup] db.init() done, starting apiServer...');
+  log.info('[startup] db.init() done, starting apiServer...');
 
   apiServer.start();
-  console.log('[startup] apiServer started');
+  log.info('[startup] apiServer started');
 }
 
 // バックグラウンド価格変動通知
@@ -863,18 +892,32 @@ async function _execJobSafe(job) {
 // ─── app lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  console.log('[startup] app ready');
+  log.info('[startup] app ready');
   await startBackend();
-  console.log('[startup] _bindIpc...');
+  log.info('[startup] _bindIpc...');
   _bindIpc();
-  console.log('[startup] createTray...');
+  log.info('[startup] createTray...');
   createTray();
-  console.log('[startup] createWindow...');
+  log.info('[startup] createWindow...');
   createWindow();
-  console.log('[startup] window created, starting background tasks...');
+  log.info('[startup] window created, starting background tasks...');
   startCrawlerBackground().catch(e =>
-    console.error('[electron] background init error', e.message)
+    log.error('[electron] background init error', e.message, e.stack)
   );
+}).catch(err => {
+  // バグ修正: 従来はこのチェーンに .catch() が無く、startBackend/_bindIpc/
+  // createTray/createWindow のいずれかが例外を投げた場合、パッケージ化された
+  // exe(コンソール非表示)ではエラーが完全に無言のまま握りつぶされ、
+  // ウィンドウが一度も表示されずにプロセスだけ生き残る/終了する、という
+  // 「原因不明の起動不能」の主要因になり得ていた。必ずログへ残す。
+  log.error('[electron] FATAL: startup sequence failed', err.message, err.stack);
+});
+
+// GPUプロセス/レンダラープロセスの異常終了を検知してログに残す。
+// app.disableHardwareAcceleration() で大半は予防できる想定だが、
+// 万一再発した場合に「原因不明のまま無言終了」に逆戻りしないための保険。
+app.on('child-process-gone', (event, details) => {
+  log.error('[electron] child-process-gone', { type: details.type, reason: details.reason, exitCode: details.exitCode });
 });
 
 app.on('window-all-closed', () => { /* トレイに残す */ });
@@ -902,14 +945,19 @@ function _isCrawlerBusy() {
 }
 
 app.on('before-quit', (event) => {
+  // バグ修正: 以前はこの分岐(通常パス)で一切ログを残していなかった。
+  // 「なぜ終了したか」の手がかりが before-quit が発火した事実そのものすら
+  // 残らないため、次に無言終了が再発した場合の切り分けができるよう、
+  // 必ず1行残す。
+  log.info('[electron] before-quit fired', { isQuiting: !!app.isQuiting, crawlerBusy: _isCrawlerBusy() });
   if (_quitFinalizing) return; // 2回目以降(強制終了時)はそのまま通す
   if (!_isCrawlerBusy()) {
-    try { db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
+    try { db?.close(); } catch (e) { log.error('[electron] db close error', e.message); }
     return;
   }
 
   event.preventDefault();
-  console.log('[electron] job running — aborting and waiting up to', _QUIT_WAIT_MS, 'ms before quit');
+  log.info('[electron] job running — aborting and waiting up to', _QUIT_WAIT_MS, 'ms before quit');
   if (!global._crawlerAbort) global._crawlerAbort = {};
   global._crawlerAbort.discovery = true;
   global._crawlerAbort.detail    = true;
