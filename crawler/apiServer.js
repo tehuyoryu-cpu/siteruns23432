@@ -37,7 +37,13 @@ const config = require('../config');
 const { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan } = require('./discovery');
 const detailFetcher = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
-const { main: pushDataShards } = require('../scripts/push-data-shards');
+// バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
+// 即requireしていた。electron-builderのfilesリストにscripts/**が含まれていなかった
+// ため、パッケージ化されたexe(app.asar)内にこのファイルが同梱されず、apiServer.js
+// がrequireされる起動シーケンスの時点で「Cannot find module」が投げられ、
+// アプリが一切起動できなくなっていた(build-202〜205)。
+// 呼び出し時(handleRun('pushdata')内)に遅延requireし、万一ファイルが無くても
+// そのジョブだけがエラーになり、アプリ全体は起動できるようにする。
 
 // ─── SSE ────────────────────────────────────────────────────────────────────
 
@@ -380,6 +386,7 @@ async function handleRun(job, res) {
       Object.assign(_progress, { found: exportResult?.works ?? 0 });
 
       _sseSend('log', 'GitHub dataブランチへpush中...');
+      const { main: pushDataShards } = require('../scripts/push-data-shards');
       const pushResult = await pushDataShards();
 
       if (pushResult?.ok) {
