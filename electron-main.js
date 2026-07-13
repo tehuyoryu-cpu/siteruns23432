@@ -16,24 +16,6 @@ const {
   shell, ipcMain, dialog,
 } = require('electron');
 
-// ─── 多重起動防止 ────────────────────────────────────────────────────────────
-// requestSingleInstanceLock が無いと、exeを複数回起動した際にウィンドウ・トレイ
-// アイコンが増殖するだけでなく、sql.js の dlsite.db をロックなしで複数プロセスが
-// 同時に export()+writeFile するためDB破損の危険がある。2つ目以降の起動は
-// 即座に終了し、既存インスタンスのウィンドウを前面に出すだけにする。
-const _gotSingleInstanceLock = app.requestSingleInstanceLock();
-if (!_gotSingleInstanceLock) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (_win) {
-      if (_win.isMinimized()) _win.restore();
-      _win.show();
-      _win.focus();
-    }
-  });
-}
-
 // ─── data dir ────────────────────────────────────────────────────────────────
 // PORTABLE_EXECUTABLE_DIR がTEMPディレクトリを指す場合があるため検証してから使用する。
 // TEMPなら app.getPath('userData') にフォールバックする。
