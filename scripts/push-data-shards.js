@@ -118,19 +118,24 @@ async function main() {
     'Content-Type': 'application/json',
   };
 
-  // 1. 各ファイルをblobとして作成
-  const tree = [];
-  for (const f of files) {
-    const content = f.content ?? fs.readFileSync(f.abs, 'utf8');
-    const res = await fetch(`${API}/repos/${OWNER}/${REPO}/git/blobs`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ content, encoding: 'utf-8' }),
-    });
-    if (!res.ok) throw new Error(`blob create failed (${f.path}): HTTP ${res.status} ${await res.text()}`);
-    const { sha } = await res.json();
-    tree.push({ path: f.path, mode: '100644', type: 'blob', sha });
-  }
+  // 1. tree項目を組み立てる
+  // バグ修正(pushが実質フリーズしていた真因): 以前はファイル1件ごとに
+  // POST /git/blobs を逐次リクエストしていた。1090ファイルだと1093回もの
+  // 直列HTTPリクエストになり、日本-GitHub間のレイテンシ(数百ms/回)が
+  // 積み重なって数分〜十数分かかる上、GitHubの二次レート制限(短時間の
+  // 大量リクエストに対するabuse detection)に引っかかって黙って詰まる
+  // リスクもあった(実際に data ブランチが何日も更新されない不具合として発現)。
+  // 出力ファイルは全てテキスト(JSON)であり、GitHubのTree作成APIは
+  // tree項目に sha の代わりに content を直接埋め込める(その場でblobを
+  // 内部生成してくれる)ため、ファイルごとのblob作成ラウンドトリップを
+  // 完全に排除できる。これによりAPI呼び出しは合計3回(tree/commit/ref)まで
+  // 減り、体感でも数秒〜十数秒で完了するようになる。
+  const tree = files.map(f => ({
+    path: f.path,
+    mode: '100644',
+    type: 'blob',
+    content: f.content ?? fs.readFileSync(f.abs, 'utf8'),
+  }));
 
   // 2. treeを作成 (base_treeを指定しない = 完全に新しいツリーでブランチを置き換える)
   const treeRes = await fetch(`${API}/repos/${OWNER}/${REPO}/git/trees`, {
