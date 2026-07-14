@@ -34,7 +34,7 @@ const path   = require('path');
 const db     = require('./db');
 const log    = require('./logger');
 const config = require('../config');
-const { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan } = require('./discovery');
+const { runDiscovery, runFullScan, runEndingSoonScan, runNewReleaseScan, runCircleGapScan } = require('./discovery');
 const detailFetcher = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
@@ -85,7 +85,7 @@ setTimeout(() => {
 const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
   fullscan: false, fullscan_sale: false, all: false, turbo: false,
-  endingsoon: false, circlegap: false, pushdata: false,
+  endingsoon: false, circlegap: false, pushdata: false, newrelease: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -106,6 +106,7 @@ const _JOB_LABELS = {
   endingsoon:    '終了間近収集',
   circlegap:     'サークル欠落診断',
   pushdata:      'データPush',
+  newrelease:    '新作収集',
 };
 
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
@@ -355,6 +356,21 @@ async function handleRun(job, res) {
       Object.assign(_progress, { done: true });
       _sseSend('log', `終了間近収集完了 — 新規:${result?.newCount ?? 0}件 優先度UP:${result?.boostedCount ?? 0}件`);
       log.info('[api] endingSoonScan done', result);
+
+    } else if (job === 'newrelease') {
+      // 過去1年以内に発売された全作品を、割引の有無を問わずFSR全ページ走査で収集する
+      // (終了間近収集から割引条件と24時間以内終了条件を外したもの)
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      const result = await runNewReleaseScan({
+        onProgress: ({ site, page, found, total }) => {
+          Object.assign(_progress, { site, page, found: total, totalPages: null });
+          _sseSend('progress', { site, page, found: total });
+        },
+      });
+      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      Object.assign(_progress, { done: true });
+      _sseSend('log', `新作収集完了 — 新規:${result?.grandTotal ?? 0}件`);
+      log.info('[api] newReleaseScan done', result);
 
     } else if (job === 'circlegap') {
       // サークル単位の欠落診断: 既知の全サークルについてDLsite上の全作品ページを
@@ -614,7 +630,7 @@ function createServer() {
         return _json(res, handleSettingsDeleteToken());
       }
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata|newrelease)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);
