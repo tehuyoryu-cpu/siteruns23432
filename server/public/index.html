@@ -627,6 +627,10 @@ body {
     <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc6600" stroke-width="1.5"/><path d="M8 4.5v4l2.8 1.6" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
     終了間近収集
   </button>
+  <button class="tb-btn" id="btnNewrelease" onclick="runJob('newrelease')" data-desc="割引条件・終了間近条件を問わず、直近1年以内に発売された全作品をFSR全ページ走査で収集します" title="新作収集（発売から1年以内・割引条件なし）" style="color:#0078d7;font-weight:bold">
+    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4.5v7M4.5 8h7" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
+    新作収集
+  </button>
   <div class="tb-sep"></div>
   <button class="tb-btn" id="btnFullscan" onclick="runJob('fullscan')" data-desc="FSR全ページを走査して登録作品を網羅収集します（時間がかかります・初回セットアップ向け）" title="FSR全ページ走査 — 全作品を網羅収集（時間がかかります）">
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#660066" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#660066" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -1333,6 +1337,7 @@ function _showJobResult(job, status) {
   else if (job?.startsWith('fullscan')) setStatus('全収集完了 — ' + (status.fullScanProgress?.grandTotal ?? 0) + ' 件');
   else if (job === 'circlegap') setStatus('サークル欠落診断完了 — チェック: ' + (r.checked ?? 0) + 'サークル / 発見した欠落: ' + (r.totalMissing ?? 0) + '件');
   else if (job === 'pushdata') setStatus('GitHub push完了 — ' + (r.files ?? 0) + 'ファイル (' + (r.exportResult?.works ?? 0) + '作品) / commit:' + (r.commit ?? '').slice(0, 7));
+  else if (job === 'newrelease') setStatus('新作収集完了 — 新規: ' + (r.grandTotal ?? 0) + ' 件');
   else setStatus((_JOB_LABELS[job] ?? job) + ' 完了');
 }
 
@@ -1348,6 +1353,7 @@ const _JOB_LABELS = {
   endingsoon:    '終了間近収集',
   circlegap:     'サークル欠落診断',
   pushdata:      '今すぐPush',
+  newrelease:    '新作収集',
 };
 
 // ── ボタン説明バーの hover 制御 ──
