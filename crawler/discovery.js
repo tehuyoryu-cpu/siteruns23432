@@ -498,6 +498,91 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
   return { grandTotal, newCount, boostedCount, sites };
 }
 
+// ─── 新作収集(過去1年以内・割引条件なし) ─────────────────────────────────────
+// runEndingSoonScan(割引終了間近収集)から「割引条件(campaign/campaign)」と
+// 「24時間以内に終了(soon/1)」の2条件を外し、代わりに regist_date_start で
+// 発売日を絞り込んだもの。割引の有無を問わず、直近1年以内に発売された全作品を
+// FSR全ページ走査で収集する。endingSoonScanと異なり優先度のブースト(urgent化)は
+// 行わない — あくまで「取りこぼしていた新作をDBに登録する」ための収集ジョブ。
+
+/** 1年前の日付文字列を返す (YYYY-MM-DD) */
+function _oneYearAgo() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function runNewReleaseScan({ onProgress = null } = {}) {
+  const sinceDate = _oneYearAgo();
+  log.info('[discovery] newReleaseScan start', { sinceDate });
+
+  const knownRjs = _loadKnown();
+  const fsrUrls  = config.dlsite.fsrUrls ?? {};
+
+  let grandTotal = 0;
+  const sites = {};
+
+  for (const [site, urls] of Object.entries(fsrUrls)) {
+    if (_discoveryAborted()) { log.warn('[discovery] newReleaseScan aborted (before site)', { site }); break; }
+    const tmpl = urls.newRelease;
+    if (!tmpl) continue;
+
+    let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0;
+
+    while (true) {
+      if (_discoveryAborted()) { log.warn('[discovery] newReleaseScan aborted', { site, page }); break; }
+
+      // page=1はURLに/page/1を含まないDLsiteの仕様に対応(runFullScanと同じパターン)
+      let url = tmpl.replace('{date}', sinceDate);
+      url = page === 1 ? url.replace(/\/page\/\{page\}/, '') : url.replace('{page}', String(page));
+      const items = await _fetchWithPrice(url);
+
+      if (!items.length) {
+        if (items.failed) {
+          failCount++;
+          if (failCount >= 3) {
+            log.error('[discovery] newReleaseScan: 取得失敗が続いたため打ち切ります', { site, page, failCount });
+            break;
+          }
+          log.warn('[discovery] newReleaseScan: 取得失敗、同じページを再試行します', { site, page, failCount });
+          await sleep(RL * 2);
+          continue;
+        }
+        log.info('[discovery] newReleaseScan end', { site, page });
+        break;
+      }
+      failCount = 0;
+
+      const added = _upsert(items, site, knownRjs);
+      siteTotal  += added;
+      grandTotal += added;
+
+      if (onProgress) onProgress({ site, page, found: added, total: siteTotal });
+      log.info('[discovery] newReleaseScan', { site, page, parsed: items.length, added, total: siteTotal });
+
+      // 100件未満は1回だけなら疑って継続し、2回連続で短ければ最終ページと判断する
+      if (items.length < 100) {
+        consecutiveShort++;
+        if (consecutiveShort >= 2) {
+          log.info('[discovery] newReleaseScan end', { site, page, reason: 'confirmed short page x2' });
+          break;
+        }
+        log.warn('[discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します', { site, page, parsed: items.length });
+      } else {
+        consecutiveShort = 0;
+      }
+
+      page++;
+      await sleep(RL);
+    }
+
+    sites[site] = siteTotal;
+  }
+
+  log.info('[discovery] newReleaseScan done', { grandTotal, ...sites });
+  return { grandTotal, sites };
+}
+
 // ─── サークル単位の欠落診断 ──────────────────────────────────────────────────
 // 通常のdiscoveryは「今月分」+「直近未チェック30サークル」しか見ないため、
 // 何らかの理由（bl の all/sale URL 未定義だった期間、アプリ停止中のリリース等）で
@@ -672,4 +757,4 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   return { checked, totalMissing, missingByCircle, skippedInvalidSite };
 }
 
-module.exports = { runDiscovery, runFullScan, runEndingSoonScan, runCircleGapScan };
+module.exports = { runDiscovery, runFullScan, runEndingSoonScan, runNewReleaseScan, runCircleGapScan };
