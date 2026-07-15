@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ステータス取得
   status: () => ipcRenderer.invoke('crawler:status'),
 
+  // CSV/JSONインポート用ファイル選択ダイアログ
+  pickImportFile: () => ipcRenderer.invoke('dialog:pickImportFile'),
+
   // 完了通知を受け取る
   onDone: (cb) => ipcRenderer.on('crawler:done', (_, data) => cb(data)),
 
