@@ -12,6 +12,8 @@
  *   GET  /api/sales                → works currently on sale
  *   GET  /api/export/json          → full price_history JSON download
  *   GET  /api/export/csv           → full price_history CSV download
+ *   POST /api/import/json          → restore works/price_history from exported JSON (DB corruption recovery)
+ *   POST /api/import/csv           → restore works/price_history from exported CSV (DB corruption recovery)
  *   GET  /api/run/status           → job running flags + progress
  *   GET  /api/settings             → github token config status (masked)
  *   POST /api/settings/github-token   → save github token (writes .github-token)
@@ -710,6 +712,49 @@ function createServer() {
         return;
       }
 
+      // ── インポート（DB破損時のリカバリ用: 過去にエクスポートしたJSON/CSVから復元）───
+      if (pathname === '/api/import/json' && req.method === 'POST') {
+        let body;
+        try { body = await _readBody(req); }
+        catch (e) { return _json(res, { ok: false, error: e.message }); }
+
+        let rows;
+        try { rows = JSON.parse(body); }
+        catch (e) { return _json(res, { ok: false, error: 'JSONの解析に失敗しました: ' + e.message }); }
+
+        if (!Array.isArray(rows)) {
+          return _json(res, { ok: false, error: 'JSONは配列形式である必要があります（/api/export/json と同じ形式）' });
+        }
+
+        try {
+          const result = db.importHistoryRows(rows);
+          log.info('[api] import json done', result);
+          return _json(res, { ok: true, ...result });
+        } catch (e) {
+          log.error('[api] import json error', e.message);
+          return _json(res, { ok: false, error: e.message });
+        }
+      }
+
+      if (pathname === '/api/import/csv' && req.method === 'POST') {
+        let body;
+        try { body = await _readBody(req); }
+        catch (e) { return _json(res, { ok: false, error: e.message }); }
+
+        let rows;
+        try { rows = _parseCsv(body); }
+        catch (e) { return _json(res, { ok: false, error: 'CSVの解析に失敗しました: ' + e.message }); }
+
+        try {
+          const result = db.importHistoryRows(rows);
+          log.info('[api] import csv done', result);
+          return _json(res, { ok: true, ...result });
+        } catch (e) {
+          log.error('[api] import csv error', e.message);
+          return _json(res, { ok: false, error: e.message });
+        }
+      }
+
       // ── 診断 ──────────────────────────────────────────────────────────────
       if (pathname === '/api/diagnostics') {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -756,6 +801,64 @@ function _csvEscape(v) {
   const s = String(v);
   return s.includes(',') || s.includes('"') || s.includes('\n')
     ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** リクエストボディ全体をUTF-8文字列として読み込む（サイズ上限300MB） */
+function _readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    const MAX = 300 * 1024 * 1024;
+    req.on('data', c => {
+      size += c.length;
+      if (size > MAX) { reject(new Error('リクエストボディが大きすぎます（300MB上限）')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+/**
+ * RFC4180準拠の簡易CSVパーサ（引用符内のカンマ/改行/エスケープされた""に対応）。
+ * handleExportCsv() が出力する形式（BOM付き、ヘッダー行あり）を読み戻すためのもの。
+ * 戻り値: ヘッダー行をキーとしたオブジェクトの配列。
+ */
+function _parseCsv(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);   // BOM除去
+
+  const rows = [];
+  let field = '', row = [], inQuotes = false;
+  const pushField = () => { row.push(field); field = ''; };
+  const pushRow   = () => { pushField(); rows.push(row); row = []; };
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      pushField();
+    } else if (c === '\r') {
+      // skip
+    } else if (c === '\n') {
+      pushRow();
+    } else {
+      field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) pushRow();
+  if (!rows.length) return [];
+
+  const header = rows[0].map(h => h.trim());
+  return rows.slice(1)
+    .filter(r => !(r.length === 1 && r[0] === ''))
+    .map(r => Object.fromEntries(header.map((h, idx) => [h, r[idx] ?? ''])));
 }
 
 async function _runDiagnostics() {

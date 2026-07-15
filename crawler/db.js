@@ -213,9 +213,49 @@ function _applySchema() {
       works_count       INTEGER DEFAULT 0
     );
 
+    -- 総集編マーク機能（旧ブラウザ拡張から移植）
+    -- comp_works: 総集編ジャンル(515)/dldshare.netで見つかった「総集編作品自体」のRJ
+    CREATE TABLE IF NOT EXISTS comp_works (
+      rj_code       TEXT    PRIMARY KEY,
+      title         TEXT,
+      circle        TEXT,
+      maker_id      TEXT,
+      page_count    INTEGER,
+      work_count    INTEGER,
+      release_date  TEXT,
+      price         INTEGER,
+      source        TEXT,               -- 'genre515' | 'dldshare'
+      processed     INTEGER DEFAULT 0,  -- 収録作品抽出(Phase B)済みか
+      first_seen    INTEGER NOT NULL,
+      processed_at  INTEGER
+    );
+
+    -- comp_marks: 総集編に収録されていると確定した「収録作品」のRJ（旧拡張のバッジ表示対象）
+    CREATE TABLE IF NOT EXISTS comp_marks (
+      rj_code    TEXT    PRIMARY KEY,
+      comp_rj    TEXT,               -- 由来の総集編RJ（直近上書き、参考情報）
+      method     TEXT,               -- 'direct' | 'dldshare' | 'estimated' | 'manual'
+      score      INTEGER,
+      marked_at  INTEGER NOT NULL
+    );
+
+    -- comp_pending: スコアリング推定で信頼度が低く、人手確認待ちの候補
+    CREATE TABLE IF NOT EXISTS comp_pending (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      rj_code    TEXT    NOT NULL,
+      comp_rj    TEXT    NOT NULL,
+      score      INTEGER,
+      reasons    TEXT,               -- JSON配列文字列（スコア理由）
+      created_at INTEGER NOT NULL,
+      UNIQUE(rj_code, comp_rj)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_ph_rj       ON price_history(rj_code);
     CREATE INDEX IF NOT EXISTS idx_ph_at       ON price_history(checked_at);
     CREATE INDEX IF NOT EXISTS idx_works_maker ON works(maker_id);
+    CREATE INDEX IF NOT EXISTS idx_comp_works_processed ON comp_works(processed);
+    CREATE INDEX IF NOT EXISTS idx_comp_marks_comp       ON comp_marks(comp_rj);
+    CREATE INDEX IF NOT EXISTS idx_comp_pending_comp     ON comp_pending(comp_rj);
   `);
 
   // æ¢å­DBã¸ã®å®å¨ãªã«ã©ã è¿½å  (IF NOT EXISTS ã¯ä½¿ããªãã®ã§try/catch)
@@ -843,6 +883,134 @@ function getCircle(makerId) {
   return _get('SELECT * FROM circles WHERE maker_id = ?', [makerId]);
 }
 
+// ─── comp_works / comp_marks / comp_pending（総集編マーク機能）───────────────
+
+/** 総集編ジャンル一覧・dldshareで見つかった「総集編作品」を登録（既存フィールドはCOALESCEで保持） */
+function upsertCompWork(w) {
+  _run(`
+    INSERT INTO comp_works
+      (rj_code, title, circle, maker_id, page_count, work_count, release_date, price, source, first_seen)
+    VALUES (?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(rj_code) DO UPDATE SET
+      title        = COALESCE(excluded.title,        comp_works.title),
+      circle       = COALESCE(excluded.circle,       comp_works.circle),
+      maker_id     = COALESCE(excluded.maker_id,     comp_works.maker_id),
+      page_count   = COALESCE(excluded.page_count,   comp_works.page_count),
+      work_count   = COALESCE(excluded.work_count,   comp_works.work_count),
+      release_date = COALESCE(excluded.release_date, comp_works.release_date),
+      price        = COALESCE(excluded.price,        comp_works.price)
+  `, [
+    w.rj_code, w.title ?? null, w.circle ?? null, w.maker_id ?? null,
+    w.page_count ?? null, w.work_count ?? null, w.release_date ?? null,
+    w.price ?? null, w.source ?? null, unixNow(),
+  ]);
+}
+
+function getAllCompWorkRjs() {
+  return new Set(_all('SELECT rj_code FROM comp_works').map(r => r.rj_code));
+}
+
+function getUnprocessedCompWorks(limit = 200) {
+  return _all('SELECT * FROM comp_works WHERE processed = 0 LIMIT ?', [limit]);
+}
+
+function markCompWorkProcessed(rjCode) {
+  _run('UPDATE comp_works SET processed = 1, processed_at = ? WHERE rj_code = ?', [unixNow(), rjCode]);
+}
+
+/** 収録作品として確定マーク（direct/dldshare/estimated-高信頼度/manual承認） */
+function addCompMark(rjCode, compRj, method, score = null) {
+  _run(`
+    INSERT INTO comp_marks (rj_code, comp_rj, method, score, marked_at)
+    VALUES (?,?,?,?,?)
+    ON CONFLICT(rj_code) DO UPDATE SET
+      comp_rj   = excluded.comp_rj,
+      method    = excluded.method,
+      score     = excluded.score,
+      marked_at = excluded.marked_at
+  `, [rjCode, compRj ?? null, method, score, unixNow()]);
+}
+
+function getCompMarksSet() {
+  return new Set(_all('SELECT rj_code FROM comp_marks').map(r => r.rj_code));
+}
+
+function isCompMarked(rjCode) {
+  return !!_get('SELECT 1 FROM comp_marks WHERE rj_code = ?', [rjCode]);
+}
+
+function removeCompMark(rjCode) {
+  _run('DELETE FROM comp_marks WHERE rj_code = ?', [rjCode]);
+}
+
+function listCompMarks({ q = '', limit = 100, offset = 0 } = {}) {
+  const like = '%' + q.toUpperCase() + '%';
+  const where = q ? 'WHERE m.rj_code LIKE ?' : '';
+  const params = q ? [like, limit, offset] : [limit, offset];
+  const rows = _all(`
+    SELECT m.rj_code, m.comp_rj, m.method, m.score, m.marked_at, w.title, w.circle
+    FROM comp_marks m LEFT JOIN works w ON w.rj_code = m.rj_code
+    ${where} ORDER BY m.marked_at DESC LIMIT ? OFFSET ?
+  `, params);
+  const totalRow = _get(`SELECT COUNT(*) AS n FROM comp_marks m ${where}`, q ? [like] : []);
+  return { rows, total: totalRow?.n ?? 0 };
+}
+
+/** 低信頼度候補を人手確認待ちキューへ（同一rj_code+comp_rjは無視、既存を残す） */
+function addCompPending(rjCode, compRj, score, reasons = []) {
+  _run(`
+    INSERT OR IGNORE INTO comp_pending (rj_code, comp_rj, score, reasons, created_at)
+    VALUES (?,?,?,?,?)
+  `, [rjCode, compRj, score, JSON.stringify(reasons), unixNow()]);
+}
+
+function getCompPending(limit = 50, offset = 0) {
+  const rows = _all(
+    'SELECT * FROM comp_pending ORDER BY score DESC, created_at ASC LIMIT ? OFFSET ?',
+    [limit, offset]
+  );
+  const totalRow = _get('SELECT COUNT(*) AS n FROM comp_pending');
+  return {
+    rows: rows.map(r => ({ ...r, reasons: _safeJsonParse(r.reasons, []) })),
+    total: totalRow?.n ?? 0,
+  };
+}
+
+function getCompPendingById(id) {
+  const r = _get('SELECT * FROM comp_pending WHERE id = ?', [id]);
+  return r ? { ...r, reasons: _safeJsonParse(r.reasons, []) } : null;
+}
+
+/** 承認: comp_marksへ確定登録し、pendingから削除 */
+function approveCompPending(id) {
+  const row = getCompPendingById(id);
+  if (!row) return false;
+  addCompMark(row.rj_code, row.comp_rj, 'manual', row.score);
+  _run('DELETE FROM comp_pending WHERE id = ?', [id]);
+  return true;
+}
+
+/** 却下: pendingから削除するのみ（再スキャンで同スコアなら再度候補に上がりうる） */
+function rejectCompPending(id) {
+  _run('DELETE FROM comp_pending WHERE id = ?', [id]);
+  return true;
+}
+
+function getCompStats() {
+  const row = _get(`
+    SELECT
+      (SELECT COUNT(*) FROM comp_works)                    AS totalCompWorks,
+      (SELECT COUNT(*) FROM comp_works WHERE processed = 0) AS unprocessedCompWorks,
+      (SELECT COUNT(*) FROM comp_marks)                    AS totalMarks,
+      (SELECT COUNT(*) FROM comp_pending)                  AS totalPending
+  `);
+  return row ?? { totalCompWorks: 0, unprocessedCompWorks: 0, totalMarks: 0, totalPending: 0 };
+}
+
+function _safeJsonParse(s, fallback) {
+  try { return JSON.parse(s); } catch { return fallback; }
+}
+
 // âââ stats ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function getStats() {
@@ -1016,6 +1184,108 @@ function exportAllHistory() {
     JOIN works w ON p.rj_code = w.rj_code
     ORDER BY p.checked_at ASC
   `);
+}
+
+// ─── import (CSV/JSONバックアップからの復元。DB破損時のリカバリ用) ────────────
+//
+// 入力は exportAllHistory() / /api/export/json / /api/export/csv と同じ行形状
+// (rj_code, title, circle, maker_id?, work_type?, release_date?, price, sale_price,
+//  discount_rate, point, checked_at) を想定。CSVはヘッダーに maker_id/work_type/
+// release_date を含まないため、その3項目は無い前提でも動く(null許容)。
+//
+// 方針:
+//   - 既存の works 行は上書きしない(生きているDBのメタ情報を優先)。無ければ新規作成。
+//   - price_history は (rj_code, checked_at) の重複があればスキップ（再インポート安全）。
+//   - checked_at は JSON由来(unix秒の数値)・CSV由来(ISO8601文字列)の両方を許容する。
+//   - インポート後、works の非正規化キャッシュ(cur_price等)を price_history の
+//     実際の最新行から再構築する(古いバックアップを後から入れても、より新しい
+//     既存データがあればそちらが優先される)。
+
+function importHistoryRows(rows) {
+  if (!Array.isArray(rows)) throw new Error('rows must be an array');
+
+  let worksImported = 0, historyImported = 0, skipped = 0;
+  const touched = new Set();
+
+  transaction(() => {
+    _db.run('CREATE TEMP TABLE IF NOT EXISTS _import_touched (rj_code TEXT PRIMARY KEY)');
+
+    for (const raw of rows) {
+      const rj = _str(raw?.rj_code)?.toUpperCase();
+      const checkedAt = _normalizeTimestamp(raw?.checked_at);
+      if (!rj || checkedAt == null) { skipped++; continue; }
+
+      if (!touched.has(rj)) {
+        const exists = _get('SELECT 1 FROM works WHERE rj_code = ?', [rj]);
+        if (!exists) {
+          _run(`
+            INSERT INTO works (rj_code, title, circle, maker_id, work_type, site_id, release_date, dl_count, first_seen)
+            VALUES (?,?,?,?,?,?,?,0,?)
+          `, [
+            rj, _str(raw?.title), _str(raw?.circle), _str(raw?.maker_id),
+            _str(raw?.work_type), 'maniax', _str(raw?.release_date), checkedAt,
+          ]);
+          worksImported++;
+        }
+        _run('INSERT OR IGNORE INTO _import_touched (rj_code) VALUES (?)', [rj]);
+        touched.add(rj);
+      }
+
+      const dup = _get('SELECT 1 FROM price_history WHERE rj_code = ? AND checked_at = ?', [rj, checkedAt]);
+      if (dup) { skipped++; continue; }
+
+      const price     = _toIntOrNull(raw?.price);
+      const salePrice = _toIntOrNull(raw?.sale_price);
+      const discount  = _toIntOrNull(raw?.discount_rate);
+      const point     = _toIntOrNull(raw?.point);
+      const isOnSale  = (salePrice != null && price != null && salePrice < price) ? 1 : 0;
+
+      _run(`
+        INSERT INTO price_history (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
+        VALUES (?,?,?,?,?,?,0,?)
+      `, [rj, price, salePrice, point, discount, isOnSale, checkedAt]);
+      historyImported++;
+    }
+
+    // インポートで触れたRJのみ、価格キャッシュを実データから再構築
+    _db.run(`
+      UPDATE works SET
+        cur_price         = (SELECT price         FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+        cur_sale_price     = (SELECT sale_price    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+        cur_discount_rate  = (SELECT discount_rate FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+        cur_point          = (SELECT point         FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+        cur_is_point_only  = (SELECT is_point_only FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+        is_on_sale         = COALESCE((SELECT is_on_sale FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1), 0),
+        price_checked_at   = (SELECT checked_at    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1)
+      WHERE rj_code IN (SELECT rj_code FROM _import_touched)
+    `);
+    _db.run('DROP TABLE _import_touched');
+  });
+
+  _invalidateRjCache();
+  return { worksImported, historyImported, skipped, totalRows: rows.length, touchedWorks: touched.size };
+}
+
+/** unix秒(数値/数値文字列) と ISO8601文字列の両方を unix秒に正規化。無効値は null。 */
+function _normalizeTimestamp(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number' && Number.isFinite(v)) return Math.floor(v);
+  const s = String(v).trim();
+  if (/^\d+(\.\d+)?$/.test(s)) return Math.floor(Number(s));
+  const t = Date.parse(s);
+  return isNaN(t) ? null : Math.floor(t / 1000);
+}
+
+function _toIntOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n) : null;
+}
+
+function _str(v) {
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
 }
 
 // âââ UI query helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -1273,4 +1543,20 @@ module.exports = {
   countSuspectedDelisted,
   recoverSuspectedDelisted,
   getSampleRjForSite,
+  importHistoryRows,
+  upsertCompWork,
+  getAllCompWorkRjs,
+  getUnprocessedCompWorks,
+  markCompWorkProcessed,
+  addCompMark,
+  getCompMarksSet,
+  isCompMarked,
+  removeCompMark,
+  listCompMarks,
+  addCompPending,
+  getCompPending,
+  getCompPendingById,
+  approveCompPending,
+  rejectCompPending,
+  getCompStats,
 };
