@@ -953,12 +953,23 @@ app.on('before-quit', (event) => {
   // 必ず1行残す。
   log.info('[electron] before-quit fired', { isQuiting: !!app.isQuiting, crawlerBusy: _isCrawlerBusy() });
   if (_quitFinalizing) return; // 2回目以降(強制終了時)はそのまま通す
+
+  // db.close()はDB破損レース修正のためasync化した(進行中のdebounce保存の
+  // 完了を待ってから書く)。await せずにここでElectronの終了を進めてしまうと
+  // 「保存完了前にプロセスが死ぬ」という、まさに直したかったレースを
+  // 別の形で再発させるため、busy/idle どちらの分岐も必ずpreventDefaultして
+  // 保存完了を待ってからapp.quit()する。
+  event.preventDefault();
+
   if (!_isCrawlerBusy()) {
-    try { db?.close(); } catch (e) { log.error('[electron] db close error', e.message); }
+    (async () => {
+      try { await db?.close(); } catch (e) { log.error('[electron] db close error', e.message); }
+      _quitFinalizing = true;
+      app.quit();
+    })();
     return;
   }
 
-  event.preventDefault();
   log.info('[electron] job running — aborting and waiting up to', _QUIT_WAIT_MS, 'ms before quit');
   if (!global._crawlerAbort) global._crawlerAbort = {};
   global._crawlerAbort.discovery = true;
@@ -974,7 +985,7 @@ app.on('before-quit', (event) => {
     }
     global._crawlerAbort.discovery = false;
     global._crawlerAbort.detail    = false;
-    try { db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
+    try { await db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
     _quitFinalizing = true;
     app.quit();
   })();
