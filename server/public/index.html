@@ -1441,7 +1441,8 @@ async function _waitJobDone(job, btn) {
     _spShow(true);
     _spStartSSE();
     _spLog((_JOB_LABELS[job] ?? job) + ' 開始...');
-  } else if (job === 'discover' || job.startsWith('fullscan') || job === 'pushdata') {
+  } else if (job === 'discover' || job.startsWith('fullscan') || job === 'pushdata'
+             || job === 'endingsoon' || job === 'circlegap' || job === 'newrelease') {
     _spScanned = 0; _spTotal = 0; _spChanges = 0;
     _spUpdate();
     _spShow(true);
