@@ -42,13 +42,13 @@ async function main() {
     const changed = await fetchAndStore(code);
     log.info('[main] done', { rj: code, priceChanged: changed });
     _printStats();
-    db.close();
+    await db.close();
     return;
   }
 
   if (mode === 'status') {
     _printStats();
-    db.close();
+    await db.close();
     return;
   }
 
@@ -56,7 +56,7 @@ async function main() {
     const result = await runDiscovery();
     log.info('[main] discovery result', result);
     _printStats();
-    db.close();
+    await db.close();
     return;
   }
 
@@ -64,7 +64,7 @@ async function main() {
     const result = await runDetailFetch(50);
     log.info('[main] fetch result', result);
     _printStats();
-    db.close();
+    await db.close();
     return;
   }
 
@@ -75,7 +75,7 @@ async function main() {
       const { main: pushDataShards } = require('./scripts/push-data-shards');
       await pushDataShards();
     }
-    db.close();
+    await db.close();
     return;
   }
 
@@ -106,14 +106,14 @@ function _printStats() {
   console.log('──────────────\n');
 }
 
-function _shutdown() {
+async function _shutdown() {
   log.info('[main] shutting down');
-  db.close();
+  await db.close();
   process.exit(0);
 }
 
-main().catch(err => {
+main().catch(async err => {
   log.error('[main] fatal error', err.message, err.stack);
-  db.close();
+  await db.close();
   process.exit(1);
 });
