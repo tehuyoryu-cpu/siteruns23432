@@ -583,6 +583,20 @@ function _bindIpc() {
     }
   });
 
+  // CSV/JSONインポート用ファイル選択ダイアログ（データ復旧機能）
+  ipcMain.handle('dialog:pickImportFile', async () => {
+    if (!_win) return null;
+    const res = await dialog.showOpenDialog(_win, {
+      title: 'インポートするCSV/JSONファイルを選択',
+      properties: ['openFile'],
+      filters: [
+        { name: 'CSV/JSON', extensions: ['csv', 'json'] },
+        { name: 'すべてのファイル', extensions: ['*'] },
+      ],
+    });
+    return res.canceled || !res.filePaths.length ? null : res.filePaths[0];
+  });
+
   // 各ジョブ実行
   // ロック判定・取得は apiServer.js の handleRun() に一本化する。
   // ここで事前に _running[sk]=true をセットすると、_running は
