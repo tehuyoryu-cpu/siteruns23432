@@ -61,6 +61,19 @@ async function init() {
     const buf = fs.readFileSync(DB_PATH);
     _db = new _SQL.Database(buf);
     log.info('[db] loaded', DB_PATH);
+    // sql.js/SQLite does not fully validate the file on open — a corrupted
+    // page only throws 'database disk image is malformed' once a query
+    // actually touches it. Without this check, the app appears to work
+    // fine at startup and only fails unpredictably mid-job later (this is
+    // exactly what happened: every job that touched a bad page rolled
+    // back instantly, making 'all'/'endingsoon'/etc. look like they
+    // "finished immediately" while actually crashing on their first write).
+    // Run an explicit integrity check now so we can recover up front.
+    if (!_checkIntegrity()) {
+      log.error('[db] integrity check FAILED on load — attempting recovery');
+      _db.close();
+      _db = _recoverFromCorruption(buf);
+    }
   } else {
     _db = new _SQL.Database();
     log.info('[db] created', DB_PATH);
@@ -69,19 +82,86 @@ async function init() {
   const schemaChanged = _applySchema();
   if (schemaChanged) {
     log.info('[db] schema changed — saving...');
-    _saveNow();
+    await _saveNow();
     log.info('[db] save complete');
   }
 }
 
 /** Returns the live sql.js Database. Throws if init() was not awaited. */
-function close() {
+async function close() {
   if (_db) {
-    _saveNow();
+    await _saveNow();
     _db.close();
     _db = null;
     log.info('[db] closed');
   }
+}
+
+/** true if PRAGMA integrity_check reports 'ok'. */
+function _checkIntegrity() {
+  try {
+    const row = _db.exec('PRAGMA integrity_check');
+    const val = row?.[0]?.values?.[0]?.[0];
+    return val === 'ok';
+  } catch (e) {
+    log.error('[db] integrity_check threw', e.message);
+    return false;
+  }
+}
+
+/**
+ * Recovery order when the loaded DB fails integrity_check:
+ *   1. Quarantine the corrupt file (rename, never delete — for forensics).
+ *   2. Try the newest verified backup (backups/*.db + matching .meta.json,
+ *      sha256-checked via verifyBackup()).
+ *   3. If no valid backup exists, start a fresh empty DB (data loss, but
+ *      keeps the app usable instead of erroring on every job forever).
+ */
+function _recoverFromCorruption(corruptBuf) {
+  const quarantineDir = path.resolve(path.dirname(DB_PATH), 'corrupted');
+  try {
+    fs.mkdirSync(quarantineDir, { recursive: true });
+    const dest = path.join(quarantineDir, `dlsite-corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}.db`);
+    fs.writeFileSync(dest, corruptBuf);
+    log.error('[db] corrupt file quarantined at', dest);
+  } catch (e) {
+    log.error('[db] failed to quarantine corrupt file', e.message);
+  }
+
+  const backupDir = path.resolve(path.dirname(DB_PATH), 'backups');
+  let candidates = [];
+  try {
+    candidates = fs.readdirSync(backupDir)
+      .filter(f => f.startsWith('dlsite-') && f.endsWith('.db'))
+      .map(f => ({ name: f, full: path.join(backupDir, f) }))
+      .sort((a, b) => b.name.localeCompare(a.name)); // newest first (timestamp in filename)
+  } catch { /* no backups dir */ }
+
+  for (const c of candidates) {
+    const v = verifyBackup(c.full);
+    if (!v.ok) {
+      log.warn('[db] backup failed verification, skipping', c.name, v.reason);
+      continue;
+    }
+    try {
+      const buf = fs.readFileSync(c.full);
+      const restored = new _SQL.Database(buf);
+      const savedDb = _db;
+      _db = restored;
+      if (_checkIntegrity()) {
+        log.error('[db] RECOVERED from backup', c.name, '— data since this backup is LOST, review corrupted/ and backups/ manually');
+        return restored;
+      }
+      _db = savedDb;
+      restored.close();
+      log.warn('[db] backup also failed integrity_check, trying older one', c.name);
+    } catch (e) {
+      log.warn('[db] backup restore attempt failed', c.name, e.message);
+    }
+  }
+
+  log.error('[db] NO usable backup found — starting with a fresh empty database. Manual recovery from corrupted/ may be possible.');
+  return new _SQL.Database();
 }
 
 // âââ schema âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -375,52 +455,54 @@ function runInTransaction(fn) {
  * （renameはファイルシステム上ほぼ原子的）に変更し、安全性も同時に高めた。
  * 加えて、書き込み中に次のsaveが呼ばれても多重に走らないようガードする。
  */
-let _saveTimer      = null;
-let _saveInProgress = false;
-let _savePending     = false;
+let _saveTimer = null;
+
+// 重大バグ修正(DB破損の主因と推定): 以前は debounced _doSaveAsync()（非同期、
+// tmpファイルへの書き込み中）と _saveNow()（同期、close()/終了処理から
+// 直接呼ばれる）が同じ DB_PATH+'.tmp' へ独立に書き込みうる構造だった。
+// アプリ終了時に「非同期saveがtmpへ書き込み中」のタイミングで _saveNow() の
+// 同期書き込みが同じパスに割り込むと、2つの書き込みが同一ファイルへ
+// 交差し、どちらのrename()が最後に勝つかも不定になる。結果、サイズや
+// ページ構造が破損した .db が本番パスへrenameされうる。これが実際に
+// 観測された「database disk image is malformed」（起動直後は正常に見えて、
+// 破損したページに触れるまで気づかない）の主因と推定される。
+// 全ての書き込みを単一の Promise チェーンで直列化し、常に「前の書き込みが
+// 完全に終わってから次を始める」ことを保証する。
+let _saveChain = Promise.resolve();
 
 function _save() {
   if (_saveTimer) return;
   _saveTimer = setTimeout(() => {
     _saveTimer = null;
-    _doSaveAsync();
+    _saveChain = _saveChain.then(_writeDbFile).catch(e => log.error('[db] save error:', e.message));
   }, 3000);
 }
 
-async function _doSaveAsync() {
-  if (_saveInProgress) { _savePending = true; return; }
-  _saveInProgress = true;
-  try {
-    const t0   = Date.now();
-    const data = _db.export();
-    const tExport = Date.now() - t0;
-    const tmpPath = DB_PATH + '.tmp';
-    await fs.promises.writeFile(tmpPath, Buffer.from(data));
-    await fs.promises.rename(tmpPath, DB_PATH);
-    const tTotal = Date.now() - t0;
-    if (tTotal > 1000) {
-      log.warn('[db] save slow:', tTotal + 'ms', `(export ${tExport}ms, size ${(data.length/1024/1024).toFixed(1)}MB)`);
-    }
-  } catch (e) {
-    log.error('[db] save error:', e.message);
-  } finally {
-    _saveInProgress = false;
-    if (_savePending) {
-      _savePending = false;
-      _save();
-    }
+async function _writeDbFile() {
+  const t0   = Date.now();
+  const data = _db.export();
+  const tExport = Date.now() - t0;
+  const tmpPath = DB_PATH + '.tmp';
+  await fs.promises.writeFile(tmpPath, Buffer.from(data));
+  await fs.promises.rename(tmpPath, DB_PATH);
+  const tTotal = Date.now() - t0;
+  if (tTotal > 1000) {
+    log.warn('[db] save slow:', tTotal + 'ms', `(export ${tExport}ms, size ${(data.length/1024/1024).toFixed(1)}MB)`);
   }
 }
 
-/** 即時書き出し（起動時マイグレーション・終了時専用、同期・ブロッキング）*/
-function _saveNow() {
+/**
+ * 即時書き出し（起動時マイグレーション・終了時専用）。
+ * 保留中のdebounce保存があればキャンセルして代わりに今すぐ書く一方、
+ * 既に進行中の非同期保存があれば必ずそれの完了を待ってから自分の
+ * 書き込みを行う（_saveChain で直列化）。async化したため呼び出し側は
+ * 必ず await すること（同期呼び出しは上記の破損レースを再発させる）。
+ */
+async function _saveNow() {
   if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
-  try {
-    const data = _db.export();
-    const tmpPath = DB_PATH + '.tmp';
-    fs.writeFileSync(tmpPath, Buffer.from(data));
-    fs.renameSync(tmpPath, DB_PATH);
-  } catch (e) { log.error('[db] saveNow error:', e.message); }
+  const p = _saveChain.then(_writeDbFile);
+  _saveChain = p.catch(e => log.error('[db] saveNow error:', e.message));
+  await _saveChain;
 }
 
 // âââ works ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
