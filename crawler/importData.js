@@ -6,6 +6,10 @@
  * DB破損・消失時の復旧用: /api/export/csv or /api/export/json で過去に
  * 書き出したファイルから works + price_history を再構築する。
  *
+ * このモジュールはCSV/JSONの読み込み・パースのみを担当する。
+ * 実際のDB書き込み（prepared statement再利用・チャンク分割・進捗yield）は
+ * db.importHistoryRows() に委譲する。
+ *
  * 制約（重要）:
  *   - CSVエクスポートには maker_id / work_type / release_date / site_id が
  *     含まれない（apiServer.js の handleExportCsv 参照）。そのためCSV
@@ -13,24 +17,18 @@
  *     JSONエクスポートには maker_id/work_type/release_date が含まれるため、
  *     可能な限りJSONを使うこと。
  *   - site_id はCSV/JSONどちらにも含まれないため 'maniax' 固定で復元する。
- *     bl/girlsサイトの作品は次回の価格更新パスで初めて正しく修正される
- *     （product/info/ajax が404/空応答を返す→recordApiMissingで検出される
- *     想定だが、確実ではないため復元直後は要目視確認）。
+ *     bl/girlsサイトの作品は次回の価格更新パスで初めて正しく修正される。
  *   - is_on_sale はCSV/JSONに直接の列が無いため、
- *     (discount_rate > 0 または sale_price が非null) から近似復元する。
+ *     (discount_rate > 0 または sale_price が非null) から近似復元する
+ *     （db.importHistoryRows側で行う）。
  *
  * インポート直後、各作品は次回の「価格更新」パスで即座に再チェックされる
- * よう next_check_at を「今」に強制する(boostWorkUrgent)。これにより
- * site_id/maker_id/現存確認など、ファイルだけでは分からない情報が
- * できるだけ早く補正される。
+ * よう next_check_at を「今」に強制する（db.importHistoryRows側で実施）。
  */
 
-const fs     = require('fs');
-const db     = require('./db');
-const config = require('../config');
-const log    = require('./logger');
-
-const CHUNK = 200; // works単位でのトランザクション分割サイズ
+const fs  = require('fs');
+const db  = require('./db');
+const log = require('./logger');
 
 // ─── CSV パーサ（ダブルクオート・カンマ・改行エスケープ対応の最小実装） ──────
 
@@ -86,7 +84,7 @@ function importFromCsv(filePath, { onProgress } = {}) {
   }));
 
   log.warn('[import] CSVインポート: maker_id/work_type/release_date/site_idは復元されません（JSONエクスポートを推奨）');
-  return _importRecords(records, onProgress);
+  return _runImport(records, onProgress);
 }
 
 function importFromJson(filePath, { onProgress } = {}) {
@@ -112,7 +110,7 @@ function importFromJson(filePath, { onProgress } = {}) {
       : (r.checked_at ? Math.floor(new Date(r.checked_at).getTime() / 1000) : null),
   }));
 
-  return _importRecords(records, onProgress);
+  return _runImport(records, onProgress);
 }
 
 /** ファイル拡張子から自動判定してインポートする */
@@ -135,85 +133,23 @@ function _numOrNull(v) {
   return typeof v === 'number' ? v : (v == null ? null : _toInt(v));
 }
 
-function _importRecords(records, onProgress) {
-  const byRj = new Map();
-  let skippedNoRj = 0, skippedNoChecked = 0;
-
-  for (const r of records) {
-    if (!r.rj_code) { skippedNoRj++; continue; }
-    const rj = String(r.rj_code).toUpperCase().trim();
-    if (!/^RJ\d{4,}$/.test(rj)) { skippedNoRj++; continue; }
-    if (!byRj.has(rj)) byRj.set(rj, []);
-    byRj.get(rj).push(r);
+/**
+ * db.importHistoryRows()（ジェネレータ）を消費し、チャンクごとに
+ * onProgressへ中継しつつ、最後にyieldされた値を最終結果として返す。
+ */
+function _runImport(records, onProgress) {
+  let last = { processed: 0, total: 0, worksImported: 0, priceRowsImported: 0, skippedNoRj: 0, skippedNoChecked: 0 };
+  for (const progress of db.importHistoryRows(records)) {
+    last = progress;
+    onProgress?.(progress);
   }
-  for (const list of byRj.values()) {
-    list.sort((a, b) => (a.checked_at ?? 0) - (b.checked_at ?? 0));
-  }
-
-  const rjCodes = [...byRj.keys()];
-  let worksImported = 0, priceRowsImported = 0, processed = 0;
-
-  for (let i = 0; i < rjCodes.length; i += CHUNK) {
-    const chunk = rjCodes.slice(i, i + CHUNK);
-
-    db.transaction(() => {
-      for (const rj of chunk) {
-        const list   = byRj.get(rj);
-        // タイトル/サークル等はnullでない最新の値を採用（欠損レコード混入対策）
-        const latest = [...list].reverse().find(r => r.title) ?? list[list.length - 1];
-
-        db.upsertWork({
-          rj_code:      rj,
-          title:        latest.title,
-          circle:       latest.circle,
-          maker_id:     latest.maker_id,
-          work_type:    latest.work_type,
-          site_id:      'maniax',
-          release_date: latest.release_date,
-          dl_count:     0,
-        });
-        worksImported++;
-
-        let lastOnSale = 0;
-        for (const row of list) {
-          if (row.checked_at == null) { skippedNoChecked++; continue; }
-          const isOnSale = ((row.discount_rate ?? 0) > 0 || row.sale_price != null) ? 1 : 0;
-          const result = db.savePriceIfChanged(rj, {
-            price:         row.price,
-            sale_price:    row.sale_price,
-            point:         row.point,
-            discount_rate: row.discount_rate,
-            is_on_sale:    isOnSale,
-            is_point_only: 0,
-          });
-          if (result?.changed) priceRowsImported++;
-          lastOnSale = isOnSale;
-        }
-
-        db.markChecked(rj, {
-          check_interval: config.checkInterval.normal,
-          priority:       lastOnSale ? config.priority.onSale : config.priority.normal,
-          is_on_sale:     lastOnSale,
-        });
-        // ファイルだけでは分からない情報(site_id/maker_id欠損/現存確認)を
-        // できるだけ早く補正させるため、次回価格更新パスで即due扱いにする
-        db.boostWorkUrgent(rj, lastOnSale ? config.priority.onSale : config.priority.normal, config.checkInterval.normal);
-      }
-    });
-
-    processed += chunk.length;
-    log.info('[import] progress', { processed, total: rjCodes.length, worksImported, priceRowsImported });
-    onProgress?.({ processed, total: rjCodes.length, worksImported, priceRowsImported });
-  }
-
-  db.save();
 
   const result = {
-    totalRjCodes: rjCodes.length,
-    works:        worksImported,
-    priceRows:    priceRowsImported,
-    skippedNoRj,
-    skippedNoChecked,
+    totalRjCodes:     last.total,
+    works:            last.worksImported,
+    priceRows:        last.priceRowsImported,
+    skippedNoRj:      last.skippedNoRj,
+    skippedNoChecked: last.skippedNoChecked,
   };
   log.info('[import] done', result);
   return result;
