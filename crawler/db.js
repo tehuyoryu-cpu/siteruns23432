@@ -399,6 +399,31 @@ function _applySchema() {
     console.error('[db] backfill error:', e.message);
   }
 
+  // price_history に (rj_code, checked_at) の UNIQUE INDEX を追加する。
+  // importHistoryRows() の INSERT OR IGNORE による冪等インポートに必要
+  // （同じCSV/JSONを再インポートしても重複行が増えないようにするため）。
+  // 既存DBに重複(rj_code, checked_at)が残っていると CREATE UNIQUE INDEX が
+  // 失敗するため、先に重複行を間引く（各組につき最小idの1行のみ残す）。
+  try {
+    const dupCheck = _get(`
+      SELECT COUNT(*) AS n FROM (
+        SELECT rj_code, checked_at FROM price_history
+        GROUP BY rj_code, checked_at HAVING COUNT(*) > 1
+      )
+    `);
+    if (dupCheck && dupCheck.n > 0) {
+      console.log('[db] price_history 重複行を間引き中...', dupCheck.n, '組');
+      _db.run(`
+        DELETE FROM price_history
+        WHERE id NOT IN (SELECT MIN(id) FROM price_history GROUP BY rj_code, checked_at)
+      `);
+      changed = true;
+    }
+    _db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_ph_rj_checked_unique ON price_history(rj_code, checked_at)');
+  } catch (e) {
+    console.error('[db] price_history unique index migration error:', e.message);
+  }
+
   console.log('[db] _applySchema: done, changed='+changed);
   return changed;
 }
@@ -854,6 +879,149 @@ function savePriceIfChanged(rjCode, priceData) {
   ]);
 
   return { changed: true, consecutive_no_change: 0 };
+}
+
+/**
+ * CSV/JSONからの一括復旧インポート用（importData.jsから呼ばれる）。
+ * importData.js側はファイル読み込み・パースのみを担当し、DB書き込みは
+ * 全てここに委譲する。
+ *
+ * savePriceIfChanged()等の通常経路との違い:
+ *   - prepared statementをループ全体で1回だけ用意し、bind/step/resetを
+ *     使い回す（_run()は呼び出しごとにprepare()し直すため、数万行規模の
+ *     インポートでは無視できないオーバーヘッドになる）。
+ *   - price_history へは INSERT OR IGNORE を使う。(rj_code, checked_at) の
+ *     UNIQUE INDEX（_applySchemaで追加済み）により、同じファイルを再度
+ *     インポートしても重複行が増えない（冪等）。
+ *   - 行ごとのSELECT diffは行わない（インポートは基本的に新規データの
+ *     一括投入であり、差分検知は通常巡回の役割のため）。
+ *
+ * ジェネレータ関数: CHUNK件のRJコードを処理するたびに進捗をyieldする。
+ * 各yieldの内容がそのまま「その時点までの累計」であり、呼び出し側は
+ * 最後にyieldされた値をそのまま最終結果として使える。
+ *
+ * @param {Array<{rj_code,title,circle,maker_id,work_type,release_date,price,sale_price,discount_rate,point,checked_at}>} records
+ * @param {{chunkSize?: number}} opts
+ */
+function* importHistoryRows(records, { chunkSize = 200 } = {}) {
+  const byRj = new Map();
+  let skippedNoRj = 0, skippedNoChecked = 0;
+
+  for (const r of records) {
+    if (!r.rj_code) { skippedNoRj++; continue; }
+    const rj = String(r.rj_code).toUpperCase().trim();
+    if (!/^RJ\d{4,}$/.test(rj)) { skippedNoRj++; continue; }
+    if (!byRj.has(rj)) byRj.set(rj, []);
+    byRj.get(rj).push(r);
+  }
+  for (const list of byRj.values()) {
+    list.sort((a, b) => (a.checked_at ?? 0) - (b.checked_at ?? 0));
+  }
+
+  const rjCodes = [...byRj.keys()];
+  const total = rjCodes.length;
+  let worksImported = 0, priceRowsImported = 0, processed = 0;
+
+  if (!total) {
+    yield { processed: 0, total: 0, worksImported: 0, priceRowsImported: 0, skippedNoRj, skippedNoChecked };
+    return;
+  }
+
+  const now = unixNow();
+
+  const workStmt = _db.prepare(`
+    INSERT INTO works
+      (rj_code, title, circle, maker_id, work_type, site_id, release_date, dl_count, first_seen)
+    VALUES (?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(rj_code) DO UPDATE SET
+      title        = COALESCE(excluded.title,        works.title),
+      circle       = COALESCE(excluded.circle,       works.circle),
+      maker_id     = COALESCE(excluded.maker_id,     works.maker_id),
+      work_type    = COALESCE(excluded.work_type,    works.work_type),
+      site_id      = COALESCE(excluded.site_id,      works.site_id),
+      release_date = COALESCE(excluded.release_date, works.release_date)
+  `);
+  const priceStmt = _db.prepare(`
+    INSERT OR IGNORE INTO price_history
+      (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
+    VALUES (?,?,?,?,?,?,?,?)
+  `);
+  const curStmt = _db.prepare(`
+    UPDATE works SET
+      cur_price = ?, cur_sale_price = ?, cur_discount_rate = ?, cur_point = ?,
+      cur_is_point_only = ?, price_checked_at = ?
+    WHERE rj_code = ?
+  `);
+  // markChecked + boostWorkUrgent相当を1文に統合(next_check_at=nowで即due化)
+  const scheduleStmt = _db.prepare(`
+    UPDATE works SET
+      last_checked = ?, check_interval = ?, priority = ?, is_on_sale = ?,
+      consecutive_no_change = 0, consecutive_errors = 0, next_check_at = ?
+    WHERE rj_code = ?
+  `);
+
+  try {
+    for (let i = 0; i < rjCodes.length; i += chunkSize) {
+      const chunk = rjCodes.slice(i, i + chunkSize);
+
+      _db.run('BEGIN');
+      try {
+        for (const rj of chunk) {
+          const list   = byRj.get(rj);
+          const latest = [...list].reverse().find(r => r.title) ?? list[list.length - 1];
+
+          workStmt.bind([
+            rj, latest.title ?? null, latest.circle ?? null, latest.maker_id ?? null,
+            latest.work_type ?? null, 'maniax', latest.release_date ?? null, 0, now,
+          ]);
+          workStmt.step(); workStmt.reset();
+          worksImported++;
+
+          let lastOnSale = 0, lastRow = null;
+          for (const row of list) {
+            if (row.checked_at == null) { skippedNoChecked++; continue; }
+            const isOnSale = ((row.discount_rate ?? 0) > 0 || row.sale_price != null) ? 1 : 0;
+            priceStmt.bind([
+              rj, row.price ?? null, row.sale_price ?? null, row.point ?? null,
+              row.discount_rate ?? null, isOnSale, 0, row.checked_at,
+            ]);
+            priceStmt.step();
+            if (_db.getRowsModified() > 0) priceRowsImported++; // OR IGNOREで実際に挿入された行のみ
+            priceStmt.reset();
+            lastOnSale = isOnSale;
+            lastRow = row;
+          }
+
+          if (lastRow) {
+            curStmt.bind([
+              lastRow.price ?? null, lastRow.sale_price ?? null, lastRow.discount_rate ?? null,
+              lastRow.point ?? null, 0, lastRow.checked_at, rj,
+            ]);
+            curStmt.step(); curStmt.reset();
+          }
+
+          const priority = lastOnSale ? config.priority.onSale : config.priority.normal;
+          scheduleStmt.bind([now, config.checkInterval.normal, priority, lastOnSale, now, rj]);
+          scheduleStmt.step(); scheduleStmt.reset();
+        }
+        _db.run('COMMIT');
+      } catch (err) {
+        try { _db.run('ROLLBACK'); } catch (_) { /* ignore */ }
+        log.error('[db] importHistoryRows chunk rolled back:', err.message);
+        throw err;
+      }
+
+      processed += chunk.length;
+      yield { processed, total, worksImported, priceRowsImported, skippedNoRj, skippedNoChecked };
+    }
+  } finally {
+    workStmt.free();
+    priceStmt.free();
+    curStmt.free();
+    scheduleStmt.free();
+  }
+
+  _save();
 }
 
 function getPriceHistory(rjCode) {
@@ -1510,4 +1678,5 @@ module.exports = {
   clearPriceIssue,
   getPriceIssues,
   getPriceIssuesCount,
+  importHistoryRows,
 };
