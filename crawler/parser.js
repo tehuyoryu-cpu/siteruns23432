@@ -44,6 +44,7 @@ function parseProductInfo(rjCode, body) {
     const isOnSale  = d.is_sale == 1 || (discRate != null && discRate > 0);
 
     let price, salePrice, disc = discRate;
+    let priceIssue = null; // { type, raw } — 定価が信頼できなかった場合にセットされる
 
     if (isOnSale) {
       if (priceWork != null && priceCur != null && priceCur < priceWork) {
@@ -69,8 +70,8 @@ function parseProductInfo(rjCode, body) {
         price     = priceWork;
         salePrice = (priceCur != null && priceCur !== priceWork) ? priceCur : null;
         if (salePrice == null) {
-          log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields', rjCode,
-            { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale });
+          priceIssue = { type: 'ambiguous', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
+          log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields', rjCode, priceIssue.raw);
         }
       } else if (priceCur != null) {
         // 重大バグ修正: price_work が欠損している場合、旧実装はここで
@@ -82,12 +83,13 @@ function parseProductInfo(rjCode, body) {
         // 実際の発生パターンを特定できるようにする。
         price     = priceCur;
         salePrice = null;
-        log.warn('[parser] price_work missing while on sale — recorded price may be the DISCOUNTED price, not the regular price', rjCode,
-          { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale });
+        priceIssue = { type: 'price_work_missing', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
+        log.warn('[parser] price_work missing while on sale — recorded price may be the DISCOUNTED price, not the regular price', rjCode, priceIssue.raw);
       } else {
         price     = 0;
         salePrice = null;
-        log.warn('[parser] no usable price field at all', rjCode, { price_work: d.price_work, price: d.price });
+        priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price } };
+        log.warn('[parser] no usable price field at all', rjCode, priceIssue.raw);
       }
     } else {
       price     = priceWork ?? priceCur ?? 0;
@@ -145,6 +147,7 @@ function parseProductInfo(rjCode, body) {
         is_on_sale:     isOnSale ? 1 : 0,
         is_point_only:  isPointCampaign ? 1 : 0,
       },
+      priceIssue,
     };
   } catch (e) {
     log.error('[parser] parseProductInfo', rjCode, e.message);
