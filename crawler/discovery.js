@@ -10,6 +10,7 @@ const db     = require('./db');
 const parser = require('./parser');
 const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
+const { pushDebugBundle } = require('../scripts/pushDebugBundle');
 
 const BASE = config.dlsite.baseUrl;
 const RL   = config.fetch.rateLimit;
@@ -757,4 +758,32 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   return { checked, totalMissing, missingByCircle, skippedInvalidSite };
 }
 
-module.exports = { runDiscovery, runFullScan, runEndingSoonScan, runNewReleaseScan, runCircleGapScan };
+// ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────
+// scheduler.js（cron）とapiServer.js（UI手動実行）のどちらから呼ばれても
+// 漏れなくpushされるよう、個々の関数内ではなくexport時にラップする。
+function _withDebugPush(jobName, fn) {
+  return async (...args) => {
+    let result, err;
+    try {
+      result = await fn(...args);
+      return result;
+    } catch (e) {
+      err = e;
+      throw e;
+    } finally {
+      try {
+        await pushDebugBundle({ job: jobName, result: err ? { error: err.message } : result });
+      } catch (pushErr) {
+        log.error('[discovery] pushDebugBundle failed', pushErr.message);
+      }
+    }
+  };
+}
+
+module.exports = {
+  runDiscovery:      _withDebugPush('discovery',   runDiscovery),
+  runFullScan:       _withDebugPush('fullscan',    runFullScan),
+  runEndingSoonScan: _withDebugPush('endingsoon',  runEndingSoonScan),
+  runNewReleaseScan: _withDebugPush('newrelease',  runNewReleaseScan),
+  runCircleGapScan:  _withDebugPush('circlegap',   runCircleGapScan),
+};
