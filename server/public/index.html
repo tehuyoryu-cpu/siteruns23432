@@ -671,6 +671,10 @@ body {
     <svg viewBox="0 0 16 16"><path d="M8 1v9M4.5 6.5L8 10l3.5-3.5" stroke="#006600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="2" y="12" width="12" height="2.5" rx="1" fill="#006600"/></svg>
     復元
   </button>
+  <button class="tb-btn" id="btnPriceIssues" onclick="showPriceIssues()" title="定価取得エラー一覧" data-desc="定価が信頼できる形で取得できなかった作品の一覧を表示します" style="color:#cc6600">
+    <svg viewBox="0 0 16 16"><path d="M8 1.5L1 14h14L8 1.5z" fill="none" stroke="#cc6600" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v4" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.8" fill="#cc6600"/></svg>
+    定価エラー
+  </button>
 </div>
 
 <!-- ボタン説明バー -->
@@ -877,6 +881,19 @@ body {
       </div>
       <div id="impLog" style="max-height:160px;overflow-y:auto;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:3px;padding:6px 8px;font-family:monospace;font-size:10px;white-space:pre-wrap;display:none"></div>
     </div>
+  </div>
+</div>
+
+<!-- 定価取得エラー一覧モーダル -->
+<div class="modal-overlay" id="priceIssuesModal" onclick="if(event.target===this)closePriceIssues()">
+  <div class="modal-box" style="max-width:820px">
+    <div class="modal-header" style="background:linear-gradient(to bottom,#996600,#cc8800)">
+      ⚠ 定価取得エラー一覧
+      <span id="piCount" style="font-size:11px;font-weight:normal;margin-left:8px;opacity:.85"></span>
+      <button class="modal-copy-btn" onclick="copyModalText('piBody')" title="コピー">📄 コピー</button>
+      <span class="modal-close" onclick="closePriceIssues()">✕</span>
+    </div>
+    <div class="modal-body" id="piBody" style="font-family:monospace;font-size:11px">読み込み中...</div>
   </div>
 </div>
 
@@ -1756,6 +1773,45 @@ async function runImport() {
     }
   }, 1000);
 }
+
+// ── 定価取得エラー一覧モーダル ──────────────────────────────────────────────────
+async function showPriceIssues() {
+  document.getElementById('priceIssuesModal').classList.add('open');
+  const body  = document.getElementById('piBody');
+  const count = document.getElementById('piCount');
+  body.textContent = '読み込み中...';
+  count.textContent = '';
+  try {
+    const r = await fetch('/api/price-issues');
+    const d = await r.json();
+    count.textContent = `全 ${d.total} 件${d.issues.length < d.total ? `（最新 ${d.issues.length} 件を表示）` : ''}`;
+    if (!d.issues.length) {
+      body.textContent = '記録された定価取得エラーはありません。';
+      return;
+    }
+    const TYPE_LABEL = {
+      ambiguous:           'あいまい（割引側の手がかり無し）',
+      price_work_missing:  'price_work欠損（割引後価格を誤登録の恐れ）',
+      no_price_field:      '価格フィールドが一切無い',
+    };
+    body.innerHTML = d.issues.map(it => {
+      const first = new Date(it.first_seen * 1000).toLocaleString('ja-JP');
+      const last  = new Date(it.last_seen  * 1000).toLocaleString('ja-JP');
+      let raw = '';
+      try { raw = JSON.stringify(JSON.parse(it.raw_fields)); } catch { raw = it.raw_fields || ''; }
+      return `<div style="margin-bottom:10px;padding:8px;border:1px solid #eee;border-radius:4px;background:#fffdf5">`
+        + `<div><b style="color:#0078d7">${esc(it.rj_code)}</b> ${esc(it.title || '')} `
+        + `<span style="color:#cc6600">${esc(TYPE_LABEL[it.issue_type] || it.issue_type)}</span> `
+        + `<span style="color:#888">×${it.occurrences}回</span></div>`
+        + `<div style="color:#888;font-size:10px">初回:${first} / 最新:${last}</div>`
+        + `<div style="color:#555;word-break:break-all">${esc(raw)}</div>`
+        + `</div>`;
+    }).join('');
+  } catch (e) {
+    body.textContent = '取得失敗: ' + e.message;
+  }
+}
+function closePriceIssues() { document.getElementById('priceIssuesModal').classList.remove('open'); }
 
 async function _refreshSettingsStatus() {
   const statusEl = document.getElementById('stCurrentStatus');
