@@ -10,6 +10,7 @@ const db     = require('./db');
 const parser = require('./parser');
 const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
+const { pushDebugBundle } = require('../scripts/pushDebugBundle');
 
 const BASE  = config.dlsite.baseUrl;
 const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Info API 上限
@@ -461,7 +462,14 @@ function _store(rjCode, body) {
     return null;   // null = parse failure (distinct from false = price unchanged)
   }
 
-  const { work, price } = parsed;
+  const { work, price, priceIssue } = parsed;
+
+  if (priceIssue) {
+    db.recordPriceIssue(rjCode, priceIssue.type, priceIssue.raw);
+  } else {
+    // 過去にissueが記録されていて今回は正常に取れた場合はクリアする
+    db.clearPriceIssue(rjCode);
+  }
 
   // バグ修正(継続的なsite_id破損): parser.jsは既知のサイトファミリーに
   // 一致しないsite_id(aix/appx等の内部分類コード)をnullとして返す。
@@ -536,4 +544,22 @@ function _ageDays(d) {
   catch { return 9999; }
 }
 
-module.exports = { runDetailFetch, fetchAndStore, saveDiscoveredPrice };
+// ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────
+async function _runDetailFetchWithPush(...args) {
+  let result, err;
+  try {
+    result = await runDetailFetch(...args);
+    return result;
+  } catch (e) {
+    err = e;
+    throw e;
+  } finally {
+    try {
+      await pushDebugBundle({ job: 'detail', result: err ? { error: err.message } : result });
+    } catch (pushErr) {
+      log.error('[detail] pushDebugBundle failed', pushErr.message);
+    }
+  }
+}
+
+module.exports = { runDetailFetch: _runDetailFetchWithPush, fetchAndStore, saveDiscoveredPrice };
