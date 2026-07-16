@@ -255,12 +255,26 @@ function _applySchema() {
       updated_at   INTEGER
     );
 
+    -- price_issues: 定価が信頼できる形で取得できなかった作品を記録（デバッグ用）
+    --   issue_type: 'ambiguous'（priceWorkはあるが割引側の手がかりが無い）
+    --              'price_work_missing'（price_work欠損、記録価格が割引後価格の可能性）
+    --              'no_price_field'（利用可能な価格フィールドが一切無い）
+    CREATE TABLE IF NOT EXISTS price_issues (
+      rj_code     TEXT PRIMARY KEY,
+      issue_type  TEXT NOT NULL,
+      raw_fields  TEXT,
+      first_seen  INTEGER NOT NULL,
+      last_seen   INTEGER NOT NULL,
+      occurrences INTEGER DEFAULT 1
+    );
+
     CREATE INDEX IF NOT EXISTS idx_ph_rj       ON price_history(rj_code);
     CREATE INDEX IF NOT EXISTS idx_ph_at       ON price_history(checked_at);
     CREATE INDEX IF NOT EXISTS idx_works_maker ON works(maker_id);
     CREATE INDEX IF NOT EXISTS idx_comp_candidates_due ON comp_candidates(processed_at);
     CREATE INDEX IF NOT EXISTS idx_comp_works_contained ON comp_works(contained_rj);
     CREATE INDEX IF NOT EXISTS idx_comp_pending_status  ON comp_pending(status);
+    CREATE INDEX IF NOT EXISTS idx_price_issues_type    ON price_issues(issue_type);
   `);
 
   // æ¢å­DBã¸ã®å®å¨ãªã«ã©ã è¿½å  (IF NOT EXISTS ã¯ä½¿ããªãã®ã§try/catch)
@@ -1015,6 +1029,41 @@ function getCompStats() {
   `);
   return row ?? { candidates: 0, candidatesDue: 0, compilationsConfirmed: 0, worksMarked: 0, pendingReview: 0 };
 }
+// ─── price_issues（定価取得エラー追跡） ────────────────────────────────────────
+
+/** 定価が信頼できる形で取得できなかった作品を記録（既存キーはoccurrences++で集計） */
+function recordPriceIssue(rjCode, issueType, rawFields) {
+  const now = unixNow();
+  _run(`
+    INSERT INTO price_issues (rj_code, issue_type, raw_fields, first_seen, last_seen, occurrences)
+    VALUES (?, ?, ?, ?, ?, 1)
+    ON CONFLICT(rj_code) DO UPDATE SET
+      issue_type  = excluded.issue_type,
+      raw_fields  = excluded.raw_fields,
+      last_seen   = excluded.last_seen,
+      occurrences = occurrences + 1
+  `, [rjCode, issueType, JSON.stringify(rawFields ?? {}), now, now]);
+}
+
+/** 正常に定価が取れるようになったら呼ぶ（次回発生時はoccurrences=1から再カウント） */
+function clearPriceIssue(rjCode) {
+  _run(`DELETE FROM price_issues WHERE rj_code = ?`, [rjCode]);
+}
+
+function getPriceIssues({ limit = 500, offset = 0 } = {}) {
+  return _all(`
+    SELECT pi.*, w.title, w.circle
+    FROM price_issues pi
+    LEFT JOIN works w ON w.rj_code = pi.rj_code
+    ORDER BY pi.last_seen DESC
+    LIMIT ? OFFSET ?
+  `, [limit, offset]);
+}
+
+function getPriceIssuesCount() {
+  return (_get('SELECT COUNT(*) AS n FROM price_issues') ?? { n: 0 }).n;
+}
+
 
 // âââ stats ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
@@ -1457,4 +1506,8 @@ module.exports = {
   setCompScanProgress,
   getAllCompiledRjs,
   getCompStats,
+  recordPriceIssue,
+  clearPriceIssue,
+  getPriceIssues,
+  getPriceIssuesCount,
 };
