@@ -60,6 +60,19 @@ module.exports = {
     recentLogSize: 8,     // トレンド計算用の直近価格ログ件数
   },
 
+  // 総集編マーク機能（拡張機能から移植）のレート設定。
+  // 意図的に config.fetch とは完全独立させている: config.fetch.rateLimit/concurrency は
+  // 'all'/'turbo' ジョブ実行中に一時的に書き換えられる共有可変オブジェクトのため、
+  // ここが同じ値を参照すると無関係なジョブの影響で総集編スキャンの速度が予期せず
+  // 変動し、本編の巡回と帯域を奪い合う原因になる。
+  compScan: {
+    listingRateLimit: 400,   // ジャンル515一覧ページ間の待機(ms)
+    detailRateLimit:  800,   // 総集編詳細ページ取得間の待機(ms)
+    detailConcurrency: 2,
+    estimateRateLimit: 150,  // サークル推定時のproduct/info APIコール間隔(ms)
+    threshold: 60,           // これ以上で自動確定、未満はcomp_pendingで要確認
+  },
+
   // GitHub への push (scripts/push-data-shards.js) 用設定。
   // トークンはリポジトリに含めず、環境変数 GH_TOKEN か DLSITE_DATA_DIR 直下の
   // .github-token ファイル(.gitignore済み)から読む。未設定ならpushはスキップされる。
