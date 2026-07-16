@@ -603,6 +603,7 @@ function handleStats() {
   return stats;
 }
 function handleSales()         { return db.getSaleWorks(200); }
+function handlePriceIssues()   { return { issues: db.getPriceIssues({ limit: 500 }), total: db.getPriceIssuesCount() }; }
 function handleExportJson()    { return db.exportAllHistory(); }
 
 function handleWorks(query) {
@@ -657,6 +658,7 @@ function createServer() {
       if (pathname === '/api/stats')  return _json(res, handleStats());
       if (pathname === '/api/works')  return _json(res, handleWorks(query));
       if (pathname === '/api/sales')  return _json(res, handleSales());
+      if (pathname === '/api/price-issues') return _json(res, handlePriceIssues());
 
       const histMatch = pathname.match(/^\/api\/history\/(.+)$/);
       if (histMatch) return _json(res, handleHistory(histMatch[1].toUpperCase()));
