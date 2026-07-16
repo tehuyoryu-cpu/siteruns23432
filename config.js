@@ -80,6 +80,9 @@ module.exports = {
     owner:      'tehuyoryu-cpu',
     repo:       'siteruns23432',
     dataBranch: 'data',
+    // 巡回ジョブ完了ごとに直近ログ・price_issuesを自動push(scripts/pushDebugBundle.js)する先。
+    // dataBranchとは分離し、価格配信データの履歴を汚さないようにする。
+    debugBranch: 'debug',
   },
 
   dlsite: {
