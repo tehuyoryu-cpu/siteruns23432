@@ -46,26 +46,48 @@ function parseProductInfo(rjCode, body) {
     let price, salePrice, disc = discRate;
 
     if (isOnSale) {
-      if (priceWork && priceCur && priceCur < priceWork) {
+      if (priceWork != null && priceCur != null && priceCur < priceWork) {
         // price_work=通常価格, price=セール価格（両フィールドあり、price<price_work）
         price     = priceWork;
         salePrice = priceCur;
-      } else if (priceWork && priceCur && priceCur > priceWork) {
+      } else if (priceWork != null && priceCur != null && priceCur > priceWork) {
         // price_work=セール価格, price=通常価格（両フィールドあり、price>price_work）
         price     = priceCur;
         salePrice = priceWork;
-      } else if (priceWork && discRate && discRate < 100) {
+      } else if (priceWork != null && discRate != null && discRate > 0 && discRate < 100) {
         // price_work のみ + discount_rate あり（price_work はセール後表示価格）
         // ゼロ除算を避ける: discRate < 100 チェック済み
         salePrice = priceWork;
         price     = Math.round(priceWork * 100 / (100 - discRate));
-      } else if (priceCur && discRate && discRate < 100) {
+      } else if (priceCur != null && discRate != null && discRate > 0 && discRate < 100) {
         salePrice = priceCur;
         price     = Math.round(priceCur * 100 / (100 - discRate));
-      } else {
-        // ポイント還元セール等（価格変動なし）
-        price     = priceWork ?? priceCur ?? 0;
+      } else if (priceWork != null) {
+        // price_work(通常価格らしきフィールド)はあるが、セール価格側の
+        // 手がかりが無い(price_curが同額 or discRateが不使用)。
+        // price_workを定価として信頼し、割引額は不明として扱う。
+        price     = priceWork;
+        salePrice = (priceCur != null && priceCur !== priceWork) ? priceCur : null;
+        if (salePrice == null) {
+          log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields', rjCode,
+            { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale });
+        }
+      } else if (priceCur != null) {
+        // 重大バグ修正: price_work が欠損している場合、旧実装はここで
+        // price = priceCur（実際はセール中の値引き後価格の可能性が高い）を
+        // そのまま「定価」として記録していた。これが「定価が上手く取れて
+        // いない」不具合の主因と推定される（price_workが返らない作品種別
+        // が存在する模様）。price_work欠損時は真の定価を判別できないため、
+        // 誤った定価を静かに確定させず、生フィールドをWARNログに残して
+        // 実際の発生パターンを特定できるようにする。
+        price     = priceCur;
         salePrice = null;
+        log.warn('[parser] price_work missing while on sale — recorded price may be the DISCOUNTED price, not the regular price', rjCode,
+          { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale });
+      } else {
+        price     = 0;
+        salePrice = null;
+        log.warn('[parser] no usable price field at all', rjCode, { price_work: d.price_work, price: d.price });
       }
     } else {
       price     = priceWork ?? priceCur ?? 0;
