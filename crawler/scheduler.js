@@ -182,8 +182,10 @@ function _startCompScanJob() {
   cron.schedule('0 5 * * *', async () => {
     if (!global._crawlerRunning) global._crawlerRunning = {};
     if (global._crawlerRunning.compListing) { log.warn('[scheduler] comp_listing still running, skip'); return; }
+    if (!global._crawlerAbort) global._crawlerAbort = {};
+    global._crawlerAbort.comp = false;   // ダッシュボードの停止ボタンからの中断要求フラグをリセット
     global._crawlerRunning.compListing = true;
-    try { await compScan.runListingScan(); }
+    try { await compScan.runListingScan({ shouldContinue: () => !global._crawlerAbort?.comp }); }
     catch (err) { log.error('[scheduler] comp_listing error', err.message); }
     finally { global._crawlerRunning.compListing = false; }
   });
@@ -192,8 +194,10 @@ function _startCompScanJob() {
   cron.schedule('20 */2 * * *', async () => {
     if (!global._crawlerRunning) global._crawlerRunning = {};
     if (global._crawlerRunning.compDetail) { log.warn('[scheduler] comp_detail still running, skip'); return; }
+    if (!global._crawlerAbort) global._crawlerAbort = {};
+    global._crawlerAbort.comp = false;   // ダッシュボードの停止ボタンからの中断要求フラグをリセット
     global._crawlerRunning.compDetail = true;
-    try { await compScan.runDetailScan({ limit: 200 }); }
+    try { await compScan.runDetailScan({ limit: 200, shouldContinue: () => !global._crawlerAbort?.comp }); }
     catch (err) { log.error('[scheduler] comp_detail error', err.message); }
     finally { global._crawlerRunning.compDetail = false; }
   });

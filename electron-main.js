@@ -957,7 +957,7 @@ let _quitFinalizing = false;
 
 function _isCrawlerBusy() {
   const r = global._crawlerRunning || {};
-  return !!(r.discovery || r.detail || r.saleBoost || r.schedulerDetailRunning);
+  return !!(r.discovery || r.detail || r.saleBoost || r.schedulerDetailRunning || r.compListing || r.compDetail);
 }
 
 app.on('before-quit', (event) => {
@@ -988,6 +988,7 @@ app.on('before-quit', (event) => {
   if (!global._crawlerAbort) global._crawlerAbort = {};
   global._crawlerAbort.discovery = true;
   global._crawlerAbort.detail    = true;
+  global._crawlerAbort.comp      = true;
 
   (async () => {
     const start = Date.now();
@@ -999,6 +1000,7 @@ app.on('before-quit', (event) => {
     }
     global._crawlerAbort.discovery = false;
     global._crawlerAbort.detail    = false;
+    global._crawlerAbort.comp      = false;
     try { await db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
     _quitFinalizing = true;
     app.quit();

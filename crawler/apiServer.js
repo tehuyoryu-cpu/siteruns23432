@@ -398,35 +398,46 @@ async function handleRun(job, res) {
 
     } else if (job === 'comp_listing') {
       // 総集編マーク Phase A: ジャンル515一覧を巡回し、総集編“作品”RJを収集する
+      if (!global._crawlerAbort) global._crawlerAbort = {};
+      global._crawlerAbort.comp = false;   // 停止ボタンからの中断要求フラグをリセット
       Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await compScan.runListingScan({
+        shouldContinue: () => !global._crawlerAbort?.comp,
         onProgress: ({ page, found, added, totalAdded }) => {
           Object.assign(_progress, { page, found: totalAdded });
           _sseSend('progress', { page, found: totalAdded });
         },
       });
-      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      const stopped = !!global._crawlerAbort?.comp;
+      _lastResult[job] = { ok: true, ...result, stopped, finishedAt: Date.now() };
       Object.assign(_progress, { done: true });
-      _sseSend('log', result.alreadyDone
-        ? '総集編一覧走査は完了済みです（再走査するには要リセット）'
-        : `総集編一覧走査完了 — 新規候補:${result.added ?? 0}件`);
-      log.info('[api] compListingScan done', result);
+      _sseSend('log', stopped
+        ? `総集編一覧走査を停止しました — 新規候補:${result.added ?? 0}件（続きから再開可能）`
+        : result.alreadyDone
+          ? '総集編一覧走査は完了済みです（再走査するには要リセット）'
+          : `総集編一覧走査完了 — 新規候補:${result.added ?? 0}件`);
+      log.info('[api] compListingScan done', { ...result, stopped });
 
     } else if (job === 'comp_detail') {
       // 総集編マーク Phase B: 候補の詳細解析（直接抽出→サークル推定）
+      if (!global._crawlerAbort) global._crawlerAbort = {};
+      global._crawlerAbort.comp = false;   // 停止ボタンからの中断要求フラグをリセット
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await compScan.runDetailScan({
         limit: 200,
+        shouldContinue: () => !global._crawlerAbort?.comp,
         onProgress: ({ processed, total, direct, confirmed, pending }) => {
           Object.assign(_progress, { found: processed, total });
           _sseSend('progress', { processed, total });
         },
       });
-      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      const stopped = !!global._crawlerAbort?.comp;
+      _lastResult[job] = { ok: true, ...result, stopped, finishedAt: Date.now() };
       Object.assign(_progress, { done: true });
       _sseSend(result.confirmed > 0 || result.direct > 0 ? 'change' : 'log',
-        `総集編詳細解析完了 — 処理:${result.processed}件 / 直接抽出:${result.direct}件 / 推定確定:${result.confirmed}件 / 要確認:${result.pending}件 / エラー:${result.errors}件`);
-      log.info('[api] compDetailScan done', result);
+        (stopped ? '総集編詳細解析を停止しました — ' : '総集編詳細解析完了 — ') +
+        `処理:${result.processed}件 / 直接抽出:${result.direct}件 / 推定確定:${result.confirmed}件 / 要確認:${result.pending}件 / エラー:${result.errors}件`);
+      log.info('[api] compDetailScan done', { ...result, stopped });
 
     } else if (job === 'pushdata') {
       // 手動pushボタン: 日次04:30スケジューラー(runExportShards → push-data-shards.main())
@@ -761,6 +772,21 @@ function createServer() {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);
         return;
+      }
+
+      // 総集編一覧走査/詳細解析を中断する。compScan.js の shouldContinue()
+      // フックが次のページ/候補に進む前にこのフラグを確認し、安全なタイミングで
+      // 打ち切る（listing側はページ位置を保存済みなので次回続きから再開できる）。
+      if (pathname === '/api/stop/comp' && req.method === 'POST') {
+        const compBusy = _jobRunning.comp_listing || _jobRunning.comp_detail ||
+          global._crawlerRunning?.compListing || global._crawlerRunning?.compDetail;
+        if (!compBusy) {
+          return _json(res, { ok: false, message: '実行中の総集編ジョブはありません' });
+        }
+        if (!global._crawlerAbort) global._crawlerAbort = {};
+        global._crawlerAbort.comp = true;
+        log.info('[api] comp scan stop requested');
+        return _json(res, { ok: true, message: '停止要求を送信しました' });
       }
 
       if (pathname === '/api/log-stream') {
