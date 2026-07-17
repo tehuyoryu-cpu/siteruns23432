@@ -18,6 +18,7 @@ const log    = require('./logger');
 const { runDiscovery, runFullScan } = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
+const compScan = require('./compScan');
 
 // ─── discovery job ───────────────────────────────────────────────────────────
 
@@ -172,6 +173,33 @@ function _startExportShardsJob() {
   log.info('[scheduler] exportShards job scheduled (daily 04:30)');
 }
 
+// ─── 総集編マーク スキャンジョブ ───────────────────────────────────────────────
+// config.compScan の専用レートで動作するため、discovery/detail の帯域を奪わない。
+// listing(Phase A)は一度完了すればほぼ即終了する軽い処理なので毎日実行して問題ない。
+// detail(Phase B)は候補キューを少しずつ消化する想定で、頻度を上げすぎないよう
+// 2時間おきに留める。
+function _startCompScanJob() {
+  cron.schedule('0 5 * * *', async () => {
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.compListing) { log.warn('[scheduler] comp_listing still running, skip'); return; }
+    global._crawlerRunning.compListing = true;
+    try { await compScan.runListingScan(); }
+    catch (err) { log.error('[scheduler] comp_listing error', err.message); }
+    finally { global._crawlerRunning.compListing = false; }
+  });
+  log.info('[scheduler] comp_listing job scheduled (daily 05:00)');
+
+  cron.schedule('20 */2 * * *', async () => {
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.compDetail) { log.warn('[scheduler] comp_detail still running, skip'); return; }
+    global._crawlerRunning.compDetail = true;
+    try { await compScan.runDetailScan({ limit: 200 }); }
+    catch (err) { log.error('[scheduler] comp_detail error', err.message); }
+    finally { global._crawlerRunning.compDetail = false; }
+  });
+  log.info('[scheduler] comp_detail job scheduled (every 2h at :20)');
+}
+
 // ─── 前月分フルスキャンジョブ ─────────────────────────────────────────────────
 // 毎月2日 04:00 に前月リリース分の FSR 全ページをスキャンする。
 // 通常の discovery は「今月分」だけを対象にしているため、月をまたいで
@@ -224,6 +252,7 @@ async function start() {
   _startPrevMonthScanJob();
   _startExportShardsJob();
   _startSessionRewarmJob();
+  _startCompScanJob();
 
   log.info('[scheduler] running initial passes on startup');
 
