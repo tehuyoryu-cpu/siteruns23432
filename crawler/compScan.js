@@ -25,6 +25,7 @@ const parser       = require('./parser');
 const compAnalyzer = require('./compAnalyzer');
 const log          = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
+const { pushDebugBundle } = require('../scripts/pushDebugBundle');
 
 const _LISTING_URL = page =>
   `https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/ana_flg/all/order%5B0%5D/trend/genre%5B0%5D/515/options_and_or/and/per_page/100/page/${page}/show_type/1`;
@@ -170,4 +171,28 @@ async function runDetailScan({ limit = 200, onProgress, shouldContinue = () => t
   return { ...totals, total: due.length };
 }
 
-module.exports = { runListingScan, runDetailScan, resetCompScanProgress };
+// ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────
+function _withDebugPush(jobName, fn) {
+  return async (...args) => {
+    let result, err;
+    try {
+      result = await fn(...args);
+      return result;
+    } catch (e) {
+      err = e;
+      throw e;
+    } finally {
+      try {
+        await pushDebugBundle({ job: jobName, result: err ? { error: err.message } : result });
+      } catch (pushErr) {
+        log.error('[compScan] pushDebugBundle failed', pushErr.message);
+      }
+    }
+  };
+}
+
+module.exports = {
+  runListingScan: _withDebugPush('comp_listing', runListingScan),
+  runDetailScan:  _withDebugPush('comp_detail',  runDetailScan),
+  resetCompScanProgress,
+};
