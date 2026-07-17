@@ -37,6 +37,7 @@ const config = require('../config');
 const { runDiscovery, runFullScan, runEndingSoonScan, runNewReleaseScan, runCircleGapScan } = require('./discovery');
 const detailFetcher = require('./detailFetcher');
 const importData = require('./importData');
+const compScan = require('./compScan');
 const { runExportShards } = require('./exportShards');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
 // 即requireしていた。electron-builderのfilesリストにscripts/**が含まれていなかった
@@ -70,7 +71,7 @@ setTimeout(() => {
     _origInfo(...a);
     const msg = log.formatArgs(a);
     // crawlerのinfoのみSSEに流す（API/DB等の頻繁なログは除外）
-    if (/\[(discovery|detail|scheduler|electron)\]/.test(msg)) {
+    if (/\[(discovery|detail|scheduler|electron|compScan)\]/.test(msg)) {
       _sseSend('log', msg);
     }
   };
@@ -87,7 +88,7 @@ const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
   fullscan: false, fullscan_sale: false, all: false, turbo: false,
   endingsoon: false, circlegap: false, pushdata: false, newrelease: false,
-  import: false,
+  import: false, comp_listing: false, comp_detail: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -110,6 +111,8 @@ const _JOB_LABELS = {
   pushdata:      'データPush',
   newrelease:    '新作収集',
   import:        'データインポート',
+  comp_listing:  '総集編一覧走査',
+  comp_detail:   '総集編詳細解析',
 };
 
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
@@ -118,7 +121,7 @@ async function handleRun(job, res) {
   // schedulerと共有フラグを確認（schedulerが実行中なら HTTP API からも起動しない）
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
-  const sharedKeys = { discover: 'discovery', fetch: 'detail', turbo: 'detail' };
+  const sharedKeys = { discover: 'discovery', fetch: 'detail', turbo: 'detail', comp_listing: 'compListing', comp_detail: 'compDetail' };
   const sharedKey  = sharedKeys[job];
   // detail / discovery ロックの所有者トークン。自分が確保した場合のみ
   // this 関数内の finally で解放する。
@@ -393,6 +396,38 @@ async function handleRun(job, res) {
       _sseSend(result.totalMissing > 0 ? 'change' : 'log', `サークル欠落診断完了 — ${gapSummary}`);
       log.info('[api] circleGapScan done', result);
 
+    } else if (job === 'comp_listing') {
+      // 総集編マーク Phase A: ジャンル515一覧を巡回し、総集編“作品”RJを収集する
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      const result = await compScan.runListingScan({
+        onProgress: ({ page, found, added, totalAdded }) => {
+          Object.assign(_progress, { page, found: totalAdded });
+          _sseSend('progress', { page, found: totalAdded });
+        },
+      });
+      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      Object.assign(_progress, { done: true });
+      _sseSend('log', result.alreadyDone
+        ? '総集編一覧走査は完了済みです（再走査するには要リセット）'
+        : `総集編一覧走査完了 — 新規候補:${result.added ?? 0}件`);
+      log.info('[api] compListingScan done', result);
+
+    } else if (job === 'comp_detail') {
+      // 総集編マーク Phase B: 候補の詳細解析（直接抽出→サークル推定）
+      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      const result = await compScan.runDetailScan({
+        limit: 200,
+        onProgress: ({ processed, total, direct, confirmed, pending }) => {
+          Object.assign(_progress, { found: processed, total });
+          _sseSend('progress', { processed, total });
+        },
+      });
+      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      Object.assign(_progress, { done: true });
+      _sseSend(result.confirmed > 0 || result.direct > 0 ? 'change' : 'log',
+        `総集編詳細解析完了 — 処理:${result.processed}件 / 直接抽出:${result.direct}件 / 推定確定:${result.confirmed}件 / 要確認:${result.pending}件 / エラー:${result.errors}件`);
+      log.info('[api] compDetailScan done', result);
+
     } else if (job === 'pushdata') {
       // 手動pushボタン: 日次04:30スケジューラー(runExportShards → push-data-shards.main())
       // と全く同じパイプラインをオンデマンドで実行する。
@@ -604,6 +639,18 @@ function handleStats() {
 }
 function handleSales()         { return db.getSaleWorks(200); }
 function handlePriceIssues()   { return { issues: db.getPriceIssues({ limit: 500 }), total: db.getPriceIssuesCount() }; }
+function handleCompStats()     { return db.getCompStats(); }
+function handleCompPending(query) {
+  const status = query.status ?? 'pending';
+  const limit  = Math.min(500, parseInt(query.limit ?? '100', 10) || 100);
+  return { pending: db.getCompPending({ status, limit }) };
+}
+function handleCompDecide({ compilationRj, containedRj, decision }) {
+  if (!compilationRj || !containedRj) return { ok: false, message: 'compilationRj/containedRjが必要です' };
+  if (decision !== 'approved' && decision !== 'rejected') return { ok: false, message: 'decisionはapproved/rejectedのいずれかです' };
+  db.decideCompPending(compilationRj, containedRj, decision);
+  return { ok: true };
+}
 function handleExportJson()    { return db.exportAllHistory(); }
 
 function handleWorks(query) {
@@ -659,6 +706,20 @@ function createServer() {
       if (pathname === '/api/works')  return _json(res, handleWorks(query));
       if (pathname === '/api/sales')  return _json(res, handleSales());
       if (pathname === '/api/price-issues') return _json(res, handlePriceIssues());
+      if (pathname === '/api/comp/stats')   return _json(res, handleCompStats());
+      if (pathname === '/api/comp/pending') return _json(res, handleCompPending(query));
+
+      if (pathname === '/api/comp/decide' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => { body += c; });
+        req.on('end', () => {
+          let parsed = {};
+          try { parsed = JSON.parse(body); } catch { /* keep {} */ }
+          _json(res, handleCompDecide(parsed));
+        });
+        return;
+      }
+
 
       const histMatch = pathname.match(/^\/api\/history\/(.+)$/);
       if (histMatch) return _json(res, handleHistory(histMatch[1].toUpperCase()));
@@ -695,7 +756,7 @@ function createServer() {
         return;
       }
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata|newrelease)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata|newrelease|comp_listing|comp_detail)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);
