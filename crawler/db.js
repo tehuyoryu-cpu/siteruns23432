@@ -166,8 +166,31 @@ function _recoverFromCorruption(corruptBuf) {
 
 // âââ schema âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
+function _fixLegacyCompTables() {
+  // 旧バージョンで comp_works/comp_pending が異なるカラム構成のまま作成されていた場合、
+  // CREATE TABLE IF NOT EXISTS はテーブルが既に存在するため無視され、直後の
+  // CREATE INDEX ... ON comp_works(contained_rj) が「no such column: contained_rj」で
+  // 例外を投げ、アプリ全体が起動不能になる不具合があった。
+  // これらのテーブルは compscan で再生成可能なキャッシュデータのため、
+  // 必須カラムが無い旧スキーマを検出した場合は安全にDROPしてから通常のスキーマ適用に進む。
+  for (const table of ['comp_works', 'comp_pending']) {
+    try {
+      const res = _db.exec(`PRAGMA table_info(${table})`);
+      if (!res.length) continue; // テーブル未作成なら何もしない
+      const colNames = res[0].values.map(r => r[1]);
+      if (!colNames.includes('contained_rj')) {
+        log.warn('[db] legacy schema detected, dropping and recreating', table);
+        _db.run(`DROP TABLE IF EXISTS ${table}`);
+      }
+    } catch (e) {
+      log.warn('[db] legacy schema check failed', table, e.message);
+    }
+  }
+}
+
 function _applySchema() {
   let changed = false;
+  _fixLegacyCompTables();
   console.log('[db] _applySchema: creating tables...');
   _db.run(`
     CREATE TABLE IF NOT EXISTS works (
@@ -1680,3 +1703,4 @@ module.exports = {
   getPriceIssuesCount,
   importHistoryRows,
 };
+
