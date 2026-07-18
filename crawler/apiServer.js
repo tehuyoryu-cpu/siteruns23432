@@ -845,7 +845,7 @@ function createServer() {
       if (pathname === '/api/log') {
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
         try {
-          const content = fs.readFileSync(log.getLogPath(), 'utf8');
+          const content = _readTail(log.getLogPath(), 2 * 1024 * 1024);
           res.end(content.split('\n').slice(-200).join('\n'));
         } catch (e) {
           res.end('(ログファイルなし: ' + e.message + ')');
@@ -856,7 +856,7 @@ function createServer() {
       if (pathname === '/api/errorlog') {
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
         try {
-          const content = fs.readFileSync(log.getErrorLogPath(), 'utf8');
+          const content = _readTail(log.getErrorLogPath(), 2 * 1024 * 1024);
           res.end(content.split('\n').slice(-300).join('\n'));
         } catch (e) {
           res.end('(エラーログなし: ' + e.message + ')');
@@ -940,6 +940,25 @@ function start() {
 function _json(res, data) {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
+}
+
+// ファイル全体を読まず、末尾 maxBytes 分だけを読む。
+// logger.js 側でサイズ上限つきローテーションを行っているため通常は不要だが、
+// 万一ローテーションが効かなかった場合の二重の安全策として、ここでも
+// fs.readFileSync(path,'utf8') によるファイル全体読み込み（V8の文字列長上限
+// 0x1fffffe8 ≈ 512MB超で例外になる）を避ける。
+function _readTail(filePath, maxBytes = 2 * 1024 * 1024) {
+  const stat  = fs.statSync(filePath);
+  const start = Math.max(0, stat.size - maxBytes);
+  const len   = stat.size - start;
+  const fd    = fs.openSync(filePath, 'r');
+  try {
+    const buf = Buffer.alloc(len);
+    if (len > 0) fs.readSync(fd, buf, 0, len, start);
+    return buf.toString('utf8');
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function _csvEscape(v) {
