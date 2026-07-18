@@ -115,6 +115,40 @@ const _JOB_LABELS = {
   comp_detail:   '総集編詳細解析',
 };
 
+// ─── 中止（停止）機構 ─────────────────────────────────────────────────────────
+// 各ジョブは内部的にすでに abort チェック済み（discovery.js の _discoveryAborted()、
+// detailFetcher.js の isAborted()、compScan.js の shouldContinue()）だが、
+// これまでユーザーがそれをトリガーする手段（停止ボタン/API）が無かった。
+// ジョブ名 → 対応する global._crawlerAbort のキー のマッピングで一本化する。
+const _ABORT_FLAG_BY_JOB = {
+  discover: 'discovery', fullscan: 'discovery', fullscan_sale: 'discovery',
+  endingsoon: 'discovery', circlegap: 'discovery', newrelease: 'discovery',
+  fetch: 'detail', all: 'detail', turbo: 'detail',
+  comp_listing: 'comp', comp_detail: 'comp',
+};
+// スケジューラー（cron）起動分の実行中判定に使う global._crawlerRunning のキー。
+// これが無いジョブ（fullscan等）はAPI起動でしか実行されないため _jobRunning だけで足りる。
+const _SCHEDULER_RUNNING_KEY_BY_JOB = {
+  discover: 'discovery', fetch: 'detail', all: 'detail', turbo: 'detail',
+  comp_listing: 'compListing', comp_detail: 'compDetail',
+};
+
+function handleStop(job, res) {
+  const abortFlag = _ABORT_FLAG_BY_JOB[job];
+  if (!abortFlag) {
+    return _json(res, { ok: false, message: (_JOB_LABELS[job] ?? job) + 'は短時間で完了するため停止操作は不要です' });
+  }
+  const schedKey = _SCHEDULER_RUNNING_KEY_BY_JOB[job];
+  const busy = _jobRunning[job] || (schedKey && !!global._crawlerRunning?.[schedKey]);
+  if (!busy) {
+    return _json(res, { ok: false, message: '実行中の' + (_JOB_LABELS[job] ?? job) + 'はありません' });
+  }
+  if (!global._crawlerAbort) global._crawlerAbort = {};
+  global._crawlerAbort[abortFlag] = true;
+  log.info('[api] stop requested for', job, '(abort flag:', abortFlag + ')');
+  return _json(res, { ok: true, message: (_JOB_LABELS[job] ?? job) + 'の停止を要求しました' });
+}
+
 // ─── ジョブ実行 ──────────────────────────────────────────────────────────────
 
 async function handleRun(job, res) {
@@ -135,6 +169,16 @@ async function handleRun(job, res) {
   // 'all'/'turbo' 以外で共有ロックが取れない場合はブロック
   if (job !== 'all' && job !== 'turbo' && sharedKey && shared[sharedKey]) {
     return _json(res, { ok: false, message: '他の巡回処理が実行中です。完了後にお試しください' });
+  }
+  // バグ修正: 以前は中止フラグ(global._crawlerAbort.*)を一度trueにした後、
+  // 次回このジョブを実行する前にfalseへ戻す処理がどこにも無かった。
+  // そのため一度でも停止ボタンを押すと、同じ系統(discovery/detail/comp)の
+  // 以降のジョブが起動直後に即座に中断扱いになってしまうバグがあった。
+  // 新しい実行を開始するたびに、このジョブが使う中止フラグを確実にリセットする。
+  const _abortFlagForThisJob = _ABORT_FLAG_BY_JOB[job];
+  if (_abortFlagForThisJob) {
+    if (!global._crawlerAbort) global._crawlerAbort = {};
+    global._crawlerAbort[_abortFlagForThisJob] = false;
   }
   _jobRunning[job] = true;
   if (sharedKey) {
@@ -774,19 +818,14 @@ function createServer() {
         return;
       }
 
-      // 総集編一覧走査/詳細解析を中断する。compScan.js の shouldContinue()
-      // フックが次のページ/候補に進む前にこのフラグを確認し、安全なタイミングで
-      // 打ち切る（listing側はページ位置を保存済みなので次回続きから再開できる）。
-      if (pathname === '/api/stop/comp' && req.method === 'POST') {
-        const compBusy = _jobRunning.comp_listing || _jobRunning.comp_detail ||
-          global._crawlerRunning?.compListing || global._crawlerRunning?.compDetail;
-        if (!compBusy) {
-          return _json(res, { ok: false, message: '実行中の総集編ジョブはありません' });
-        }
-        if (!global._crawlerAbort) global._crawlerAbort = {};
-        global._crawlerAbort.comp = true;
-        log.info('[api] comp scan stop requested');
-        return _json(res, { ok: true, message: '停止要求を送信しました' });
+      // 実行中のジョブを中止する。各ジョブは shouldContinue()/isAborted() フックが
+      // 次のページ/バッチに進む前にこのフラグを確認し、安全なタイミングで打ち切る
+      // （listing系はページ位置・due件数が保存済みなので次回続きから再開できる）。
+      const stopMatch = pathname.match(/^\/api\/stop\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata|newrelease|comp_listing|comp_detail)$/);
+      if (stopMatch) {
+        if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
+        handleStop(stopMatch[1], res);
+        return;
       }
 
       if (pathname === '/api/log-stream') {
