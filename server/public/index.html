@@ -7,188 +7,195 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --bg:          #f5f5f9;
+  --surface:     #ffffff;
+  --surface-alt: #f0f0f6;
+  --border:      #e2e2ec;
+  --border-2:    #d2d2e0;
+  --text:        #1d1d29;
+  --text-2:      #66667a;
+  --text-3:      #9c9cad;
+  --accent:      #5b53d6;
+  --accent-2:    #7d76e3;
+  --accent-soft: #edecfb;
+  --green:       #17875a;
+  --green-soft:  #e5f6ee;
+  --red:         #d0433f;
+  --red-soft:    #fbe9e8;
+  --amber:       #b5790a;
+  --amber-soft:  #fbf1de;
+  --radius:      8px;
+  --radius-sm:   5px;
+  --shadow-sm:   0 1px 2px rgba(30,30,60,.06);
+  --shadow-md:   0 6px 20px rgba(30,30,60,.10);
+  --sans: 'Inter', 'Segoe UI', 'Meiryo', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+html { height: 100%; overflow: hidden; }
+
 body {
-  font-family: "Meiryo","Segoe UI","MS UI Gothic",sans-serif;
-  font-size: 12px;
-  background: #f0f0f0;
-  color: #000;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  background: var(--bg);
+  color: var(--text);
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
-
-html {
-  height: 100%;
-  overflow: hidden;
-}
-
-/* ── メニューバー ── */
-.menubar {
-  background: #f0f0f0;
-  border-bottom: 1px solid #999;
-  display: flex;
-  align-items: stretch;
-  padding: 0 2px;
-  height: 22px;
-  flex-shrink: 0;
-}
-.menu-item {
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  cursor: default;
-  position: relative;
-}
-.menu-item:hover { background: #0078d7; color: #fff; }
 
 /* ── ツールバー ── */
 .toolbar {
-  background: #f0f0f0;
-  border-bottom: 1px solid #999;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: 8px 10px 6px;
+  gap: 4px 6px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 5;
+}
+.tb-group {
   display: flex;
   align-items: center;
-  padding: 2px 4px;
-  gap: 1px;
-  height: 30px;
-  flex-shrink: 0;
+  gap: 3px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 5px 4px 8px;
+  margin-bottom: 2px;
+}
+.tb-group-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-right: 4px;
+  white-space: nowrap;
 }
 .tb-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: 5px;
+  padding: 5px 9px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 2px;
-  cursor: default;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  color: #000;
-  height: 24px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text);
+  height: 27px;
   white-space: nowrap;
   position: relative;
   overflow: hidden;
+  transition: background .12s, border-color .12s, box-shadow .12s;
 }
 .ripple-el {
   position: absolute;
   width: 6px; height: 6px;
   margin: -3px 0 0 -3px;
   border-radius: 50%;
-  background: rgba(0,0,0,.18);
+  background: rgba(91,83,214,.25);
   pointer-events: none;
   animation: ripple-anim .4s ease-out forwards;
 }
 @keyframes ripple-anim {
   from { transform: scale(1); opacity: 1; }
-  to   { transform: scale(14); opacity: 0; }
+  to   { transform: scale(16); opacity: 0; }
 }
-.tb-btn:hover  { background:#e5f1fb; border-color:#0078d7; }
-.tb-btn:active { background:#cce4f7; border-color:#005499; }
-.tb-btn.active { background:#cce4f7; border-color:#005499; }
-.tb-btn svg    { width:16px; height:16px; flex-shrink:0; }
-.tb-sep { width:1px; background:#999; height:20px; margin:0 3px; }
-.tb-btn.running { background:#fff4cc; border-color:#cc8800; color:#884400; cursor:wait; }
+.tb-btn:hover  { background: #fff; border-color: var(--border-2); box-shadow: var(--shadow-sm); }
+.tb-btn:active { background: var(--accent-soft); }
+.tb-btn.active { background: var(--accent-soft); border-color: var(--accent-2); color: var(--accent); }
+.tb-btn svg    { width: 15px; height: 15px; flex-shrink: 0; }
+.tb-sep { width: 1px; background: var(--border-2); height: 18px; margin: 0 2px; align-self: center; }
+.tb-btn.running {
+  background: var(--accent-soft); border-color: var(--accent-2); color: var(--accent);
+  cursor: wait;
+}
 .tb-btn.running svg { animation: spin 1s linear infinite; }
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.tb-btn:disabled { opacity: .45; cursor: default; }
 
-/* ── ログモーダル ── */
-.modal-overlay {
-  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
-  z-index:999; align-items:center; justify-content:center;
-}
-.modal-overlay.open { display:flex; }
-.modal-box {
-  background:#fff; width:80vw; max-width:900px; height:70vh;
-  border:1px solid #999; border-radius:3px; display:flex; flex-direction:column;
-  box-shadow:0 4px 20px rgba(0,0,0,.3);
-}
-.modal-header {
-  background:linear-gradient(to bottom,#0055aa,#0078d7); color:#fff;
-  padding:6px 12px; display:flex; align-items:center; gap:8px;
-  font-weight:bold; font-size:13px; border-radius:2px 2px 0 0;
-}
-.modal-copy-btn {
-  margin-left: auto;
-  background: rgba(255,255,255,.2);
-  border: 1px solid rgba(255,255,255,.4);
-  border-radius: 2px;
-  color: #fff;
+/* ── ボタン説明バー ── */
+.desc-bar {
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 12px;
   font-size: 11px;
-  padding: 1px 7px;
-  cursor: pointer;
-  font-family: inherit;
+  color: #423b9e;
+  min-height: 20px;
+  line-height: 20px;
+  display: none;
 }
-.modal-copy-btn:hover { background: rgba(255,255,255,.35); }
-.modal-close { margin-left: 8px; cursor:pointer; font-size:16px; opacity:.8; }
-.modal-close:hover { opacity:1; }
-.modal-body {
-  flex:1; overflow:auto; padding:8px 12px;
-  font-family:"Courier New",monospace; font-size:11px;
-  white-space:pre; line-height:1.5; color:#333;
-  background:#f8f8ff;
-  user-select: text;
-  cursor: text;
-}
-.log-error { color:#cc0000; }
-.log-warn  { color:#cc6600; }
-.tb-btn.running { background:#fff4cc; border-color:#cc8800; color:#884400; cursor:wait; }
-.tb-btn.running svg { animation: spin 1s linear infinite; }
-@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.desc-bar.visible { display: block; }
 
 /* ── アドレスバー風フィルタ行 ── */
 .filterbar {
-  background: #fff;
-  border-bottom: 1px solid #ccc;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 3px 6px;
-  gap: 6px;
-  height: 26px;
+  padding: 6px 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
-.filterbar label { color:#555; white-space:nowrap; font-size:11px; }
+.filterbar label { color: var(--text-2); white-space: nowrap; font-size: 11px; font-weight: 500; }
 .filterbar input, .filterbar select {
-  height: 20px;
-  border: 1px solid #aaa;
-  border-radius: 1px;
-  padding: 0 4px;
+  height: 26px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  padding: 0 9px;
   font-family: inherit;
   font-size: 12px;
-  background: #fff;
+  background: var(--surface-alt);
   outline: none;
+  color: var(--text);
+  transition: border-color .12s, background .12s;
 }
-.filterbar input { width: 220px; }
-.filterbar input:focus { border-color:#0078d7; }
-.filterbar select { font-size:11px; }
+.filterbar input { width: 260px; }
+.filterbar input:focus, .filterbar select:focus { border-color: var(--accent); background: #fff; }
+.filterbar select { font-size: 11px; }
 
 /* ── 進捗バー ── */
 .progress-bar-wrap {
-  border-bottom: 1px solid #ccc;
-  background: #f8f8f8;
-  height: 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  height: 26px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
-  gap: 8px;
+  padding: 0 12px;
+  gap: 10px;
   flex-shrink: 0;
   overflow: hidden;
-  transition: height .2s;
+  transition: height .2s, padding .2s;
 }
 .progress-bar-wrap.hidden { height: 0; border: none; padding: 0; }
 .progress-track {
   flex: 1;
-  height: 10px;
-  background: #dde;
-  border: 1px solid #aab;
-  border-radius: 3px;
+  height: 6px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
   overflow: hidden;
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(to right, #0055cc, #0088ff);
-  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 999px;
   transition: width .4s;
   min-width: 4px;
 }
@@ -202,10 +209,11 @@ html {
   100% { margin-left: 0;    }
 }
 .progress-label {
-  font-size: 10px;
-  color: #555;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-2);
   white-space: nowrap;
-  min-width: 160px;
+  min-width: 170px;
   text-align: right;
 }
 
@@ -214,41 +222,41 @@ html {
   display: flex;
   flex: 1;
   overflow: hidden;
+  gap: 1px;
+  background: var(--border);
 }
 
 /* ── 左ペイン: リスト ── */
 .pane-left {
-  width: 360px;
-  min-width: 200px;
+  width: 380px;
+  min-width: 220px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #999;
-  background: #fff;
+  background: var(--surface);
   flex-shrink: 0;
 }
 
 /* カラムヘッダ */
 .list-header {
   display: grid;
-  grid-template-columns: 90px 1fr 70px 60px;
-  background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
-  border-bottom: 1px solid #999;
-  height: 20px;
+  grid-template-columns: 100px 1fr 76px 62px;
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+  height: 28px;
   flex-shrink: 0;
 }
 .list-col-hdr {
   display: flex;
   align-items: center;
-  padding: 0 4px;
-  border-right: 1px solid #ccc;
-  font-size: 11px;
-  color: #333;
+  padding: 0 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--text-2);
   cursor: default;
   white-space: nowrap;
   overflow: hidden;
 }
-.list-col-hdr:hover { background: #ddeeff; }
-.list-col-hdr:last-child { border-right: none; }
 
 /* 作品リスト */
 .works-list {
@@ -259,57 +267,57 @@ html {
 
 .work-row {
   display: grid;
-  grid-template-columns: 90px 1fr 70px 60px;
-  height: 19px;
-  border-bottom: 1px solid #e8e8e8;
-  cursor: default;
+  grid-template-columns: 100px 1fr 76px 62px;
+  height: 30px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
   align-items: center;
+  transition: background .1s;
 }
-.work-row:nth-child(even) { background: #f7f7ff; }
-.work-row:hover           { background: #e5f1fb; }
-.work-row.selected        { background: #0078d7; color: #fff; }
-.work-row.selected .rj    { color: #cce4f7; }
-.work-row.selected .disc  { background:#ff6060; }
+.work-row:hover           { background: var(--accent-soft); }
+.work-row.selected        { background: var(--accent); }
+.work-row.selected .work-cell { color: #fff; }
+.work-row.selected .rj    { color: rgba(255,255,255,.75); }
+.work-row.selected .disc  { background: rgba(255,255,255,.28); color: #fff; }
 
 .work-cell {
-  padding: 0 4px;
+  padding: 0 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-right: 1px solid #e0e0e0;
-  font-size: 11px;
-  line-height: 19px;
+  font-size: 11.5px;
+  line-height: 30px;
 }
-.work-cell:last-child { border-right: none; }
-.rj    { font-family: "Courier New",monospace; font-size:10px; color:#555; }
-.price { text-align:right; font-family:"Courier New",monospace; font-size:11px; }
+.rj    { font-family: var(--mono); font-size: 10px; color: var(--text-3); }
+.price { text-align: right; font-family: var(--mono); font-size: 11.5px; font-weight: 500; }
 .disc  {
-  text-align:center; font-family:"Courier New",monospace; font-size:10px; font-weight:bold;
-  color:#fff; background:#cc0000; border-radius:2px; margin:1px 3px; padding:0 2px;
-  line-height:16px;
+  text-align: center; font-family: var(--mono); font-size: 10px; font-weight: 700;
+  color: var(--red); background: var(--red-soft); border-radius: 999px; margin: 3px 4px; padding: 1px 2px;
+  line-height: 18px;
 }
-.disc.none  { background:transparent; color:transparent; }
-.disc.point { background:#0055aa; }  /* ポイント還元セール */
+.disc.none  { background: transparent; color: transparent; }
+.disc.point { background: var(--accent-soft); color: var(--accent); }
 
 /* ページネーション */
 .pager {
-  border-top: 1px solid #ccc;
-  padding: 2px 6px;
+  border-top: 1px solid var(--border);
+  padding: 5px 8px;
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f0f0f0;
-  height: 22px;
+  background: var(--surface-alt);
+  height: 32px;
   flex-shrink: 0;
 }
 .pager-btn {
-  width:20px; height:16px;
-  background: linear-gradient(to bottom,#fff,#e0e0e0);
-  border: 1px solid #aaa; border-radius:2px;
-  cursor:default; font-size:10px; text-align:center; line-height:14px;
+  width: 22px; height: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-2); border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 10px; text-align: center; line-height: 18px;
+  transition: border-color .12s, color .12s;
 }
-.pager-btn:hover { background:linear-gradient(to bottom,#e5f1fb,#c8ddf0); border-color:#0078d7; }
-.pager-info { font-size:11px; color:#555; flex:1; text-align:center; }
+.pager-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pager-info { font-size: 11px; color: var(--text-2); flex: 1; text-align: center; }
 
 /* ── 右ペイン: 詳細 ── */
 .pane-right {
@@ -317,197 +325,185 @@ html {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f0f0f0;
+  background: var(--bg);
 }
 
 /* 詳細ヘッダ */
 .detail-header {
-  background: linear-gradient(135deg, #0055aa 0%, #0078d7 100%);
+  background: linear-gradient(135deg, #4a43c4 0%, var(--accent) 100%);
   color: #fff;
-  padding: 8px 14px;
+  padding: 12px 16px;
   flex-shrink: 0;
-  border-bottom: 2px solid #004a8f;
 }
 .detail-empty-header {
-  background: linear-gradient(135deg,#888,#aaa);
-  color:#fff;
-  padding: 8px 14px;
+  background: linear-gradient(135deg, #9797ab, #b4b4c4);
+  color: #fff;
+  padding: 12px 16px;
   flex-shrink: 0;
-  border-bottom: 2px solid #666;
 }
-.detail-rj    { font-family:"Courier New",monospace; font-size:10px; opacity:.8; }
-.detail-title { font-size:16px; font-weight:bold; margin:2px 0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.detail-sub   { font-size:11px; opacity:.85; }
+.detail-rj    { font-family: var(--mono); font-size: 10px; opacity: .8; }
+.detail-title { font-size: 16px; font-weight: 700; margin: 3px 0; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-sub   { font-size: 11px; opacity: .85; }
 .detail-meta  {
-  display:flex; flex-wrap:wrap; gap:0 16px;
-  margin:3px 0 2px; font-size:11px;
+  display: flex; flex-wrap: wrap; gap: 2px 16px;
+  margin: 4px 0 2px; font-size: 11px;
 }
-.detail-meta-item { display:flex; gap:4px; align-items:baseline; }
-.detail-meta-key  { font-size:10px; color:#888; white-space:nowrap; }
-.detail-meta-val  { color:#222; }
-.detail-meta-val a { color:#0055aa; text-decoration:none; }
-.detail-meta-val a:hover { text-decoration:underline; }
+.detail-meta-item { display: flex; gap: 4px; align-items: baseline; }
+.detail-meta-key  { font-size: 10px; opacity: .7; white-space: nowrap; }
+.detail-meta-val  { color: #fff; }
+.detail-meta-val a { color: #fff; text-decoration: underline; text-decoration-color: rgba(255,255,255,.4); }
+.detail-meta-val a:hover { text-decoration-color: #fff; }
 .detail-prices {
-  display:flex; gap:20px; margin-top:6px; align-items:baseline;
+  display: flex; gap: 22px; margin-top: 8px; align-items: baseline;
 }
-.dp-label { font-size:10px; opacity:.75; }
-.dp-value { font-family:"Courier New",monospace; font-size:16px; font-weight:bold; }
-.dp-value.sale { color:#ffcc00; }
+.dp-label { font-size: 10px; opacity: .75; }
+.dp-value { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+.dp-value.sale { color: #ffd866; }
 .dp-badge {
-  background:#cc0000; color:#fff;
-  font-family:"Courier New",monospace; font-size:12px; font-weight:bold;
-  padding:1px 6px; border-radius:2px; margin-left:6px;
+  background: rgba(255,255,255,.22); color: #fff;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  padding: 1px 7px; border-radius: 999px; margin-left: 6px;
 }
 
 /* タブ */
 .detail-tabs {
   display: flex;
-  background: #e4e4e4;
-  border-bottom: 1px solid #999;
-  padding-top: 4px;
-  padding-left: 4px;
-  gap: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px 0;
+  gap: 2px;
   flex-shrink: 0;
 }
 .tab-btn {
-  padding: 3px 12px 3px 12px;
-  background: linear-gradient(to bottom,#d8d8d8,#c8c8c8);
-  border: 1px solid #999;
-  border-bottom: none;
-  margin-right: 2px;
-  cursor: default;
-  font-size: 11px;
-  border-radius: 3px 3px 0 0;
-  color: #333;
-  position: relative;
-  top: 1px;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  transition: color .12s, border-color .12s;
 }
 .tab-btn.active {
-  background: #fff;
-  border-bottom: 1px solid #fff;
-  color: #000;
-  font-weight: bold;
-  z-index: 1;
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
 }
-.tab-btn:not(.active):hover { background: linear-gradient(to bottom,#e0e8f4,#d0d8e8); }
+.tab-btn:not(.active):hover { color: var(--text); }
 
 /* タブコンテンツ */
-.tab-content { flex:1; overflow:hidden; display:none; }
-.tab-content.active { display:flex; flex-direction:column; }
+.tab-content { flex: 1; overflow: hidden; display: none; }
+.tab-content.active { display: flex; flex-direction: column; }
 
 /* チャートエリア */
 .chart-area {
-  padding: 8px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
   overflow: hidden;
 }
 .chart-panel {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 2px;
-  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow: hidden;
 }
-.chart-panel.small { flex: 0 0 140px; }
+.chart-panel.small { flex: 0 0 150px; }
 .chart-title {
   font-size: 11px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 3px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
 }
-.chart-wrap { flex:1; position:relative; min-height:0; }
+.chart-wrap { flex: 1; position: relative; min-height: 0; }
 
 /* 履歴テーブル */
 .hist-wrap {
   flex: 1;
   overflow-y: auto;
-  padding: 6px;
+  padding: 10px;
 }
 .hist-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 .hist-table th {
-  background: linear-gradient(to bottom,#f8f8f8,#e8e8e8);
-  border: 1px solid #ccc;
-  padding: 2px 6px;
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 8px;
   text-align: left;
   position: sticky;
   top: 0;
   white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-2);
 }
 .hist-table td {
-  border: 1px solid #e0e0e0;
-  padding: 1px 6px;
-  font-family: "Courier New",monospace;
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px;
+  font-family: var(--mono);
 }
-.hist-table tr:nth-child(even) td { background:#f7f7ff; }
-.hist-table tr:hover td { background:#e5f1fb; }
-.td-sale    { color:#cc0000; font-weight:bold; }
-.td-drop    { color:#008800; font-weight:bold; }
-.td-rise    { color:#cc6600; }
-.td-date    { color:#555; font-size:10px; }
-.td-num     { text-align:right; }
+.hist-table tr:hover td { background: var(--accent-soft); }
+.td-sale    { color: var(--red); font-weight: 700; }
+.td-drop    { color: var(--green); font-weight: 700; }
+.td-rise    { color: var(--amber); }
+.td-date    { color: var(--text-3); font-size: 10px; }
+.td-num     { text-align: right; }
 
 /* 空状態 */
 .empty-pane {
-  flex:1; display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  color:#888; gap:8px;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--text-3); gap: 10px;
 }
-.empty-icon { font-size:48px; opacity:.3; }
-.empty-msg  { font-size:13px; }
+.empty-icon { font-size: 46px; opacity: .35; }
+.empty-msg  { font-size: 13px; }
 
 /* ── ステータスバー ── */
 .statusbar {
-  border-top: 1px solid #999;
-  background: linear-gradient(to bottom,#f0f0f0,#e4e4e4);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
   display: flex;
-  height: 20px;
+  height: 26px;
   align-items: center;
   flex-shrink: 0;
 }
 .sb-panel {
-  padding: 0 8px;
-  border-right: 1px solid #bbb;
+  padding: 0 11px;
+  border-right: 1px solid var(--border);
   height: 100%;
   display: flex;
   align-items: center;
   font-size: 11px;
-  color: #333;
+  color: var(--text-2);
   white-space: nowrap;
 }
-.sb-panel:last-child { border-right: none; flex:1; }
-.sb-sale { color: #cc0000; font-weight:bold; }
+.sb-panel b { color: var(--text); font-family: var(--mono); font-weight: 600; }
+.sb-panel:last-child { border-right: none; flex: 1; }
+.sb-sale { color: var(--red); font-weight: 600; }
+.sb-sale b { color: var(--red); }
 
-/* ── ボタン説明バー ── */
-.desc-bar {
-  background: #fffbe6;
-  border-bottom: 1px solid #d4b800;
-  padding: 2px 8px;
-  font-size: 11px;
-  color: #665500;
-  min-height: 18px;
-  line-height: 18px;
-  display: none;
-}
-.desc-bar.visible { display: block; }
-
-/* ── 走査進捗パネル（progress.htmlから） ── */
+/* ── 走査進捗パネル ── */
 .scan-panel {
   display: none;
-  border-top: 1px solid #ccc;
-  background: #fff;
-  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 12px 16px;
   flex-shrink: 0;
 }
 .scan-panel.active { display: block; }
@@ -518,180 +514,250 @@ html {
   margin-bottom: 10px;
 }
 .scan-stat {
-  background: #f8f8f8;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  padding: 6px 10px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 11px;
 }
-.scan-stat-label { font-size: 10px; color: #999; margin-bottom: 2px; }
-.scan-stat-value { font-size: 18px; font-weight: 700; color: #222; }
-.scan-stat-value.blue  { color: #185FA5; }
-.scan-stat-value.amber { color: #BA7517; }
-.scan-rows { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.scan-stat-label { font-size: 10px; color: var(--text-3); margin-bottom: 2px; }
+.scan-stat-value { font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+.scan-stat-value.blue  { color: var(--accent); }
+.scan-stat-value.amber { color: var(--amber); }
+.scan-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .scan-row { display: flex; align-items: center; gap: 8px; }
-.scan-row-label { font-size: 11px; color: #555; width: 90px; flex-shrink: 0; }
-.scan-track { flex: 1; height: 7px; background: #efefef; border-radius: 999px; overflow: hidden; }
-.scan-fill  { height: 100%; border-radius: 999px; background: #E24B4A;
+.scan-row-label { font-size: 11px; color: var(--text-2); width: 90px; flex-shrink: 0; }
+.scan-track { flex: 1; height: 6px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; }
+.scan-fill  { height: 100%; border-radius: 999px; background: var(--red);
               transition: width .6s cubic-bezier(.4,0,.2,1), background .4s; }
-.scan-fill.mid  { background: #EF9F27; }
-.scan-fill.done { background: #639922; }
-.scan-pct { font-size: 11px; font-weight: 700; color: #185FA5; width: 32px; text-align: right; flex-shrink:0; }
+.scan-fill.mid  { background: var(--amber); }
+.scan-fill.done { background: var(--green); }
+.scan-pct { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); width: 34px; text-align: right; flex-shrink: 0; }
 .scan-log {
-  background: #f8f8f8;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  padding: 5px 8px;
-  max-height: 90px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 9px;
+  max-height: 100px;
   overflow-y: auto;
-  font-family: "Courier New", monospace;
-  font-size: 11px;
+  font-family: var(--mono);
+  font-size: 10.5px;
 }
-.scan-log-item { padding: 1px 0; color: #555; }
-.scan-log-item.change { background:#e8f4e8; border-left:3px solid #3B6D11; padding:1px 5px; color:#1a4a08; font-weight:500; border-radius:2px; margin:1px 0; }
-.scan-log-item.warn   { background:#fef4e4; border-left:3px solid #BA7517; padding:1px 5px; color:#5a3500; border-radius:2px; margin:1px 0; }
-.scan-log-item.err    { background:#fde8e8; border-left:3px solid #A32D2D; padding:1px 5px; color:#500; border-radius:2px; margin:1px 0; }
-.sb-dot  { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
-.sb-dot.green  { background:#008800; }
-.sb-dot.red    { background:#cc0000; }
-.sb-dot.yellow { background:#cc8800; }
+.scan-log-item { padding: 2px 0; color: var(--text-2); }
+.scan-log-item.change { background: var(--green-soft); border-left: 3px solid var(--green); padding: 2px 6px; color: #0e5c3d; font-weight: 500; border-radius: var(--radius-sm); margin: 2px 0; }
+.scan-log-item.warn   { background: var(--amber-soft); border-left: 3px solid var(--amber); padding: 2px 6px; color: #6e4c06; border-radius: var(--radius-sm); margin: 2px 0; }
+.scan-log-item.err    { background: var(--red-soft); border-left: 3px solid var(--red); padding: 2px 6px; color: #7a1815; border-radius: var(--radius-sm); margin: 2px 0; }
+.sb-dot  { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+.sb-dot.green  { background: var(--green); }
+.sb-dot.red    { background: var(--red); }
+.sb-dot.yellow { background: var(--amber); }
+
+/* ── ログモーダル / 各種モーダル ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(20,20,35,.45);
+  z-index: 999; align-items: center; justify-content: center;
+  backdrop-filter: blur(1px);
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface); width: 80vw; max-width: 900px; height: 70vh;
+  border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.modal-header {
+  background: linear-gradient(135deg, #4a43c4, var(--accent)); color: #fff;
+  padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: 13px;
+}
+.modal-copy-btn {
+  margin-left: auto;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s;
+}
+.modal-copy-btn:hover { background: rgba(255,255,255,.3); }
+.modal-close { margin-left: 8px; cursor: pointer; font-size: 16px; opacity: .8; line-height: 1; }
+.modal-close:hover { opacity: 1; }
+.modal-body {
+  flex: 1; overflow: auto; padding: 12px 16px;
+  font-family: var(--mono); font-size: 11px;
+  white-space: pre; line-height: 1.6; color: var(--text-2);
+  background: var(--surface);
+  user-select: text;
+  cursor: text;
+}
+.log-error { color: var(--red); }
+.log-warn  { color: var(--amber); }
 
 /* スクロールバー */
-.works-list::-webkit-scrollbar { width:16px; }
-.works-list::-webkit-scrollbar-track { background:#f0f0f0; border-left:1px solid #ccc; }
-.works-list::-webkit-scrollbar-thumb { background:linear-gradient(to right,#ccc,#d8d8d8); border:1px solid #aaa; }
-.works-list::-webkit-scrollbar-button { height:16px; background:#f0f0f0; border:1px solid #ccc; display:block; }
-
-/* ── ニュースページ ── */
+.works-list::-webkit-scrollbar,
+.hist-wrap::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar { width: 12px; }
+.works-list::-webkit-scrollbar-track,
+.hist-wrap::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.works-list::-webkit-scrollbar-thumb,
+.hist-wrap::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; border: 3px solid var(--surface); }
+.works-list::-webkit-scrollbar-thumb:hover,
+.hist-wrap::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
 /* ── ページ読み込み時のフェードイン ── */
-body {
-  animation: fadeInDown .4s ease both;
+body { animation: fadeInDown .35s ease both; }
+.toolbar { animation: fadeInDown .25s ease both; }
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.toolbar {
-  animation: fadeInDown .3s ease both;
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-btn, .work-row, .pager-btn, .tab-btn, .filterbar input, .filterbar select,
+  .modal-copy-btn, .progress-fill, .scan-fill { transition: none !important; }
+  body, .toolbar { animation: none !important; }
+  .tb-btn.running svg { animation: none !important; }
 }
-.menubar {
-  animation: fadeInDown .2s ease both;
-}
+
 </style>
 </head>
 <body>
 
 <!-- ツールバー -->
 <div class="toolbar">
-  <button class="tb-btn" onclick="loadWorks(1)" title="更新" data-desc="作品リストを最新の状態に更新します">
-    <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5H10" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    更新
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="setTab('all')" id="tbAll" title="全作品" data-desc="追跡中の全作品を表示します">
-    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="1" y="9" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="9" width="6" height="6" fill="#0078d7" rx="1"/></svg>
-    全作品
-  </button>
-  <button class="tb-btn" onclick="setTab('sale')" id="tbSale" title="セール中のみ表示" data-desc="現在セール中の作品だけを絞り込みます">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
-    セール中
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="exportData('csv')" title="CSVで保存" data-desc="全作品と価格履歴をCSVファイルで書き出します">
-    <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><path d="M4 9h8M4 11h6" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
-    CSVで保存
-  </button>
-  <button class="tb-btn" onclick="exportData('json')" title="JSONで保存" data-desc="全作品と価格履歴をJSONファイルで書き出します">
-    <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><text x="8" y="12" text-anchor="middle" fill="#cc6600" font-size="6" font-family="monospace" font-weight="bold">{}</text></svg>
-    JSONで保存
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnDiscover" onclick="runJob('discover')" data-desc="DLsiteの新着・ランキング・セールページを巡回してRJコードを収集します（価格は取得しません）" title="新着/ランキング/セールを巡回してRJ収集">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4v4l3 1.5" stroke="#0078d7" stroke-width="1.3" stroke-linecap="round"/></svg>
-    RJ収集
-  </button>
-  <button class="tb-btn" id="btnFetch" onclick="runJob('fetch')" data-desc="未取得または期限切れの作品の価格をDLsite APIから取得・更新します" title="未取得・期限切れ作品の価格を更新">
-    <svg viewBox="0 0 16 16"><path d="M2 8h12M10 4l4 4-4 4" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-    価格更新
-  </button>
-  <button class="tb-btn" id="btnSaleboost" onclick="runJob('saleboost')" data-desc="セール中サークルの全作品を優先キューに追加して価格確認を早めます" title="セール中サークルの優先度を維持">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
-    セール優先
-  </button>
-  <button class="tb-btn" id="btnAll" onclick="runJob('all')" data-desc="RJ収集 → 価格更新 → セール優先を順番に実行します（通常はこれだけでOK）" title="全て巡回" style="font-weight:bold">
-    <svg viewBox="0 0 16 16"><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="#006600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="3.5" fill="#006600"/></svg>
-    全て巡回
-  </button>
-  <button class="tb-btn" id="btnTurbo" onclick="runJob('turbo')" data-desc="rateLimit最小・全due作品を一括処理。PCに高負荷がかかります" title="ぶっ飛ばし — 全due作品を高速一括処理" style="color:#c0392b;font-weight:bold">
-    <svg viewBox="0 0 16 16"><path d="M8 1l1.8 4.5L15 6.4l-3.8 3.4 1 5.2L8 12.5l-4.2 2.5 1-5.2L1 6.4l5.2-.9z" fill="#e74c3c"/></svg>
-    ぶっ飛ばし
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnEndingsoon" onclick="runJob('endingsoon')" data-desc="割引終了まで24時間以内の作品をDLsiteのsoon検索で収集し、優先度を最優先にして取りこぼしを防ぎます" title="終了間近収集（24時間以内に割引終了）" style="color:#cc6600;font-weight:bold">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc6600" stroke-width="1.5"/><path d="M8 4.5v4l2.8 1.6" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-    終了間近収集
-  </button>
-  <button class="tb-btn" id="btnNewrelease" onclick="runJob('newrelease')" data-desc="割引条件・終了間近条件を問わず、直近1年以内に発売された全作品をFSR全ページ走査で収集します" title="新作収集（発売から1年以内・割引条件なし）" style="color:#0078d7;font-weight:bold">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4.5v7M4.5 8h7" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
-    新作収集
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnFullscan" onclick="runJob('fullscan')" data-desc="FSR全ページを走査して登録作品を網羅収集します（時間がかかります・初回セットアップ向け）" title="FSR全ページ走査 — 全作品を網羅収集（時間がかかります）">
-    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#660066" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#660066" stroke-width="1.5" stroke-linecap="round"/></svg>
-    全収集
-  </button>
-  <button class="tb-btn" id="btnFullscan_sale" onclick="runJob('fullscan_sale')" data-desc="セール中作品のみFSR全ページ走査します" title="セール作品を全ページ走査">
-    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/></svg>
-    全セール収集
-  </button>
-  <button class="tb-btn" id="btnCirclegap" onclick="runJob('circlegap')" data-desc="既知の全サークルについてDLsite上の全作品を走査し、DBに存在しないRJコードを検出・登録します（時間がかかります）" title="サークル欠落診断 — 既知サークルの取りこぼしRJを検出">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#0066cc" stroke-width="1.3"/><path d="M5.5 8.5l1.8 1.8L11 6.5" stroke="#0066cc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-    サークル欠落診断
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" onclick="showLog()" title="ログを確認" data-desc="直近200行の動作ログを確認します">
-    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
-    ログ確認
-  </button>
-  <button class="tb-btn" onclick="showErrorLog()" title="エラーログ" id="tbErrLog" data-desc="エラーログを確認します（巡回失敗・APIエラーなど）">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M8 4.5v4" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="#cc0000"/></svg>
-    エラーログ
-  </button>
-  <button class="tb-btn" onclick="showDiag()" title="巡回テスト・診断" data-desc="特定のRJコードを手動で取得してAPIやセッションの動作を確認します">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 5v3.5l2.5 1.5" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
-    診断
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnPushdata" onclick="runJob('pushdata')" data-desc="配信データ(shards/index)を生成し、GitHubのdataブランチへ即座にpushします（04:30の自動pushと同じ処理）" title="今すぐPush — 配信データをGitHubへ手動反映" style="color:#0055aa;font-weight:bold">
-    <svg viewBox="0 0 16 16"><path d="M8 11V3M5 6l3-3 3 3" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.5 11v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V11" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
-    今すぐPush
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnSettings" onclick="showSettings()" title="設定 — GitHub連携" data-desc="拡張機能向けデータをGitHubへ自動配信するためのトークンを設定します">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
-    設定
-  </button>
-  <button class="tb-btn" id="btnImport" onclick="showImport()" title="CSV/JSONからインポート — DB復旧" data-desc="以前エクスポートしたCSV/JSONファイルからDBを復元します（DB破損・消失時の復旧用）" style="color:#006600">
-    <svg viewBox="0 0 16 16"><path d="M8 1v9M4.5 6.5L8 10l3.5-3.5" stroke="#006600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="2" y="12" width="12" height="2.5" rx="1" fill="#006600"/></svg>
-    復元
-  </button>
-  <button class="tb-btn" id="btnPriceIssues" onclick="showPriceIssues()" title="定価取得エラー一覧" data-desc="定価が信頼できる形で取得できなかった作品の一覧を表示します" style="color:#cc6600">
-    <svg viewBox="0 0 16 16"><path d="M8 1.5L1 14h14L8 1.5z" fill="none" stroke="#cc6600" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v4" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.8" fill="#cc6600"/></svg>
-    定価エラー
-  </button>
-  <div class="tb-sep"></div>
-  <button class="tb-btn" id="btnComp_listing" onclick="runJob('comp_listing')" title="総集編一覧走査" data-desc="ジャンル515(総集編)一覧を巡回し、総集編“作品”RJを候補として収集します" style="color:#4a4a9e">
-    <svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="10" rx="1.5" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><path d="M1.5 6h13" stroke="#4a4a9e" stroke-width="1.3"/></svg>
-    総集編一覧
-  </button>
-  <button class="tb-btn" id="btnComp_detail" onclick="runJob('comp_detail')" title="総集編詳細解析" data-desc="収集済みの総集編候補について収録作品を解析します（直接抽出→サークル推定）" style="color:#4a4a9e">
-    <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="6" height="6" rx="1" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1" fill="#4a4a9e"/></svg>
-    総集編解析
-  </button>
-  <button class="tb-btn" id="btnCompPending" onclick="showCompPending()" title="要確認候補" data-desc="推定スコアが閾値未満で自動確定できなかった収録候補を確認・承認/却下します" style="color:#4a4a9e">
-    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><path d="M8 5v3.5l2.3 1.3" stroke="#4a4a9e" stroke-width="1.3" stroke-linecap="round"/></svg>
-    📦 要確認 <span id="compPendingBadge" style="display:none;background:#cc0000;color:#fff;border-radius:8px;font-size:9px;padding:0 5px;margin-left:3px"></span>
-  </button>
-  <button class="tb-btn" id="btnCompStop" onclick="stopCompScan()" title="総集編走査を停止" data-desc="実行中の総集編一覧走査/詳細解析を安全に中断します（続きから再開可能）" style="display:none;color:#cc0000;font-weight:bold">
-    <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1.5" fill="#cc0000"/></svg>
-    ■ 停止
-  </button>
+  <div class="tb-group">
+    <span class="tb-group-label">表示</span>
+    <button class="tb-btn" onclick="loadWorks(1)" title="更新" data-desc="作品リストを最新の状態に更新します">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5H10" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      更新
+    </button>
+    <button class="tb-btn" onclick="setTab('all')" id="tbAll" title="全作品" data-desc="追跡中の全作品を表示します">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="1" width="6" height="6" fill="#0078d7" rx="1"/><rect x="1" y="9" width="6" height="6" fill="#0078d7" rx="1"/><rect x="9" y="9" width="6" height="6" fill="#0078d7" rx="1"/></svg>
+      全作品
+    </button>
+    <button class="tb-btn" onclick="setTab('sale')" id="tbSale" title="セール中のみ表示" data-desc="現在セール中の作品だけを絞り込みます">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
+      セール中
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="exportData('csv')" title="CSVで保存" data-desc="全作品と価格履歴をCSVファイルで書き出します">
+      <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><path d="M4 9h8M4 11h6" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
+      CSVで保存
+    </button>
+    <button class="tb-btn" onclick="exportData('json')" title="JSONで保存" data-desc="全作品と価格履歴をJSONファイルで書き出します">
+      <svg viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M8 1v4h4" fill="none" stroke="#888"/><text x="8" y="12" text-anchor="middle" fill="#cc6600" font-size="6" font-family="monospace" font-weight="bold">{}</text></svg>
+      JSONで保存
+    </button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-group-label">巡回</span>
+    <button class="tb-btn" id="btnDiscover" onclick="runJob('discover')" data-desc="DLsiteの新着・ランキング・セールページを巡回してRJコードを収集します（価格は取得しません）" title="新着/ランキング/セールを巡回してRJ収集">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4v4l3 1.5" stroke="#0078d7" stroke-width="1.3" stroke-linecap="round"/></svg>
+      RJ収集
+    </button>
+    <button class="tb-btn" id="btnFetch" onclick="runJob('fetch')" data-desc="未取得または期限切れの作品の価格をDLsite APIから取得・更新します" title="未取得・期限切れ作品の価格を更新">
+      <svg viewBox="0 0 16 16"><path d="M2 8h12M10 4l4 4-4 4" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      価格更新
+    </button>
+    <button class="tb-btn" id="btnSaleboost" onclick="runJob('saleboost')" data-desc="セール中サークルの全作品を優先キューに追加して価格確認を早めます" title="セール中サークルの優先度を維持">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#cc0000"/><text x="8" y="11.5" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">S</text></svg>
+      セール優先
+    </button>
+    <button class="tb-btn" id="btnAll" onclick="runJob('all')" data-desc="RJ収集 → 価格更新 → セール優先を順番に実行します（通常はこれだけでOK）" title="全て巡回" style="font-weight:bold">
+      <svg viewBox="0 0 16 16"><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="#006600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="3.5" fill="#006600"/></svg>
+      全て巡回
+    </button>
+    <button class="tb-btn" id="btnTurbo" onclick="runJob('turbo')" data-desc="rateLimit最小・全due作品を一括処理。PCに高負荷がかかります" title="ぶっ飛ばし — 全due作品を高速一括処理" style="color:#c0392b;font-weight:bold">
+      <svg viewBox="0 0 16 16"><path d="M8 1l1.8 4.5L15 6.4l-3.8 3.4 1 5.2L8 12.5l-4.2 2.5 1-5.2L1 6.4l5.2-.9z" fill="#e74c3c"/></svg>
+      ぶっ飛ばし
+    </button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-group-label">収集強化</span>
+    <button class="tb-btn" id="btnEndingsoon" onclick="runJob('endingsoon')" data-desc="割引終了まで24時間以内の作品をDLsiteのsoon検索で収集し、優先度を最優先にして取りこぼしを防ぎます" title="終了間近収集（24時間以内に割引終了）" style="color:#cc6600;font-weight:bold">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc6600" stroke-width="1.5"/><path d="M8 4.5v4l2.8 1.6" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      終了間近収集
+    </button>
+    <button class="tb-btn" id="btnNewrelease" onclick="runJob('newrelease')" data-desc="割引条件・終了間近条件を問わず、直近1年以内に発売された全作品をFSR全ページ走査で収集します" title="新作収集（発売から1年以内・割引条件なし）" style="color:#0078d7;font-weight:bold">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#0078d7" stroke-width="1.5"/><path d="M8 4.5v7M4.5 8h7" stroke="#0078d7" stroke-width="1.5" stroke-linecap="round"/></svg>
+      新作収集
+    </button>
+    <button class="tb-btn" id="btnFullscan" onclick="runJob('fullscan')" data-desc="FSR全ページを走査して登録作品を網羅収集します（時間がかかります・初回セットアップ向け）" title="FSR全ページ走査 — 全作品を網羅収集（時間がかかります）">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#660066" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#660066" stroke-width="1.5" stroke-linecap="round"/></svg>
+      全収集
+    </button>
+    <button class="tb-btn" id="btnFullscan_sale" onclick="runJob('fullscan_sale')" data-desc="セール中作品のみFSR全ページ走査します" title="セール作品を全ページ走査">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/></svg>
+      全セール収集
+    </button>
+    <button class="tb-btn" id="btnCirclegap" onclick="runJob('circlegap')" data-desc="既知の全サークルについてDLsite上の全作品を走査し、DBに存在しないRJコードを検出・登録します（時間がかかります）" title="サークル欠落診断 — 既知サークルの取りこぼしRJを検出">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#0066cc" stroke-width="1.3"/><path d="M5.5 8.5l1.8 1.8L11 6.5" stroke="#0066cc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      サークル欠落診断
+    </button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-group-label">総集編</span>
+    <button class="tb-btn" id="btnComp_listing" onclick="runJob('comp_listing')" title="総集編一覧走査" data-desc="ジャンル515(総集編)一覧を巡回し、総集編“作品”RJを候補として収集します" style="color:#4a4a9e">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="10" rx="1.5" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><path d="M1.5 6h13" stroke="#4a4a9e" stroke-width="1.3"/></svg>
+      総集編一覧
+    </button>
+    <button class="tb-btn" id="btnComp_detail" onclick="runJob('comp_detail')" title="総集編詳細解析" data-desc="収集済みの総集編候補について収録作品を解析します（直接抽出→サークル推定）" style="color:#4a4a9e">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="6" height="6" rx="1" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1" fill="#4a4a9e"/></svg>
+      総集編解析
+    </button>
+    <button class="tb-btn" id="btnCompPending" onclick="showCompPending()" title="要確認候補" data-desc="推定スコアが閾値未満で自動確定できなかった収録候補を確認・承認/却下します" style="color:#4a4a9e">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#4a4a9e" stroke-width="1.3"/><path d="M8 5v3.5l2.3 1.3" stroke="#4a4a9e" stroke-width="1.3" stroke-linecap="round"/></svg>
+      📦 要確認 <span id="compPendingBadge" style="display:none;background:#cc0000;color:#fff;border-radius:8px;font-size:9px;padding:0 5px;margin-left:3px"></span>
+    </button>
+    <button class="tb-btn" id="btnCompStop" onclick="stopCompScan()" title="総集編走査を停止" data-desc="実行中の総集編一覧走査/詳細解析を安全に中断します（続きから再開可能）" style="display:none;color:#cc0000;font-weight:bold">
+      <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1.5" fill="#cc0000"/></svg>
+      ■ 停止
+    </button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-group-label">診断</span>
+    <button class="tb-btn" onclick="showLog()" title="ログを確認" data-desc="直近200行の動作ログを確認します">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="13" rx="1" fill="#fff" stroke="#888"/><path d="M3 5h10M3 8h10M3 11h6" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg>
+      ログ確認
+    </button>
+    <button class="tb-btn" onclick="showErrorLog()" title="エラーログ" id="tbErrLog" data-desc="エラーログを確認します（巡回失敗・APIエラーなど）">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M8 4.5v4" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="#cc0000"/></svg>
+      エラーログ
+    </button>
+    <button class="tb-btn" onclick="showDiag()" title="巡回テスト・診断" data-desc="特定のRJコードを手動で取得してAPIやセッションの動作を確認します">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 5v3.5l2.5 1.5" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
+      診断
+    </button>
+    <button class="tb-btn" id="btnPriceIssues" onclick="showPriceIssues()" title="定価取得エラー一覧" data-desc="定価が信頼できる形で取得できなかった作品の一覧を表示します" style="color:#cc6600">
+      <svg viewBox="0 0 16 16"><path d="M8 1.5L1 14h14L8 1.5z" fill="none" stroke="#cc6600" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v4" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.8" fill="#cc6600"/></svg>
+      定価エラー
+    </button>
+  </div>
+
+  <div class="tb-group">
+    <span class="tb-group-label">配信・データ</span>
+    <button class="tb-btn" id="btnPushdata" onclick="runJob('pushdata')" data-desc="配信データ(shards/index)を生成し、GitHubのdataブランチへ即座にpushします（04:30の自動pushと同じ処理）" title="今すぐPush — 配信データをGitHubへ手動反映" style="color:#0055aa;font-weight:bold">
+      <svg viewBox="0 0 16 16"><path d="M8 11V3M5 6l3-3 3 3" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.5 11v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V11" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+      今すぐPush
+    </button>
+    <button class="tb-btn" id="btnSettings" onclick="showSettings()" title="設定 — GitHub連携" data-desc="拡張機能向けデータをGitHubへ自動配信するためのトークンを設定します">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
+      設定
+    </button>
+    <button class="tb-btn" id="btnImport" onclick="showImport()" title="CSV/JSONからインポート — DB復旧" data-desc="以前エクスポートしたCSV/JSONファイルからDBを復元します（DB破損・消失時の復旧用）" style="color:#006600">
+      <svg viewBox="0 0 16 16"><path d="M8 1v9M4.5 6.5L8 10l3.5-3.5" stroke="#006600" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="2" y="12" width="12" height="2.5" rx="1" fill="#006600"/></svg>
+      復元
+    </button>
+  </div>
 </div>
 
 <!-- ボタン説明バー -->
