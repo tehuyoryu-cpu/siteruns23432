@@ -152,11 +152,17 @@ function _startBackupJob() {
 }
 
 // ─── 拡張機能向けシャードエクスポートジョブ ───────────────────────────────────
-// ブラウザ拡張(DLsite Score)へGitHub raw/jsDelivr経由で配信するスコアデータを
-// 1日1回生成する。ローカルファイル生成のみ(pushはトークンが設定されている
+// ブラウザ拡張(DLsite Score)へGitHub raw/jsDelivr経由で配信するスコア/総集編バッジデータを
+// 生成・pushする。ローカルファイル生成のみ(pushはトークンが設定されている
 // 場合のみ scripts/push-data-shards.js が行う。未設定なら安全にスキップされる)。
+//
+// 頻度修正: 以前は1日1回(04:30)のみだったが、拡張側のスコアキャッシュTTL(既定6時間)より
+// 配信間隔の方が長く、拡張が「6時間ごとに再取得しても実際には1日に1回しか変わらない
+// データを引いているだけ」という状態になっていた。特に総集編バッジはcomp_detailが
+// 2時間おきに確定させているにもかかわらず、配信が1日1回のため反映まで最大24時間近く
+// 遅延していた。拡張のTTL既定値と揃えて6時間おきに配信することで、末端の反映遅延を縮める。
 function _startExportShardsJob() {
-  cron.schedule('30 4 * * *', async () => {
+  const _run = async () => {
     try {
       const result = await runExportShards();
       log.info('[scheduler] exportShards done', result);
@@ -169,8 +175,9 @@ function _startExportShardsJob() {
     } catch (err) {
       log.error('[scheduler] exportShards error', err.message);
     }
-  });
-  log.info('[scheduler] exportShards job scheduled (daily 04:30)');
+  };
+  cron.schedule('30 */6 * * *', _run);
+  log.info('[scheduler] exportShards job scheduled (every 6h, :30)');
 }
 
 // ─── 総集編マーク スキャンジョブ ───────────────────────────────────────────────
