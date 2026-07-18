@@ -496,7 +496,12 @@ async function handleRun(job, res) {
 
       _sseSend('log', 'GitHub dataブランチへpush中...');
       const { main: pushDataShards } = require('../scripts/push-data-shards');
-      const pushResult = await pushDataShards();
+      const pushResult = await pushDataShards({
+        onProgress: ({ done, total }) => {
+          Object.assign(_progress, { page: done, totalPages: total });
+          _sseSend('progress', { page: done, total, phase: 'push' });
+        },
+      });
 
       if (pushResult?.ok) {
         _lastResult[job] = { ok: true, ...pushResult, exportResult, finishedAt: Date.now() };

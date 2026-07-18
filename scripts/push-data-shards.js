@@ -39,6 +39,53 @@ const OUT_DIR = path.resolve(
 
 const API = 'https://api.github.com';
 
+// バグ修正（Push Now が不安定な根本原因）:
+// 1回の POST /git/trees に全ファイル(shards 最大1024 + index 最大64 + manifest
+// + README ≈ 1090件)のcontentをまとめて埋め込んでいたため、DBが大きくなると
+// 単一リクエストのペイロードが数十MBに達し、GitHub側のタイムアウト/5xxや、
+// 手元の回線状況によっては素直に失敗しやすい状態だった。さらに全fetch呼び出しに
+// タイムアウト・リトライが一切無く、通信が詰まると「実行中...」表示のまま
+// 何分でも応答を待ち続けてしまう(ユーザーからは「固まった/不安定」に見える)。
+// 対策:
+//   ① ファイルをCHUNK_SIZE件ずつに分割し、base_tree を前チャンクのtree shaに
+//      指定して積み上げていく(GitHub Trees APIの仕様上、base_treeに無い
+//      パスは維持されるため、複数回に分けても最終的に全ファイルを含む
+//      1本のtreeになる)。1リクエストのペイロードを大幅に縮小する。
+//   ② 全fetch呼び出しにタイムアウト(30秒)とリトライ(最大3回・指数バックオフ、
+//      429/5xx/タイムアウトが対象)を追加する。
+const CHUNK_SIZE          = 150;   // 1回のtree作成リクエストに含める最大ファイル数
+const REQUEST_TIMEOUT_MS  = 30_000;
+const MAX_RETRY            = 3;
+const RETRY_BASE_DELAY_MS = 1500;
+
+function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function _fetchWithRetry(url, opts = {}) {
+  let lastErr;
+  for (let i = 0; i <= MAX_RETRY; i++) {
+    if (i > 0) {
+      const wait = RETRY_BASE_DELAY_MS * 2 ** (i - 1);
+      log.warn(`[push-data-shards] retry ${i}/${MAX_RETRY} (${wait}ms後)`, url, String(lastErr?.message ?? lastErr));
+      await _sleep(wait);
+    }
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, { ...opts, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.status === 429 || res.status >= 500) {
+        lastErr = new Error(`HTTP ${res.status}`);
+        continue;   // リトライ対象。ok/4xx(429以外)はそのまま返して呼び出し側で判定させる
+      }
+      return res;
+    } catch (e) {
+      clearTimeout(timer);
+      lastErr = e.name === 'AbortError' ? new Error(`timeout after ${REQUEST_TIMEOUT_MS}ms`) : e;
+    }
+  }
+  throw lastErr ?? new Error(`fetchWithRetry failed: ${url}`);
+}
+
 const README_CONTENT = `# DLsite Score — 配信データ (自動生成)
 
 このブランチは DLsite Score ブラウザ拡張機能向けの価格スコアデータを配信するための
@@ -75,7 +122,7 @@ shard番号の算出方法(FNV-1a 32bit)は \`crawler/exportShards.js\` の \`fn
  *   ok:false,skipped — 意図的なスキップ（トークン未設定・出力なし等）。エラーではない。
  *   ok:false         — 実際の失敗はここには来ず throw する（呼び出し側の catch に委ねる）
  */
-async function main() {
+async function main({ onProgress } = {}) {
   const token = _resolveToken();
   if (!token) {
     // バグ修正: 従来はlog.info()で、通常ログファイルにしか残らず
@@ -118,36 +165,36 @@ async function main() {
     'Content-Type': 'application/json',
   };
 
-  // 1. tree項目を組み立てる
-  // バグ修正(pushが実質フリーズしていた真因): 以前はファイル1件ごとに
-  // POST /git/blobs を逐次リクエストしていた。1090ファイルだと1093回もの
-  // 直列HTTPリクエストになり、日本-GitHub間のレイテンシ(数百ms/回)が
-  // 積み重なって数分〜十数分かかる上、GitHubの二次レート制限(短時間の
-  // 大量リクエストに対するabuse detection)に引っかかって黙って詰まる
-  // リスクもあった(実際に data ブランチが何日も更新されない不具合として発現)。
-  // 出力ファイルは全てテキスト(JSON)であり、GitHubのTree作成APIは
-  // tree項目に sha の代わりに content を直接埋め込める(その場でblobを
-  // 内部生成してくれる)ため、ファイルごとのblob作成ラウンドトリップを
-  // 完全に排除できる。これによりAPI呼び出しは合計3回(tree/commit/ref)まで
-  // 減り、体感でも数秒〜十数秒で完了するようになる。
-  const tree = files.map(f => ({
-    path: f.path,
-    mode: '100644',
-    type: 'blob',
-    content: f.content ?? fs.readFileSync(f.abs, 'utf8'),
-  }));
+  // 1. ファイルをCHUNK_SIZE件ずつに分割し、tree項目としてcontentを直接埋め込む
+  //    (blob作成のラウンドトリップを避けつつ、1リクエストの肥大化も防ぐ)
+  log.info('[push-data-shards] tree構築開始', { chunks: Math.ceil(files.length / CHUNK_SIZE), chunkSize: CHUNK_SIZE });
+  let treeSha = null;
+  for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+    const chunk = files.slice(i, i + CHUNK_SIZE);
+    const treeItems = chunk.map(f => ({
+      path:    f.path,
+      mode:    '100644',
+      type:    'blob',
+      content: f.content ?? fs.readFileSync(f.abs, 'utf8'),
+    }));
+    // base_treeを前チャンクのsha結果に指定して積み上げる。
+    // (base_treeに含まれるがこのチャンクで言及していないパスはそのまま維持される)
+    const body = treeSha ? { base_tree: treeSha, tree: treeItems } : { tree: treeItems };
+    const treeRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/trees`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!treeRes.ok) {
+      throw new Error(`tree create failed (chunk ${i}〜${i + chunk.length - 1}件目): HTTP ${treeRes.status} ${await treeRes.text()}`);
+    }
+    ({ sha: treeSha } = await treeRes.json());
+    log.info('[push-data-shards] tree chunk done', { from: i, count: chunk.length, treeSha });
+    onProgress?.({ done: Math.min(i + chunk.length, files.length), total: files.length });
+  }
 
-  // 2. treeを作成 (base_treeを指定しない = 完全に新しいツリーでブランチを置き換える)
-  const treeRes = await fetch(`${API}/repos/${OWNER}/${REPO}/git/trees`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ tree }),
-  });
-  if (!treeRes.ok) throw new Error(`tree create failed: HTTP ${treeRes.status} ${await treeRes.text()}`);
-  const { sha: treeSha } = await treeRes.json();
-
-  // 3. 親を持たないコミットを作成(スカッシュ運用のため毎回orphanにする)
-  const commitRes = await fetch(`${API}/repos/${OWNER}/${REPO}/git/commits`, {
+  // 2. 親を持たないコミットを作成(スカッシュ運用のため毎回orphanにする)
+  const commitRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/commits`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -159,10 +206,10 @@ async function main() {
   if (!commitRes.ok) throw new Error(`commit create failed: HTTP ${commitRes.status} ${await commitRes.text()}`);
   const { sha: commitSha } = await commitRes.json();
 
-  // 4. ref更新(既存ならforce update、無ければ新規作成)
-  const refCheck = await fetch(`${API}/repos/${OWNER}/${REPO}/git/ref/heads/${BRANCH}`, { headers });
+  // 3. ref更新(既存ならforce update、無ければ新規作成)
+  const refCheck = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/ref/heads/${BRANCH}`, { headers });
   if (refCheck.status === 404) {
-    const createRes = await fetch(`${API}/repos/${OWNER}/${REPO}/git/refs`, {
+    const createRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/refs`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ ref: `refs/heads/${BRANCH}`, sha: commitSha }),
@@ -170,7 +217,7 @@ async function main() {
     if (!createRes.ok) throw new Error(`ref create failed: HTTP ${createRes.status} ${await createRes.text()}`);
     log.info('[push-data-shards] branch created', BRANCH);
   } else {
-    const updateRes = await fetch(`${API}/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
+    const updateRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ sha: commitSha, force: true }),
