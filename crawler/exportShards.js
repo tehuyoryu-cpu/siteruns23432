@@ -72,6 +72,7 @@ async function runExportShards() {
   const discountDaysMap = _loadDiscountDays();
   const lowestMap        = _loadLowestPrices();
   const recentLogMap     = _loadRecentLogs();
+  const compiledSet      = _loadCompiledRjSet();
 
   // shard_id -> { rj: entry }
   const dataShards = Array.from({ length: DATA_SHARDS }, () => ({}));
@@ -95,6 +96,8 @@ async function runExportShards() {
 
     const log_ = recentLogMap.get(rj);
     if (log_ && log_.length) entry.lg = log_;
+
+    if (compiledSet.has(rj)) entry.c = 1;
 
     const shardKey = w.maker_id || rj;
     const shardId  = shardOf(shardKey, DATA_SHARDS);
@@ -139,6 +142,22 @@ function _loadRecentLogs() {
   } catch (e) {
     log.warn('[exportShards] recentLog query failed (window function unsupported?), skipping', e.message);
     return new Map();
+  }
+}
+
+/**
+ * 総集編に収録されている作品RJのSet（バッジ表示用）。
+ * compScan.js が comp_works テーブルに書き込んだ確定分のみを対象とする
+ * (comp_pending の未確定推定は含めない)。
+ * price未取得(cur_price IS NULL)の作品は base側でそもそもshardに載らないため、
+ * その場合はバッジも一時的に表示されない(価格取得後の次回export以降に反映される)。
+ */
+function _loadCompiledRjSet() {
+  try {
+    return new Set(db.getAllCompiledRjs());
+  } catch (e) {
+    log.warn('[exportShards] compiled RJ set query failed, skipping', e.message);
+    return new Set();
   }
 }
 
@@ -191,6 +210,7 @@ function _writeOutput(dataShards, idxShards, totalWorks) {
       dd: '直近365日のセール日数 (0のときは省略)',
       lp: '過去最安値 (定価と同額なら省略)',
       lg: '直近価格ログ、新しい順 (空なら省略)',
+      c:  '総集編に収録されている場合のみ 1 (comp_works確定分のみ、未収録時は省略)',
     },
   };
   fs.writeFileSync(path.join(OUT_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2));
