@@ -1251,6 +1251,11 @@ function getCompStats() {
 /** 定価が信頼できる形で取得できなかった作品を記録（既存キーはoccurrences++で集計） */
 function recordPriceIssue(rjCode, issueType, rawFields) {
   const now = unixNow();
+  // 注: detailFetcher._store() から db.transactionNoSave() のコールバック内で
+  // ネストして呼ばれるため、ここを runInTransaction() で囲むと
+  // 「トランザクション内トランザクション」でSQLiteがエラーになる。
+  // 保存は外側の transactionNoSave + runDetailFetch の周期 db.save() に
+  // 委ねる(_run()のまま)。
   _run(`
     INSERT INTO price_issues (rj_code, issue_type, raw_fields, first_seen, last_seen, occurrences)
     VALUES (?, ?, ?, ?, ?, 1)
@@ -1264,6 +1269,7 @@ function recordPriceIssue(rjCode, issueType, rawFields) {
 
 /** 正常に定価が取れるようになったら呼ぶ（次回発生時はoccurrences=1から再カウント） */
 function clearPriceIssue(rjCode) {
+  // 注: recordPriceIssue と同じ理由でrunInTransaction()化しない（ネスト対策）
   _run(`DELETE FROM price_issues WHERE rj_code = ?`, [rjCode]);
 }
 
