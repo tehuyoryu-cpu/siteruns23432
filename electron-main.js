@@ -129,7 +129,7 @@ async function warmUpSession() {
     } else {
       log.warn('[warmUp] DB内に', site, '向けの実在RJコードが無いためサイトルートで代用します(年齢確認ゲートが表示されない可能性が高い、初回起動時は正常)');
     }
-    results[site] = await _warmUpOneSite(w, targetUrl);
+    results[site] = await _warmUpOneSite(w, targetUrl, site);
     results[site].targetUrl = targetUrl;
     results[site].rjUsed = rjUsed;
     results[site].cookieObtained = await _checkAgeCookie(session, site);
@@ -445,7 +445,7 @@ function _waitAfterClick(w, minMs = 2000, maxMs = 6000) {
 // 拾ってそこへ遷移し、そこで改めて年齢確認ボタンを探す2段階方式に変更。
 // トップページで直接ボタンが見つかるサイト(従来通り動いていた場合)は
 // 1段階目で完結するため、既存の動作を壊さない。
-async function _warmUpOneSite(w, url) {
+async function _warmUpOneSite(w, url, site) {
   const log = require('./crawler/logger');
 
   const rootNav = await _navigateAndWait(w, url, 15000);
@@ -461,17 +461,32 @@ async function _warmUpOneSite(w, url) {
     return { clicked: true, reason: 'finish-load(root)', diag: r.diag };
   }
 
+  // バグ修正(⑤): 以前は `a[href*="/product_id/RJ"]` に一致する最初のリンクを
+  // サイトを問わず無条件に採用していた。DLsiteのルートページには他サイト
+  // (例: home/announce の告知バナー等)への案内リンクが混在することがあり、
+  // maniaxのルートページでこれを踏むと `home/announce/=/product_id/RJ....html`
+  // のような全く無関係なサイトへ遷移してしまう。実機ログで確認済み:
+  // bl/girlsは同一サイト内で正しく遷移していたが、maniaxだけ`home/`に
+  // すり替わっていた。結果、本来検証すべきmaniaxの年齢確認ゲートが一度も
+  // 再検証されないまま「site done」として処理が完了扱いになっていた。
+  // 現在ロード中のサイトパス(`/${site}/`)に一致するリンクだけを対象にする。
   let productUrl = null;
   try {
     productUrl = await w.webContents.executeJavaScript(
-      `(function(){ const a = document.querySelector('a[href*="/product_id/RJ"]'); return a ? a.href : null; })()`
+      `(function(){
+         const links = document.querySelectorAll('a[href*="/product_id/RJ"]');
+         for (const a of links) {
+           if (a.href.includes('/${site}/work/') || a.href.includes('/${site}/work_') ) return a.href;
+         }
+         return null;
+       })()`
     );
   } catch (e) {
     log.warn('[warmUp] product link scan failed', { url, error: e.message });
   }
 
   if (!productUrl) {
-    log.warn('[warmUp] 年齢確認ボタンが見つからず、商品リンクも見つからなかったため断念', { url });
+    log.warn('[warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念', { url, site });
     return { clicked: false, reason: 'no-age-gate-no-product-link', diag: r.diag };
   }
 
