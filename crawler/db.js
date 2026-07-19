@@ -1099,12 +1099,19 @@ function getCircle(makerId) {
 function addCompCandidates(rjCodes) {
   const now = unixNow();
   let added = 0;
-  for (const rj of rjCodes) {
-    const before = _get('SELECT 1 AS x FROM comp_candidates WHERE rj_code = ?', [rj]);
-    if (before) continue;
-    _run(`INSERT INTO comp_candidates (rj_code, discovered_at) VALUES (?, ?)`, [rj, now]);
-    added++;
-  }
+  // バグ修正: 以前は _run() を直接呼んでおり _save() を一切トリガーしないため、
+  // 総集編候補(comp_candidates)がディスクに永続化されずアプリ終了/クラッシュで
+  // 消えていた(dataブランチ検証: 52万件中236件しか総集編マークが付いていなかった
+  // 実害を確認済み)。runInTransaction() でまとめて実行し、debounce付きsaveを
+  // トリガーする。
+  runInTransaction(() => {
+    for (const rj of rjCodes) {
+      const before = _get('SELECT 1 AS x FROM comp_candidates WHERE rj_code = ?', [rj]);
+      if (before) continue;
+      _run(`INSERT INTO comp_candidates (rj_code, discovered_at) VALUES (?, ?)`, [rj, now]);
+      added++;
+    }
+  });
   return added;
 }
 
@@ -1114,20 +1121,26 @@ function getDueCompCandidates(limit = 50) {
 }
 
 function markCompCandidateProcessed(rjCode, status = 'done') {
-  _run(`UPDATE comp_candidates SET processed_at = ?, status = ? WHERE rj_code = ?`, [unixNow(), status, rjCode]);
+  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
+  runInTransaction(() => {
+    _run(`UPDATE comp_candidates SET processed_at = ?, status = ? WHERE rj_code = ?`, [unixNow(), status, rjCode]);
+  });
 }
 
 /** 高信頼度（作品内容欄からの直接抽出）の収録関係を確定登録する */
 function addCompWorksDirect(compilationRj, containedRjs) {
   if (!containedRjs.length) return 0;
   const now = unixNow();
-  for (const rj of containedRjs) {
-    _run(`
-      INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
-      VALUES (?, ?, 'direct', NULL, ?)
-      ON CONFLICT(compilation_rj, contained_rj) DO NOTHING
-    `, [compilationRj, rj, now]);
-  }
+  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
+  runInTransaction(() => {
+    for (const rj of containedRjs) {
+      _run(`
+        INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
+        VALUES (?, ?, 'direct', NULL, ?)
+        ON CONFLICT(compilation_rj, contained_rj) DO NOTHING
+      `, [compilationRj, rj, now]);
+    }
+  });
   return containedRjs.length;
 }
 
@@ -1135,23 +1148,26 @@ function addCompWorksDirect(compilationRj, containedRjs) {
 function addCompCandidateScored(compilationRj, scoredList, threshold) {
   const now = unixNow();
   let confirmed = 0, pending = 0;
-  for (const { rj, score, reasons } of scoredList) {
-    if (score >= threshold) {
-      _run(`
-        INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
-        VALUES (?, ?, 'estimated', ?, ?)
-        ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score
-      `, [compilationRj, rj, score, now]);
-      confirmed++;
-    } else {
-      _run(`
-        INSERT INTO comp_pending (compilation_rj, contained_rj, score, reasons, status, found_at)
-        VALUES (?, ?, ?, ?, 'pending', ?)
-        ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score, reasons = excluded.reasons
-      `, [compilationRj, rj, score, JSON.stringify(reasons ?? []), now]);
-      pending++;
+  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
+  runInTransaction(() => {
+    for (const { rj, score, reasons } of scoredList) {
+      if (score >= threshold) {
+        _run(`
+          INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
+          VALUES (?, ?, 'estimated', ?, ?)
+          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score
+        `, [compilationRj, rj, score, now]);
+        confirmed++;
+      } else {
+        _run(`
+          INSERT INTO comp_pending (compilation_rj, contained_rj, score, reasons, status, found_at)
+          VALUES (?, ?, ?, ?, 'pending', ?)
+          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score, reasons = excluded.reasons
+        `, [compilationRj, rj, score, JSON.stringify(reasons ?? []), now]);
+        pending++;
+      }
     }
-  }
+  });
   return { confirmed, pending };
 }
 
@@ -1170,20 +1186,23 @@ function getCompPending({ status = 'pending', limit = 100, offset = 0 } = {}) {
 /** 要確認候補の承認/却下。承認時は comp_works(source='estimated')へ昇格する */
 function decideCompPending(compilationRj, containedRj, decision) {
   const now = unixNow();
-  if (decision === 'approved') {
-    const row = _get('SELECT * FROM comp_pending WHERE compilation_rj = ? AND contained_rj = ?', [compilationRj, containedRj]);
-    if (row) {
-      _run(`
-        INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
-        VALUES (?, ?, 'estimated', ?, ?)
-        ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score
-      `, [compilationRj, containedRj, row.score, now]);
+  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
+  runInTransaction(() => {
+    if (decision === 'approved') {
+      const row = _get('SELECT * FROM comp_pending WHERE compilation_rj = ? AND contained_rj = ?', [compilationRj, containedRj]);
+      if (row) {
+        _run(`
+          INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
+          VALUES (?, ?, 'estimated', ?, ?)
+          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score
+        `, [compilationRj, containedRj, row.score, now]);
+      }
     }
-  }
-  _run(`
-    UPDATE comp_pending SET status = ?, decided_at = ?
-    WHERE compilation_rj = ? AND contained_rj = ?
-  `, [decision, now, compilationRj, containedRj]);
+    _run(`
+      UPDATE comp_pending SET status = ?, decided_at = ?
+      WHERE compilation_rj = ? AND contained_rj = ?
+    `, [decision, now, compilationRj, containedRj]);
+  });
 }
 
 function getCompScanProgress() {
@@ -1194,14 +1213,21 @@ function getCompScanProgress() {
 function setCompScanProgress(patch) {
   const cur  = getCompScanProgress();
   const next = { ...cur, ...patch };
-  _run(`
-    INSERT INTO comp_scan_progress (id, listing_page, listing_done, updated_at)
-    VALUES (1, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      listing_page = excluded.listing_page,
-      listing_done = excluded.listing_done,
-      updated_at   = excluded.updated_at
-  `, [next.listing_page, next.listing_done ? 1 : 0, unixNow()]);
+  // バグ修正(本丸): _run() 直呼びのため listing_page の走査進捗が一切ディスクに
+  // 保存されておらず、アプリ再起動のたびに1ページ目からやり直しになっていた
+  // (comp_candidates/comp_works も同様に未保存だったため、総集編マーク機能が
+  // ほぼ機能していなかった。dataブランチ検証: 52万件中236件のみ)。
+  // runInTransaction() で保存する。
+  runInTransaction(() => {
+    _run(`
+      INSERT INTO comp_scan_progress (id, listing_page, listing_done, updated_at)
+      VALUES (1, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        listing_page = excluded.listing_page,
+        listing_done = excluded.listing_done,
+        updated_at   = excluded.updated_at
+    `, [next.listing_page, next.listing_done ? 1 : 0, unixNow()]);
+  });
 }
 
 /** 拡張機能互換のフラットなRJリスト（バッジ表示用途にそのまま使える） */
