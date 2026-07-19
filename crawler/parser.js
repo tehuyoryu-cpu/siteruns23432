@@ -74,17 +74,25 @@ function parseProductInfo(rjCode, body) {
           log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields', rjCode, priceIssue.raw);
         }
       } else if (priceCur != null) {
-        // 重大バグ修正: price_work が欠損している場合、旧実装はここで
-        // price = priceCur（実際はセール中の値引き後価格の可能性が高い）を
-        // そのまま「定価」として記録していた。これが「定価が上手く取れて
-        // いない」不具合の主因と推定される（price_workが返らない作品種別
-        // が存在する模様）。price_work欠損時は真の定価を判別できないため、
-        // 誤った定価を静かに確定させず、生フィールドをWARNログに残して
-        // 実際の発生パターンを特定できるようにする。
+        // バグ修正(③): 旧実装はここに来た時点で無条件に「price_work欠損＝定価不明」
+        // として priceIssue を記録していたが、discRate(discount_rate)の判定順序上、
+        // このブランチに到達する時点で discRate は必ず 0/null である
+        // (discRate>0かつ<100のケースは上の分岐で既に処理済みのため)。
+        // つまりここに来る is_sale=true は「実際の値引きは無いポイント還元
+        // キャンペーン等」であることがほとんどで、price_workが存在しないのは
+        // 欠損ではなく「割引額という概念が無いので最初から返らない」という
+        // 正常な仕様である可能性が高い。この場合 priceCur は普通に定価そのもの
+        // であり、priceIssueとして記録するのは誤検知（dataブランチ実測で
+        // 全price_issuesの約1割・5万件がこのケースに該当していた）。
+        // discRateが未設定/0のときは正常な「定価そのもの」として扱い、
+        // 万一discRateが100以上(全額ポイント還元/無料配布等の異常値)のときのみ
+        // 真に定価不明としてpriceIssueに記録する。
         price     = priceCur;
         salePrice = null;
-        priceIssue = { type: 'price_work_missing', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
-        log.warn('[parser] price_work missing while on sale — recorded price may be the DISCOUNTED price, not the regular price', rjCode, priceIssue.raw);
+        if (discRate != null && discRate >= 100) {
+          priceIssue = { type: 'price_work_missing_high_discount', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
+          log.warn('[parser] price_work missing with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
+        }
       } else {
         price     = 0;
         salePrice = null;
