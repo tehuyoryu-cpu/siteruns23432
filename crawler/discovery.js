@@ -590,6 +590,19 @@ async function runNewReleaseScan({ onProgress = null } = {}) {
 // 一度も収集対象にならなかったRJが既知サークル内に埋もれている可能性がある。
 // 既知の全サークル(maker_id)についてDLsite上の全作品ページを走査し、
 // DBに存在しないRJコードを正確に検出・登録する。
+//
+// 改修: 全サークルを毎回同じ順序（先頭から）で走査していたため、
+//   - limit指定時は毎回同じ先頭N件しかチェックされず、それ以降のサークルには
+//     永遠に手が届かなかった
+//   - 中止ボタンや異常終了で中断すると、次回実行時も先頭からやり直しになり、
+//     既にチェック済みだった大量のサークルを再度なぞる無駄が発生していた
+//     （circlegapは1サークルあたり複数ページ・数百msのレート制限待ちを伴う
+//     重い処理で、"時間がかかります"と案内しているだけに影響が大きい）
+// circles.last_gap_checked（最後にこの診断でチェックした時刻）を基準に
+// 「未チェック/最も古くチェックされたサークル」から優先的に対象とすることで、
+// 中断・再開・limit指定のいずれでも自然に全サークルをローテーションし、
+// 一度全サークルを一巡した後も継続的な再検証として機能するようにした
+// （getDueWorksのnext_check_atと同じ考え方）。
 
 /**
  * @param {number|null} limit  診断するサークル数の上限（null=全サークル）
@@ -612,7 +625,13 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
     log.warn('[discovery] circleGapScan: site_id不明/巡回対象外のためスキップしたサークル', { count: skippedInvalidSite });
   }
 
-  let makerIds = [...makerSites.keys()];
+  // 最後にチェックした時刻の昇順（未チェック=0が先頭）でソートしてから
+  // limitを適用する。これにより中断/再開/limit指定のいずれでも
+  // 「まだ見ていないサークル」から確実に消化していく。
+  const gapCheckedMap = db.getCircleGapCheckedMap();
+  let makerIds = [...makerSites.keys()].sort((a, b) =>
+    (gapCheckedMap.get(a) ?? 0) - (gapCheckedMap.get(b) ?? 0));
+  const resumedCount = makerIds.filter(id => (gapCheckedMap.get(id) ?? 0) > 0).length;
   if (limit) makerIds = makerIds.slice(0, limit);
 
   const knownRjs = _loadKnown();
@@ -627,7 +646,10 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   // という2つの問題があった。ループ開始前に総数を即時通知し、ページ単位でも
   // 進捗を通知するようにする。
   if (onProgress) onProgress({ checked: 0, total: makerIds.length, totalMissing: 0, makerId: null, site: null });
-  log.info('[discovery] circleGapScan targets', { total: makerIds.length, skippedInvalidSite });
+  log.info('[discovery] circleGapScan targets', {
+    total: makerIds.length, skippedInvalidSite,
+    resuming: resumedCount > 0, alreadyCheckedBefore: resumedCount,
+  });
 
   // 以前はここに「50ページ/missing150件で打ち切り」という上限があった。
   // これはmaker_idフィルタが壊れている可能性を疑っての安全弁だったが、
@@ -644,11 +666,16 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
 
   async function _scanOneCircle(makerId, site) {
     let circleMissing = 0;
+    let abortedThisCircle = false;
     try {
       // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
       let page = 1, consecutiveShort = 0, failCount = 0;
       while (true) {
-        if (_discoveryAborted()) { log.warn('[discovery] circleGap aborted', { makerId, site, page }); break; }
+        if (_discoveryAborted()) {
+          log.warn('[discovery] circleGap aborted', { makerId, site, page });
+          abortedThisCircle = true;   // 中断: このサークルは未完了のまま次回に持ち越す（checked済みにしない）
+          break;
+        }
         if (page > MAX_PAGES_PER_CIRCLE) {
           log.error('[discovery] circleGap: ページ数が異常上限(1000)に到達、打ち切り(要調査)', { makerId, site, page, circleMissing });
           break;
@@ -726,6 +753,12 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
       log.error('[discovery] circleGap: サークル処理中にエラー、スキップして続行します', { makerId, site, error: err.message });
     }
 
+    // 中断（ユーザーが停止ボタンを押した等）の場合は未完了のまま次回に持ち越し、
+    // それ以外（正常完了・エラーによるスキップ問わず）は「この巡回サイクルで
+    // チェック済み」として記録する。次回実行時は未チェック/最も古いサークルから
+    // 優先されるため、同じ壊れたサークルに毎回時間を浪費することも避けられる。
+    if (!abortedThisCircle) db.markCircleGapChecked(makerId);
+
     checked++;
     if (onProgress) onProgress({ checked, total: makerIds.length, totalMissing, makerId, site });
   }
@@ -755,7 +788,7 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   log.info('[discovery] circleGapScan done', {
     checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length, skippedInvalidSite,
   });
-  return { checked, totalMissing, missingByCircle, skippedInvalidSite };
+  return { checked, totalMissing, missingByCircle, skippedInvalidSite, totalCircles: makerIds.length, resumedFromPrevious: resumedCount > 0 };
 }
 
 // ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────

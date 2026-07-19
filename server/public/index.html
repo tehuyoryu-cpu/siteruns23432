@@ -697,7 +697,7 @@ body { animation: fadeInDown .35s ease both; }
       <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#cc0000" stroke-width="1.3"/><path d="M4 8h8M8 4v8" stroke="#cc0000" stroke-width="1.5" stroke-linecap="round"/></svg>
       全セール収集
     </button>
-    <button class="tb-btn" id="btnCirclegap" onclick="runJob('circlegap')" data-desc="既知の全サークルについてDLsite上の全作品を走査し、DBに存在しないRJコードを検出・登録します（時間がかかります）" title="サークル欠落診断 — 既知サークルの取りこぼしRJを検出">
+    <button class="tb-btn" id="btnCirclegap" onclick="runJob('circlegap')" data-desc="既知の全サークルについてDLsite上の全作品を走査し、DBに存在しないRJコードを検出・登録します（時間がかかります・中止しても続きから再開されます）" title="サークル欠落診断 — 既知サークルの取りこぼしRJを検出（再開可能）">
       <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#0066cc" stroke-width="1.3"/><path d="M5.5 8.5l1.8 1.8L11 6.5" stroke="#0066cc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
       サークル欠落診断
     </button>
@@ -1492,7 +1492,10 @@ function _showJobResult(job, status) {
   else if (job === 'fetch')  setStatus('価格更新完了 — 処理: ' + (r.processed ?? 0) + ' 件 / 変化: ' + (r.priceChanges ?? 0) + ' 件');
   else if (job === 'all')    setStatus('全て巡回完了 — 新規: ' + (r.discovered ?? 0) + '件 / 価格更新: ' + (r.processed ?? 0) + '件 / 変動: ' + (r.priceChanges ?? 0) + '件');
   else if (job?.startsWith('fullscan')) setStatus('全収集完了 — ' + (status.fullScanProgress?.grandTotal ?? 0) + ' 件');
-  else if (job === 'circlegap') setStatus('サークル欠落診断完了 — チェック: ' + (r.checked ?? 0) + 'サークル / 発見した欠落: ' + (r.totalMissing ?? 0) + '件');
+  else if (job === 'circlegap') setStatus(
+    (r.stopped ? 'サークル欠落診断を停止 — ' : 'サークル欠落診断完了 — ') +
+    'チェック: ' + (r.checked ?? 0) + '/' + (r.totalCircles ?? '?') + 'サークル / 発見した欠落: ' + (r.totalMissing ?? 0) + '件' +
+    (r.stopped ? '（続きから再開可能）' : ''));
   else if (job === 'pushdata') setStatus('GitHub push完了 — ' + (r.files ?? 0) + 'ファイル (' + (r.exportResult?.works ?? 0) + '作品) / commit:' + (r.commit ?? '').slice(0, 7));
   else if (job === 'newrelease') setStatus('新作収集完了 — 新規: ' + (r.grandTotal ?? 0) + ' 件');
   else if (job === 'comp_listing') setStatus('総集編一覧走査完了 — 新規候補: ' + (r.added ?? 0) + ' 件');

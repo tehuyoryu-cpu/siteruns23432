@@ -313,6 +313,11 @@ function _applySchema() {
     'ALTER TABLE works ADD COLUMN cur_point         INTEGER',
     'ALTER TABLE works ADD COLUMN cur_is_point_only INTEGER DEFAULT 0',
     'ALTER TABLE works ADD COLUMN price_checked_at  INTEGER',
+    // サークル欠落診断(circleGapScan)の再開・ローテーション用。
+    // 「このサークルを最後にcircleGapScanでチェックした時刻」を記録し、
+    // 次回実行時は未チェック/最も古くチェックされたサークルから優先的に
+    // 対象にする（既存の getDueWorks の next_check_at と同じ考え方）。
+    'ALTER TABLE circles ADD COLUMN last_gap_checked INTEGER DEFAULT 0',
   ];
 
 
@@ -347,6 +352,8 @@ function _applySchema() {
     _db.run('CREATE INDEX IF NOT EXISTS idx_works_cur_discount ON works(cur_discount_rate)');
     _db.run('CREATE INDEX IF NOT EXISTS idx_works_cur_price    ON works(cur_price)');
     _db.run('CREATE INDEX IF NOT EXISTS idx_works_on_sale      ON works(is_on_sale)');
+    // circleGapScanの再開・ローテーション用（last_gap_checked ASCでの並び替えを高速化）
+    _db.run('CREATE INDEX IF NOT EXISTS idx_circles_gap_checked ON circles(last_gap_checked)');
   } catch (e) {
     log.error('[db] failed to create cur_* indexes:', e.message);
   }
@@ -793,6 +800,31 @@ function getCirclesForDiscovery(limit = 30) {
     LIMIT ?
   `, [limit]);
   return rows.map(r => r.maker_id);
+}
+
+/**
+ * circleGapScan の再開・ローテーション用: maker_id → 最後にチェックした時刻 のマップ。
+ * circles テーブルに行が無い(=一度もdetail取得でupsertCircleされていない)
+ * maker_idはマップに含まれない。呼び出し側は未登場のmaker_idを
+ * 「未チェック(0扱い)」として扱うこと。
+ */
+function getCircleGapCheckedMap() {
+  const rows = _all('SELECT maker_id, last_gap_checked FROM circles');
+  return new Map(rows.map(r => [r.maker_id, r.last_gap_checked ?? 0]));
+}
+
+/**
+ * circleGapScan がこのサークルの走査を完了したことを記録する。
+ * circles テーブルに行が無い場合は作成する(INSERT ON CONFLICT)ため、
+ * まだ一度もupsertCircleされていないサークルでも正しく記録できる
+ * （circle_name等の他カラムは後続のdetail取得upsertCircleで補完される）。
+ */
+function markCircleGapChecked(makerId) {
+  _run(`
+    INSERT INTO circles (maker_id, last_gap_checked)
+    VALUES (?, ?)
+    ON CONFLICT(maker_id) DO UPDATE SET last_gap_checked = excluded.last_gap_checked
+  `, [makerId, unixNow()]);
 }
 
 function boostCircleWorks(makerId, priority, checkInterval) {
@@ -1689,6 +1721,8 @@ module.exports = {
   getAllMakerIds,
   getMakerSiteMap,
   getCirclesForDiscovery,
+  getCircleGapCheckedMap,
+  markCircleGapChecked,
   boostCircleWorks,
   boostWorkUrgent,
   resetCircleWorksPriority,

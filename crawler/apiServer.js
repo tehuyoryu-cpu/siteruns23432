@@ -425,6 +425,8 @@ async function handleRun(job, res) {
     } else if (job === 'circlegap') {
       // サークル単位の欠落診断: 既知の全サークルについてDLsite上の全作品ページを
       // 走査し、DBに存在しないRJコードを検出・登録する。
+      // 未チェック/最も古くチェックされたサークルから優先するため、中止しても
+      // 次回実行時は続きから再開される（同じサークルを何度もなぞらない）。
       Object.assign(_progress, { job, page: 0, found: 0, totalPages: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await runCircleGapScan({
         onProgress: ({ checked, total, totalMissing, makerId, page }) => {
@@ -432,13 +434,18 @@ async function handleRun(job, res) {
           _sseSend('progress', { checked, total, totalMissing, makerId, page });
         },
       });
-      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
+      const stopped = !!global._crawlerAbort?.discovery;
+      _lastResult[job] = { ok: true, ...result, stopped, finishedAt: Date.now() };
       Object.assign(_progress, { done: true });
-      const gapSummary = `チェック:${result.checked}サークル / 発見した欠落:${result.totalMissing}件` +
+      const gapSummary = `チェック:${result.checked}/${result.totalCircles}サークル` +
+        (result.resumedFromPrevious ? '（前回の続きから再開）' : '') +
+        ` / 発見した欠落:${result.totalMissing}件` +
         (result.totalMissing > 0 ? ` (${Object.keys(result.missingByCircle).length}サークルで検出)` : '') +
         (result.skippedInvalidSite > 0 ? ` / site_id不明で除外:${result.skippedInvalidSite}サークル` : '');
-      _sseSend(result.totalMissing > 0 ? 'change' : 'log', `サークル欠落診断完了 — ${gapSummary}`);
-      log.info('[api] circleGapScan done', result);
+      _sseSend(result.totalMissing > 0 ? 'change' : 'log',
+        (stopped ? 'サークル欠落診断を停止しました — ' : 'サークル欠落診断完了 — ') + gapSummary +
+        (stopped ? '（続きは次回実行時に再開されます）' : ''));
+      log.info('[api] circleGapScan done', { ...result, stopped });
 
     } else if (job === 'comp_listing') {
       // 総集編マーク Phase A: ジャンル515一覧を巡回し、総集編“作品”RJを収集する
