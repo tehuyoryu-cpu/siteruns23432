@@ -166,8 +166,12 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
         }
 
         // 次チャンクがある場合のみsleep（最終バッチ後の無駄な700ms待機を除去）
+        // ±20%のジッターを加え、複数サイト/ワーカーの待機が揃って規則的な
+        // リクエストパターンになるのを避ける。
         if (config.fetch.rateLimit > 0 && nextIdx < chunks.length) {
-          await sleep(config.fetch.rateLimit);
+          const rl = config.fetch.rateLimit;
+          const jittered = Math.round(rl * 0.8 + Math.random() * rl * 0.4);
+          await sleep(jittered);
         }
       }
     }
@@ -215,11 +219,14 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
       (bySite[s] ??= []).push(w);
     }
 
-    let abortedMidBatch = false;
-    for (const [site, works] of Object.entries(bySite)) {
-      if (abortedMidBatch) break;
-      abortedMidBatch = await _runConcurrentBatches(works, site);
-    }
+    // サイト単位のバッチも並列実行する（以前は maniax → bl → girls と逐次で、
+    // 1サイトの巡回が終わるまで他サイトを一切処理しなかった）。各サイトは
+    // 内部で独自の concurrency プールと rateLimit 待機を持つため、サイト間を
+    // 並列化しても単一サイトへの同時リクエスト数は変わらない。
+    const abortedFlags = await Promise.all(
+      Object.entries(bySite).map(([site, works]) => _runConcurrentBatches(works, site))
+    );
+    const abortedMidBatch = abortedFlags.some(Boolean);
     if (abortedMidBatch) {
       log.info('[detail] aborted by external request (mid-batch)');
       break;
