@@ -61,6 +61,21 @@ const _NETWORK_ERRORS   = new Set([
 ]);
 const _PAUSE_DURATION   = 30_000;   // 30秒待機してからリトライ
 
+// リトライ/スロットル待機の上限（指数バックオフが際限なく伸びるのを防ぐ）
+const _MAX_BACKOFF_MS = 60_000;
+
+// ±20%のランダムジッター。複数ワーカーが同じ待機時間で揃うと、DLsite側から
+// 見て規則的なリクエストパターンになりやすい（スロットリング/ブロックの
+// 引き金になりうる）ため、待機のたびに分散させる。
+function _jitter(ms) {
+  const spread = ms * 0.2;
+  return Math.round(ms - spread + Math.random() * spread * 2);
+}
+
+function _cappedBackoff(ms) {
+  return _jitter(Math.min(ms, _MAX_BACKOFF_MS));
+}
+
 function _isNetworkError(msg) {
   return _NETWORK_ERRORS.has(msg) || /ERR_NETWORK|NETWORK_IO_SUSPENDED|ECONNRESET|ETIMEDOUT/.test(msg);
 }
@@ -86,7 +101,7 @@ async function fetchWithRetry(url, opts = {}) {
     await _waitForNetwork();
 
     if (i > 0 && !throttledWait) {
-      const wait = baseDelay * 2 ** (i - 1);
+      const wait = _cappedBackoff(baseDelay * 2 ** (i - 1));
       log.warn(`[fetch] retry ${i}/${maxRetry} wait ${wait}ms`, url);
       await sleep(wait);
     }
@@ -119,9 +134,11 @@ async function fetchWithRetry(url, opts = {}) {
 
       if (res.status === 429 || res.status === 503) {
         const retryAfter = parseInt(res.headers.get('Retry-After') ?? '0', 10);
+        // サーバー明示の Retry-After はそのまま尊重する（ジッターを足さない）。
+        // こちら側の指数バックオフのみキャップ+ジッターを適用する。
         const wait = retryAfter > 0
           ? retryAfter * 1000
-          : baseDelay * 2 ** (i);
+          : _cappedBackoff(baseDelay * 2 ** i);
         log.warn(`[fetch] ${res.status} throttle – wait ${wait}ms`, url);
         last = new Error(`HTTP ${res.status}`);
         await sleep(wait);
