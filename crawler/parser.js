@@ -37,16 +37,48 @@ function parseProductInfo(rjCode, body) {
       return null;
     }
 
-    const priceWork = _int(d.price_work);              // 通常価格（DLsite APIの主フィールド）
+    // ── 価格情報の優先ソース: discount オブジェクト / official_price ──────────
+    // 価格取得精度の改善: 従来はprice_work/price/discount_rateの大小関係のみから
+    // 「どちらが定価でどちらがセール価格か」を推測していたが、DLsiteのAPI構造の
+    // 調査(dlsite-rs等、公開されているクライアント実装の解析結果)によると、
+    // 推測を必要としないより直接的なフィールドが別途存在する:
+    //   discount.campaign_price = 現在のセール価格そのもの
+    //   discount.restore_price  = セール終了後に「復元」される定価そのもの
+    //   official_price / regular_price = セールの有無に関わらない定価そのもの
+    //   is_discount_work = セール中かどうかの明示フラグ（is_saleより直接的）
+    // これらが利用できる場合は、下のprice_work等による推測ロジックより優先して
+    // 使う。存在しない/想定と異なる場合は安全に既存ロジックへフォールバックする
+    // (このプロジェクトではAPI応答の全フィールドを継続的に検証できないため、
+    // 新フィールドは「使えるときだけ使う」形にして既存の実績あるロジックを
+    // 壊さないようにしている)。
+    const discObj        = (d.discount && typeof d.discount === 'object') ? d.discount : null;
+    const campaignPrice  = _int(discObj?.campaign_price);
+    const restorePrice   = _int(discObj?.restore_price);
+    const officialPrice  = _int(d.official_price ?? d.regular_price);
+    const isDiscountFlag = d.is_discount_work === true || d.is_discount_work === 1 || d.is_discount_work === '1';
+
+    const priceWork = _int(d.price_work);              // 通常価格（DLsite APIの主フィールド、経験則）
     const priceCur  = _int(d.price);                   // 現在価格（セール中は値引き後）
     const discRate  = _int(d.discount_rate ?? d.rate); // 割引率 (%)
     // is_sale は "1" (文字列) / 1 (数値) の両方が返る
-    const isOnSale  = d.is_sale == 1 || (discRate != null && discRate > 0);
+    const isOnSale  = isDiscountFlag || d.is_sale == 1 || (discRate != null && discRate > 0)
+      || (campaignPrice != null && restorePrice != null && campaignPrice < restorePrice);
 
     let price, salePrice, disc = discRate;
     let priceIssue = null; // { type, raw } — 定価が信頼できなかった場合にセットされる
 
-    if (isOnSale) {
+    if (isOnSale && campaignPrice != null && restorePrice != null && campaignPrice < restorePrice) {
+      // 最優先: discountオブジェクトが直接示す「セール価格」と「復元後の定価」。
+      // DLsite自身が管理する値であり、他フィールドの大小関係を見て推測する
+      // 必要が無いため最も確実。
+      price     = restorePrice;
+      salePrice = campaignPrice;
+    } else if (isOnSale && officialPrice != null && priceCur != null && priceCur < officialPrice) {
+      // 次点: 公式定価フィールド(official_price/regular_price)と現在価格の比較。
+      // price_workのような経験則由来のフィールドより公式性が高い。
+      price     = officialPrice;
+      salePrice = priceCur;
+    } else if (isOnSale) {
       if (priceWork != null && priceCur != null && priceCur < priceWork) {
         // price_work=通常価格, price=セール価格（両フィールドあり、price<price_work）
         price     = priceWork;
@@ -63,6 +95,17 @@ function parseProductInfo(rjCode, body) {
       } else if (priceCur != null && discRate != null && discRate > 0 && discRate < 100) {
         salePrice = priceCur;
         price     = Math.round(priceCur * 100 / (100 - discRate));
+      } else if (officialPrice != null) {
+        // price_workは無いが公式定価フィールド(official_price/regular_price)は
+        // ある。price_curとの差が取れないため割引額は不明扱いだが、定価の値
+        // 自体はofficial_priceの方がprice_workより信頼できるため、ambiguous
+        // 分岐へ流す前にこちらを優先する。
+        price     = officialPrice;
+        salePrice = (priceCur != null && priceCur !== officialPrice) ? priceCur : null;
+        if (salePrice == null) {
+          priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
+          log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields (official_price fallback)', rjCode, priceIssue.raw);
+        }
       } else if (priceWork != null) {
         // price_work(通常価格らしきフィールド)はあるが、セール価格側の
         // 手がかりが無い(price_curが同額 or discRateが不使用)。
@@ -93,14 +136,25 @@ function parseProductInfo(rjCode, body) {
           priceIssue = { type: 'price_work_missing_high_discount', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
           log.warn('[parser] price_work missing with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
         }
+      } else if (officialPrice != null || campaignPrice != null || restorePrice != null) {
+        // price_work/priceともに欠損だが、official_price/regular_priceや
+        // discountオブジェクトの断片(campaign_price/restore_priceのどちらか
+        // 一方のみ等)は残っている場合の最終手段。0円で上書きするよりは、
+        // 得られる中で最も定価らしい値を使う方が実害が小さい。
+        price     = officialPrice ?? restorePrice ?? campaignPrice;
+        salePrice = null;
+        priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, discount: discObj, price_work: d.price_work, price: d.price } };
+        log.warn('[parser] price_work/price欠損だがofficial_price等から代替', rjCode, priceIssue.raw);
       } else {
         price     = 0;
         salePrice = null;
-        priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price } };
+        priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price, official_price: d.official_price, regular_price: d.regular_price } };
         log.warn('[parser] no usable price field at all', rjCode, priceIssue.raw);
       }
     } else {
-      price     = priceWork ?? priceCur ?? 0;
+      // セール中でない場合も、price_workより公式性の高いofficial_price/
+      // regular_priceが使えるなら優先する。
+      price     = officialPrice ?? priceWork ?? priceCur ?? 0;
       salePrice = null;
     }
 
@@ -116,8 +170,12 @@ function parseProductInfo(rjCode, body) {
     const point = _int(d.point ?? d.dl_point ?? d.point_rate ?? d.dl_point_rate ?? d.rate_review);
 
     // is_on_sale の区別: discount あり vs ポイント還元のみ
-    // discount_rate > 0 なら価格割引セール、そうでなければポイントキャンペーン
-    const isPriceDiscount = !!(discRate && discRate > 0);
+    // 精度改善: 生のAPIフィールドdiscRateではなく、上のロジックで確定した
+    // 最終的なdisc(price/salePriceの差分から事後計算された場合を含む)を見る。
+    // discRateだけを見ると「discount_rateフィールドは返らないが、price_work
+    // (またはofficial_price)とpriceに実際の価格差がある」ケースを、値引きが
+    // 無いポイント還元キャンペーンと誤分類してしまう。
+    const isPriceDiscount = !!(disc && disc > 0);
     const isPointCampaign = isOnSale && !isPriceDiscount;
 
     // 未使用フィールドをデバッグログに出力（開発/調査用）
