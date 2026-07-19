@@ -247,7 +247,11 @@ async function fetchAndStore(rjCode, siteId = 'maniax') {
 
 // discovery が取得した初期価格を保存
 function saveDiscoveredPrice(rjCode, priceData) {
-  const changed = db.savePriceIfChanged(rjCode, priceData);
+  // バグ修正: savePriceIfChanged はオブジェクトを返す(changed=falseでも)ため
+  // 素の真偽値として扱うと常にtruthyになり、変化が無くても毎回db.save()を
+  // スケジュールしてしまっていた。
+  const result = db.savePriceIfChanged(rjCode, priceData);
+  const changed = result.changed === true;
   if (changed) db.save(); // Fix#7: ensure persistence outside transaction
   return changed;
 }
@@ -344,7 +348,15 @@ async function _processBatch(works, site, depth = 0) {
   // intervalのみ延長）に倒す。少数件バッチ(数件程度)はたまたま低一致率に
   // なりうるため、ある程度まとまった件数のバッチのみを対象にする。
   const MIN_BATCH_FOR_RATIO_CHECK = 4;   // これ未満の件数は対象外（誤検出防止）
-  const SUSPECT_MATCH_RATIO       = 0.3; // 一致率がこれ未満なら汚染を疑う
+  // バグ修正(②): 0.3だと「50件中22件しか一致しない(44%)」のような中途半端な
+  // 汚染を見逃し、残りの28件がdb.recordApiMissing()で個別に「削除済み」誤判定
+  // されていた(2回連続でpriority=delisted(0)まで格下げ＝実質永久除外という
+  // 重大なデータ破損)。DLsiteのカタログ構造上、ランダムな50件バッチの半数以上が
+  // 同時に削除される事は現実的にまず起きないため、閾値を0.6に引き上げる。
+  // 誤ってCDN汚染扱いにする副作用は「再チェックが少し遅れる」程度で済むが、
+  // 誤ってdelisted落ちさせる副作用は「生きている作品が巡回対象から長期間
+  // 脱落する」でありダメージが非対称に大きいため、安全側に倒す。
+  const SUSPECT_MATCH_RATIO       = 0.6; // 一致率がこれ未満なら汚染を疑う
   const matchedCount = works.filter(w => {
     const rj    = w.rj_code.toUpperCase();
     const nopad = rj.replace(/^RJ0+/, 'RJ');
@@ -471,6 +483,32 @@ function _store(rjCode, body) {
     db.clearPriceIssue(rjCode);
   }
 
+  // バグ修正(③の続き): price/price_work が両方欠損(no_price_field)、または
+  // discount_rate>=100の異常値(price_work_missing_high_discount)のときは
+  // parser.jsが安全策として price=0 等の信頼できない値を返す。これを
+  // 無条件にsavePriceIfChangedへ渡すと「定価0円」でDB/配信データを
+  // 上書きしてしまい、既存の正しい価格情報を破壊する(data ブランチで実在
+  // 確認済み)。この場合は価格の書き込み自体をスキップし、既存の価格を
+  // そのまま保持する(在庫/優先度スケジューリングは is_on_sale フラグだけで
+  // 十分機能するため、work情報・巡回スケジュールの更新は通常通り行う)。
+  const priceUnreliable = priceIssue?.type === 'no_price_field'
+    || priceIssue?.type === 'price_work_missing_high_discount';
+
+  // バグ修正(重大): savePriceIfChanged() は { changed, consecutive_no_change }
+  // という「オブジェクト」を返す(changed=falseのときも！)。以前はこれを
+  // そのまま真偽値として扱っていたため `if (changed)` 等が常にtruthyになり、
+  // 実際には価格が変化していない作品も毎回「価格変動あり」として
+  // カウント・ログされ続けていた(meta.json: processed===priceChangesが
+  // 常に一致する不具合の直接の原因)。加えて `changed ? 0 : ...` が常に0を
+  // 返すため consecutive_no_change が一切増加せず、"cold"優先度への降格が
+  // 機能しない副作用もあった。.changed / .consecutive_no_change を正しく
+  // 分解して使う。
+  const saveResult = priceUnreliable
+    ? { changed: false, consecutive_no_change: db.getWorkByRj(rjCode)?.consecutive_no_change ?? 0 }
+    : db.savePriceIfChanged(rjCode, price);
+  const changed  = saveResult.changed === true;
+  const noChange = changed ? 0 : saveResult.consecutive_no_change + 1;
+
   // バグ修正(継続的なsite_id破損): parser.jsは既知のサイトファミリーに
   // 一致しないsite_id(aix/appx等の内部分類コード)をnullとして返す。
   // ここで null の場合は既存DB値を維持し、そもそも存在しない新規行なら
@@ -490,10 +528,7 @@ function _store(rjCode, body) {
     _handleCircleSale(work.maker_id, price);
   }
 
-  const changed   = db.savePriceIfChanged(rjCode, price);
-  const existing  = db.getWorkByRj(rjCode);
-  const noChange  = changed ? 0 : (existing?.consecutive_no_change ?? 0) + 1;
-  const schedule  = _schedule(work, price, noChange);
+  const schedule = _schedule(work, price, noChange);
 
   db.markChecked(rjCode, {
     check_interval:        schedule.interval,
