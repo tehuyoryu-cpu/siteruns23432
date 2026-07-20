@@ -129,7 +129,7 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
-  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0 };
+  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0 };
 
   // サイト別グループ
   // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
@@ -167,6 +167,10 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
         result.processed    += r.processed;
         result.priceChanges += r.priceChanges;
         result.errors       += r.errors;
+        result.apiMissing    += r.apiMissing;
+        result.contaminated  += r.contaminated;
+        result.fetchFail     += r.fetchFail;
+        result.storeError    += r.storeError;
         onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
 
         batchesSinceSave++;
@@ -276,7 +280,7 @@ function saveDiscoveredPrice(rjCode, priceData) {
 // ─── バッチ処理 ───────────────────────────────────────────────────────────────
 
 async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.rateLimit) {
-  const result = { processed: 0, priceChanges: 0, errors: 0 };
+  const result = { processed: 0, priceChanges: 0, errors: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0 };
 
   // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
   // fetchError扱いにする（priorityは下げない・intervalのみ延長）。
@@ -284,7 +288,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
     });
-    result.errors += works.length;
+    result.errors    += works.length;
+    result.fetchFail  += works.length;
     return result;
   }
 
@@ -319,6 +324,10 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     result.processed    += r1.processed    + r2.processed;
     result.priceChanges += r1.priceChanges + r2.priceChanges;
     result.errors       += r1.errors       + r2.errors;
+    result.apiMissing    += r1.apiMissing    + r2.apiMissing;
+    result.contaminated  += r1.contaminated  + r2.contaminated;
+    result.fetchFail      += r1.fetchFail      + r2.fetchFail;
+    result.storeError    += r1.storeError    + r2.storeError;
     return result;
   }
 
@@ -328,7 +337,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
     });
-    result.errors += works.length;
+    result.errors    += works.length;
+    result.fetchFail  += works.length;
     return result;
   }
 
@@ -403,7 +413,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
     });
-    result.errors += works.length;
+    result.errors      += works.length;
+    result.contaminated += works.length;
     return result;
   }
 
@@ -420,6 +431,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
             'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
           db.recordApiMissing(dbKey);   // API不在→急速退避
           result.errors++;
+          result.apiMissing++;
           continue;
         }
 
@@ -430,6 +442,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
 
         if (changed === null) {
           result.errors++;
+          result.storeError++;
         } else {
           result.priceChanges += changed ? 1 : 0;
           result.processed++;
@@ -438,6 +451,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         log.error('[detail] store error', w.rj_code, e.message);
         db.recordFetchError(w.rj_code);
         result.errors++;
+        result.storeError++;
       }
     }
   });
