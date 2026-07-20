@@ -112,10 +112,20 @@ async function _recordApiEmptyAndMaybeRecover(site) {
 
 // ─── public ──────────────────────────────────────────────────────────────────
 
-async function runDetailFetch(limit = 300, { onProgress } = {}) {
+async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency } = {}) {
   // 実行ごとにサーキット/ストリークをリセット（前回の巡回で打ち切ったサイトも
   // 今回はまず1回試す。再ウォームアップのクールダウンは実行をまたいで維持する）
   _resetSessionHealthState();
+
+  // バグ修正: 以前は apiServer.js の 'turbo'/'all' ジョブが実行中に
+  // `config.fetch.rateLimit = 200` のようにグローバル設定を直接書き換えて
+  // 一時的にブーストし、finally で元の値へ戻していた。しかしこれは
+  // モジュール全体で共有されるグローバル状態のため、ブースト中に他の処理
+  // （scheduler の定期detailジョブ等）が config.fetch.* を参照すると、
+  // 意図せず速度が変わる/元に戻すタイミングが競合するレース状態になりうる。
+  // 呼び出し元から明示的に上書き値を渡せるようにし、グローバルは一切変更しない。
+  const effRateLimit   = rateLimit   ?? config.fetch.rateLimit;
+  const effConcurrency = concurrency ?? config.fetch.concurrency;
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
@@ -153,7 +163,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
         if (isAborted()) { aborted = true; return; }
         const myIdx = nextIdx++;
         const batch = chunks[myIdx];
-        const r = await _processBatch(batch, site);
+        const r = await _processBatch(batch, site, 0, effRateLimit);
         result.processed    += r.processed;
         result.priceChanges += r.priceChanges;
         result.errors       += r.errors;
@@ -168,15 +178,15 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
         // 次チャンクがある場合のみsleep（最終バッチ後の無駄な700ms待機を除去）
         // ±20%のジッターを加え、複数サイト/ワーカーの待機が揃って規則的な
         // リクエストパターンになるのを避ける。
-        if (config.fetch.rateLimit > 0 && nextIdx < chunks.length) {
-          const rl = config.fetch.rateLimit;
+        if (effRateLimit > 0 && nextIdx < chunks.length) {
+          const rl = effRateLimit;
           const jittered = Math.round(rl * 0.8 + Math.random() * rl * 0.4);
           await sleep(jittered);
         }
       }
     }
 
-    const poolSize = Math.max(1, Math.min(config.fetch.concurrency ?? 1, chunks.length));
+    const poolSize = Math.max(1, Math.min(effConcurrency ?? 1, chunks.length));
     await Promise.all(Array.from({ length: poolSize }, () => worker()));
     return aborted;
   }
@@ -209,7 +219,7 @@ async function runDetailFetch(limit = 300, { onProgress } = {}) {
     }
 
     result.total += due.length;
-    log.info('[detail] due batch:', due.length, '(total so far:', result.total, ') concurrency=' + (config.fetch.concurrency ?? 1));
+    log.info('[detail] due batch:', due.length, '(total so far:', result.total, ') concurrency=' + (effConcurrency ?? 1));
 
     const bySite = {};
     for (const w of due) {
@@ -265,7 +275,7 @@ function saveDiscoveredPrice(rjCode, priceData) {
 
 // ─── バッチ処理 ───────────────────────────────────────────────────────────────
 
-async function _processBatch(works, site, depth = 0) {
+async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.rateLimit) {
   const result = { processed: 0, priceChanges: 0, errors: 0 };
 
   // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
@@ -303,9 +313,9 @@ async function _processBatch(works, site, depth = 0) {
   if (!body && works.length > 1 && depth < MAX_SPLIT_DEPTH) {
     log.warn('[detail] batch fail, splitting', works.length);
     const mid = Math.ceil(works.length / 2);
-    const r1 = await _processBatch(works.slice(0, mid), site, depth + 1);
-    await sleep(Math.max(config.fetch.rateLimit ?? 0, 300));
-    const r2 = await _processBatch(works.slice(mid), site, depth + 1);
+    const r1 = await _processBatch(works.slice(0, mid), site, depth + 1, rateLimit);
+    await sleep(Math.max(rateLimit ?? 0, 300));
+    const r2 = await _processBatch(works.slice(mid), site, depth + 1, rateLimit);
     result.processed    += r1.processed    + r2.processed;
     result.priceChanges += r1.priceChanges + r2.priceChanges;
     result.errors       += r1.errors       + r2.errors;
