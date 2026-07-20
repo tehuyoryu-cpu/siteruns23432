@@ -310,23 +310,20 @@ async function handleRun(job, res) {
       // 実行されており、'turbo' で動作確認済み(concurrency=6, rateLimit=200ms)の
       // 速度が「全て巡回」には反映されていなかった。
       _sseSend('log', '価格更新を開始します...');
-      const origRL_all          = config.fetch.rateLimit;
-      const origConcurrency_all = config.fetch.concurrency;
-      config.fetch.rateLimit    = 200;
-      config.fetch.concurrency  = Math.max(origConcurrency_all ?? 1, 6);
-      let fetchR;
-      try {
-        fetchR = await detailFetcher.runDetailFetch(Infinity, {
-          onProgress: ({ processed, priceChanges, total }) => {
-            Object.assign(_progress, { found: processed, total });
-            _sseSend('progress', { processed, priceChanges, total });
-            if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
-          },
-        });
-      } finally {
-        config.fetch.rateLimit   = origRL_all;
-        config.fetch.concurrency = origConcurrency_all;
-      }
+      // バグ修正: 以前は config.fetch.rateLimit/concurrency をグローバルに
+      // 一時上書きしてから finally で戻していたが、これはモジュール全体で
+      // 共有される状態のため、ブースト中に他の処理(scheduler の定期detail等)
+      // が同じ config を参照するとレース状態になりうる。runDetailFetch に
+      // 直接オーバーライド値を渡し、グローバルは一切変更しない。
+      const fetchR = await detailFetcher.runDetailFetch(Infinity, {
+        rateLimit:   200,
+        concurrency: Math.max(config.fetch.concurrency ?? 1, 6),
+        onProgress: ({ processed, priceChanges, total }) => {
+          Object.assign(_progress, { found: processed, total });
+          _sseSend('progress', { processed, priceChanges, total });
+          if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
+        },
+      });
       // Phase 2 完了。detail ロックの解放は finally の releaseDetail()（トークン一致チェックあり）に任せる。
       // ここで直接 shared['detail'] = false をしていた旧コードはトークン保護を素通りするバグがあった。
 
@@ -366,18 +363,19 @@ async function handleRun(job, res) {
       _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速並列処理します');
       Object.assign(_progress, { job, found: 0, total: 0, startedAt: Math.floor(Date.now() / 1000), done: false });
       // rateLimit縮小だけでなく concurrency(同時並列リクエスト数) も引き上げる。
-      // 以前は concurrency 設定が定義されているのに使われておらず、'turbo' でも
-      // 実質ほぼ逐次処理のままで体感速度がほとんど変わらないバグがあった。
-      const origRL          = config.fetch.rateLimit;
-      const origConcurrency = config.fetch.concurrency;
-      config.fetch.rateLimit    = 200;
-      config.fetch.concurrency  = Math.max(origConcurrency ?? 1, 6);
-      try {
+      // バグ修正: 以前は config.fetch.rateLimit/concurrency をグローバルに
+      // 一時上書きしてから finally で戻していたが、これはモジュール全体で
+      // 共有される状態のため、ブースト中に他の処理が同じ config を参照すると
+      // レース状態になりうる。runDetailFetch に直接オーバーライド値を渡し、
+      // グローバルは一切変更しない。
+      {
         // バグ修正: 99999 は「実質無制限」のつもりの値だったが、実装上は
         // ハードキャップとして扱われるため、due作品数がこれを超えると
         // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
         // Infinity にすることで、真に due が枯渇するまで処理を続ける。
         const r = await detailFetcher.runDetailFetch(Infinity, {
+          rateLimit:   200,
+          concurrency: Math.max(config.fetch.concurrency ?? 1, 6),
           onProgress: ({ processed, priceChanges, total }) => {
             Object.assign(_progress, { found: processed, total });
             _sseSend('progress', { processed, priceChanges, total });
@@ -388,9 +386,6 @@ async function handleRun(job, res) {
         const msg = `ぶっ飛ばし完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`;
         _sseSend(r?.priceChanges > 0 ? 'change' : 'log', msg);
         if (r?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(r.priceChanges);
-      } finally {
-        config.fetch.rateLimit   = origRL;
-        config.fetch.concurrency = origConcurrency;
       }
 
     } else if (job === 'endingsoon') {
