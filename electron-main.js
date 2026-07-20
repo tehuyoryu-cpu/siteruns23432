@@ -393,10 +393,28 @@ async function _tryClickAgeGate(w, url) {
     const clicked = !!evalResult?.clicked;
     const diag = evalResult?.diag ?? null;
     log.info('[warmUp] クリック試行結果', { url, clicked, clickedInfo: diag?.clickedInfo ?? null });
+    // バグ修正: 以前はボタンが見つからなかった場合、必ず log.warn で診断情報を
+    // 書き出していた。しかし実機ログを確認したところ、警告が出ていたページの
+    // bodyTextSample/title には実際の商品タイトル・価格情報が既に表示されており
+    // (年齢確認ページ特有の文言が一切ない)、これは「年齢確認ゲートが最初から
+    // 存在しない/既に通過済み」という正常なケースだった。真の失敗判定は
+    // warmUpSession() 側の _checkAgeCookie() (実際にCookieが付与されたか)で
+    // 行われており機能的な影響はなかったが、正常系が毎回エラーログに大量に
+    // 記録され、本当にセレクタ変更等で壊れた場合の signal がノイズに埋もれて
+    // 見えなくなっていた。ページ本文に年齢確認ゲート特有の文言が一切無ければ
+    // 「ゲート不在(正常)」として log.info に格下げする。
+    const AGE_GATE_SIGNAL_RE = /(18歳|年齢確認|age.?check|age.?verif|adult.?check)/i;
+    const gateAbsent = !clicked && diag
+      && !AGE_GATE_SIGNAL_RE.test(diag.bodyTextSample || '')
+      && !AGE_GATE_SIGNAL_RE.test(diag.title || '');
     if (!clicked && diag) {
-      log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
+      if (gateAbsent) {
+        log.info('[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常', { url, title: diag.title });
+      } else {
+        log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
+      }
     }
-    return { clicked, diag };
+    return { clicked, diag, gateAbsent };
   } catch (e) {
     log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
     return { clicked: false, diag: { error: e.message } };
@@ -499,9 +517,9 @@ async function _warmUpOneSite(w, url, site) {
 
   r = await _tryClickAgeGate(w, productUrl);
   const navigated = await _waitAfterClick(w);
-  const reason = r.clicked ? 'finish-load(product)' : 'no-button-on-product-page';
+  const reason = r.clicked ? 'finish-load(product)' : (r.gateAbsent ? 'gate-absent(product)' : 'no-button-on-product-page');
   log.info('[warmUp] site done', { url, clicked: r.clicked, reason, navigatedAfterClick: navigated });
-  return { clicked: r.clicked, reason, diag: r.diag };
+  return { clicked: r.clicked, reason, diag: r.diag, gateAbsent: r.gateAbsent };
 }
 async function startBackend() {
   log.info('[startup] requiring modules...');
