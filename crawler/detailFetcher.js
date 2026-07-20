@@ -351,48 +351,54 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // RJ群に対して毎回同じ固定キー集合しか返らない)。
   // この場合は「削除された」ではなく「取得に失敗した」として扱い、
   // recordFetchError(intervalを延ばすのみ、priorityは下げない)に倒す。
-  // バグ修正: 以前は matchedCount === 0（1件も一致しない）の場合のみ
-  // 「レスポンス不一致＝別バッチ向けキャッシュ汚染」として扱っていた。
-  // しかし実運用ログでは、50件requestして実際には固定の1〜2件（大文字/ゼロ埋め
-  // なし版の重複を含むため実質1件のことが多い）だけが繰り返しキーとして返る
-  // 事例が大量発生していた。この場合 matchedCount は0にならないため上の判定を
-  // すり抜け、残りの数十件が「本当にAPIから消えた」と誤認されて
-  // recordApiMissing() が呼ばれてしまう ── 2回連続でこれが起きると
-  // priority=delisted(0) まで落ち、実際には生きている作品が巡回対象から
-  // 実質除外されてしまう重大なデータ破損につながっていた。
-  // 一致率が極端に低い場合も同じ「汚染されたレスポンス」として扱い、
-  // recordApiMissing ではなく recordFetchError（priorityは下げず、
-  // intervalのみ延長）に倒す。少数件バッチ(数件程度)はたまたま低一致率に
-  // なりうるため、ある程度まとまった件数のバッチのみを対象にする。
-  const MIN_BATCH_FOR_RATIO_CHECK = 4;   // これ未満の件数は対象外（誤検出防止）
-  // バグ修正(②): 0.3だと「50件中22件しか一致しない(44%)」のような中途半端な
-  // 汚染を見逃し、残りの28件がdb.recordApiMissing()で個別に「削除済み」誤判定
-  // されていた(2回連続でpriority=delisted(0)まで格下げ＝実質永久除外という
-  // 重大なデータ破損)。DLsiteのカタログ構造上、ランダムな50件バッチの半数以上が
-  // 同時に削除される事は現実的にまず起きないため、閾値を0.6に引き上げる。
-  // 誤ってCDN汚染扱いにする副作用は「再チェックが少し遅れる」程度で済むが、
-  // 誤ってdelisted落ちさせる副作用は「生きている作品が巡回対象から長期間
-  // 脱落する」でありダメージが非対称に大きいため、安全側に倒す。
-  const SUSPECT_MATCH_RATIO       = 0.6; // 一致率がこれ未満なら汚染を疑う
-  const matchedCount = works.filter(w => {
-    const rj    = w.rj_code.toUpperCase();
-    const nopad = rj.replace(/^RJ0+/, 'RJ');
-    return rj in normalizedBody || nopad in normalizedBody;
-  }).length;
-  const matchRatio       = works.length > 0 ? matchedCount / works.length : 1;
-  const isFullMismatch   = matchedCount === 0 && Object.keys(normalizedBody).length > 0;
-  const isPartialSuspect = works.length >= MIN_BATCH_FOR_RATIO_CHECK
-    && matchedCount > 0
-    && matchRatio < SUSPECT_MATCH_RATIO;
+  // バグ修正: 以前は matchRatio（要求件数に対する一致件数の割合）が低いだけで
+  // バッチ全体を「別バッチ向けキャッシュ汚染」と断定し、一致した作品まで含めて
+  // 丸ごと recordFetchError に倒していた。しかし実運用ログでは、返ってきた
+  // キーが少数でも「要求したバッチに実在するRJ」ばかりで、他バッチのRJが
+  // 紛れ込んでいるわけではないケースが大量発生していた
+  // (例: 50件要求して15件しか返らないが、その15件は全て要求リスト内のRJ)。
+  // これは「古い/削除済み作品が多いバッチでAPIが部分応答している」だけの
+  // 正常な挙動であり、汚染ではない。汚染の実際の兆候は「返ってきたキーが
+  // 要求リストに存在しない(＝無関係な別バッチのRJ)」ことなので、
+  // matchRatio ではなく foreignRatio（返ってきたキーのうち要求外だった割合）
+  // で判定する。これにより:
+  //   1. 本物の汚染（無関係なRJが大量に混入）は引き続き検出してrecordFetchErrorに倒す
+  //   2. 単なる部分応答（一致した分は要求リスト内）は通常の per-work ループに通し、
+  //      一致した作品は正しく価格保存され、不在の作品は recordApiMissing の
+  //      段階的退避(7日→30日→180日+priority低下)に正しく乗る
+  // (2)が無限リトライループ化していたのが本件の主因。
+  const requestedKeys = new Set();
+  for (const w of works) {
+    const rj = w.rj_code.toUpperCase();
+    requestedKeys.add(rj);
+    requestedKeys.add(rj.replace(/^RJ0+/, 'RJ'));
+  }
+  const returnedKeys = Object.keys(normalizedBody);
+  const foreignKeys  = returnedKeys.filter(k => !requestedKeys.has(k));
+  const foreignRatio = returnedKeys.length > 0 ? foreignKeys.length / returnedKeys.length : 0;
 
-  if (works.length > 0 && (isFullMismatch || isPartialSuspect)) {
-    log.error('[detail] response mismatch (requested RJs mostly not found, likely stale CDN/proxy cache) — treating as fetch error, not delisted', {
+  const MIN_BATCH_FOR_RATIO_CHECK  = 4;    // 部分一致の疑いはこれ未満の件数だと対象外（誤検出防止）
+  const CONTAMINATION_FOREIGN_RATIO = 0.5; // 返ってきたキーの半数以上が要求外なら汚染とみなす
+  // 完全不一致(foreignRatio=1, 一致0件)はバッチサイズによらず常に汚染確定として扱う。
+  // 部分不一致は少数件バッチだとたまたま起きうるため MIN_BATCH_FOR_RATIO_CHECK で足切りする。
+  const isContaminated = returnedKeys.length > 0 && (
+    foreignRatio === 1 ||
+    (works.length >= MIN_BATCH_FOR_RATIO_CHECK && foreignRatio >= CONTAMINATION_FOREIGN_RATIO)
+  );
+
+  if (isContaminated) {
+    const matchedCount = works.length - works.filter(w => {
+      const rj    = w.rj_code.toUpperCase();
+      const nopad = rj.replace(/^RJ0+/, 'RJ');
+      return !(rj in normalizedBody || nopad in normalizedBody);
+    }).length;
+    log.error('[detail] response contaminated (returned keys mostly unrelated to requested batch, likely stale CDN/proxy cache) — treating as fetch error, not delisted', {
       site,
       requestedCount: works.length,
       matchedCount,
-      matchRatio: matchRatio.toFixed(2),
+      foreignRatio: foreignRatio.toFixed(2),
       requested: works.map(w => w.rj_code),
-      availableSample: Object.keys(normalizedBody).slice(0, 5),
+      foreignSample: foreignKeys.slice(0, 5),
     });
     db.transactionNoSave(() => {
       for (const w of works) db.recordFetchError(w.rj_code);
