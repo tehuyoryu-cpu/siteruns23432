@@ -107,6 +107,13 @@ async function _processOne(rj) {
     html = await _getText(_WORK_URL(rj));
   } catch (e) {
     log.warn('[compScan] detail fetch failed', rj, e.message);
+    // バグ修正: 以前はここで markCompCandidateProcessed を呼んでいなかったため、
+    // comp_candidates は processed_at IS NULL の間ずっと due 扱いになる
+    // (このテーブルには価格巡回のような interval/priority による再試行制御が無い)。
+    // 404で恒久的に取得できない作品(削除済み/ゴーストRJ)が、毎回のcompScan実行で
+    // 際限なく再フェッチされ続けていた。取得失敗も明示的に処理済みとして
+    // 記録し、無限リトライを止める。
+    db.markCompCandidateProcessed(rj, 'fetch-failed');
     return { rj, ok: false };
   }
 
