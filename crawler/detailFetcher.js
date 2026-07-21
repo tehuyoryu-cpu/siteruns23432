@@ -129,7 +129,7 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
-  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0 };
+  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0 };
 
   // サイト別グループ
   // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
@@ -171,6 +171,7 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
         result.contaminated  += r.contaminated;
         result.fetchFail     += r.fetchFail;
         result.storeError    += r.storeError;
+        result.verifiedAlive += r.verifiedAlive;
         onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
 
         batchesSinceSave++;
@@ -280,7 +281,7 @@ function saveDiscoveredPrice(rjCode, priceData) {
 // ─── バッチ処理 ───────────────────────────────────────────────────────────────
 
 async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.rateLimit) {
-  const result = { processed: 0, priceChanges: 0, errors: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0 };
+  const result = { processed: 0, priceChanges: 0, errors: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0 };
 
   // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
   // fetchError扱いにする（priorityは下げない・intervalのみ延長）。
@@ -328,6 +329,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     result.contaminated  += r1.contaminated  + r2.contaminated;
     result.fetchFail      += r1.fetchFail      + r2.fetchFail;
     result.storeError    += r1.storeError    + r2.storeError;
+    result.verifiedAlive += r1.verifiedAlive + r2.verifiedAlive;
     return result;
   }
 
@@ -418,6 +420,45 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     return result;
   }
 
+  // ── delisted化直前の作品だけ、詳細ページへ直接アクセスして存在確認する ──────
+  // バッチAPIが「不在」を返しても、CDN/プロキシのキャッシュ汚染や一時的な
+  // API不調である可能性が残る。特に consecutive_errors が既に1件溜まっている
+  // 作品は、今回のミスで recordApiMissing() が priority=delisted まで
+  // 落としてしまう(=以後最大180日ほぼ再確認されなくなる)ため、その直前だけ
+  // 作品詳細ページ(/work/=/product_id/...)へ直接アクセスして本当に存在
+  // しないか確認する。閾値に達していない作品まで毎回確認すると負荷が増える
+  // ため、delisted化の瀬戸際にある作品だけに絞る。
+  const notFoundKeys = new Set();
+  for (const w of works) {
+    const rj      = w.rj_code.toUpperCase();
+    const rjNopad = rj.replace(/^RJ0+/, 'RJ');
+    if (!(rj in normalizedBody || rjNopad in normalizedBody)) notFoundKeys.add(w.rj_code);
+  }
+
+  const toVerify = [];
+  for (const rjCode of notFoundKeys) {
+    const w = db.getWorkByRj(rjCode);
+    if ((w?.consecutive_errors ?? 0) >= 1) toVerify.push(rjCode);
+  }
+
+  const verifiedAlive = new Set();
+  if (toVerify.length) {
+    const VERIFY_CONCURRENCY = 3;
+    let vi = 0;
+    const verifyWorker = async () => {
+      while (vi < toVerify.length) {
+        const rjCode = toVerify[vi++];
+        const status = await _verifyRjExists(rjCode, site);
+        if (status === 'exists') {
+          verifiedAlive.add(rjCode);
+          log.warn('[detail] API missing but detail page confirms existence — rescuing from delisting', rjCode);
+        }
+        await sleep(300);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(VERIFY_CONCURRENCY, toVerify.length) }, verifyWorker));
+  }
+
   db.transactionNoSave(() => {
     for (const w of works) {
       try {
@@ -427,11 +468,21 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         const found   = rj in normalizedBody || rjNopad in normalizedBody;
 
         if (!found) {
-          log.warn('[detail] key not in API response', rj,
-            'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
-          db.recordApiMissing(dbKey);   // API不在→急速退避
-          result.errors++;
-          result.apiMissing++;
+          if (verifiedAlive.has(dbKey)) {
+            // 詳細ページで実在確認済み → delisted化させず、一時的な取得失敗として扱う
+            // (priorityは維持、intervalのみ延長。真に削除済みなら次回以降も
+            //  ミスが続き、いずれ consecutive_errors 増加で自然にdelistedへ至る)
+            db.recordFetchError(dbKey);
+            result.errors++;
+            result.fetchFail++;
+            result.verifiedAlive++;
+          } else {
+            log.warn('[detail] key not in API response', rj,
+              'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
+            db.recordApiMissing(dbKey);   // API不在→急速退避
+            result.errors++;
+            result.apiMissing++;
+          }
           continue;
         }
 
@@ -457,6 +508,24 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   });
 
   return result;
+}
+
+// ─── 詳細ページ直読み確認（delisted化の瀬戸際にある作品のみ）───────────────────
+// product/info/ajax バッチAPIではなく、作品詳細ページ本体へ直接アクセスして
+// 存在有無を独立に確認する。バッチAPI側の一時的な不調・CDNキャッシュ汚染と
+// 「本当に削除/非公開になった」を切り分けるための最終確認手段。
+async function _verifyRjExists(rjCode, site) {
+  const url = `${BASE}/${site}/work/=/product_id/${rjCode}.html`;
+  try {
+    const res = await fetchWithRetry(url, { headers: { Accept: 'text/html' } });
+    if (res.status === 404) return 'gone';
+    if (res.ok) return 'exists';
+    log.warn('[detail] verifyRjExists non-ok/non-404 response', rjCode, res.status);
+    return 'unknown';
+  } catch (e) {
+    log.warn('[detail] verifyRjExists fetch error', rjCode, e.message);
+    return 'unknown';
+  }
 }
 
 // ─── API fetch ────────────────────────────────────────────────────────────────
