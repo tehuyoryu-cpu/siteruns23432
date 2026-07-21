@@ -335,6 +335,13 @@ function _applySchema() {
     // 次回実行時は未チェック/最も古くチェックされたサークルから優先的に
     // 対象にする（既存の getDueWorks の next_check_at と同じ考え方）。
     'ALTER TABLE circles ADD COLUMN last_gap_checked INTEGER DEFAULT 0',
+    // バグ修正: 総集編詳細ページの取得が一時的なネットワーク不調で失敗しただけでも
+    // 即座に processed_at を確定させてしまい、getDueCompCandidates は
+    // processed_at IS NULL のみを対象にするため、その総集編が二度と再解析
+    // されなくなる不具合があった。fail_count で失敗回数を数え、一定回数
+    // (compScan.js側で判定)に達するまでは processed_at を確定させず
+    // due のまま残して次回スキャンで再試行できるようにする。
+    'ALTER TABLE comp_candidates ADD COLUMN fail_count INTEGER DEFAULT 0',
   ];
 
   for (const sql of migrations) {
@@ -1054,14 +1061,37 @@ function addCompCandidates(rjCodes) {
   return added;
 }
 
-/** 詳細解析がまだの候補(processed_at IS NULL)を取得 */
+/** 詳細解析がまだの候補(processed_at IS NULL)を取得。古い順(FIFO)で公平に処理する */
 function getDueCompCandidates(limit = 50) {
-  return _all(`SELECT rj_code FROM comp_candidates WHERE processed_at IS NULL LIMIT ?`, [limit]).map(r => r.rj_code);
+  return _all(
+    `SELECT rj_code FROM comp_candidates WHERE processed_at IS NULL ORDER BY discovered_at ASC LIMIT ?`,
+    [limit]
+  ).map(r => r.rj_code);
 }
 
 function markCompCandidateProcessed(rjCode, status = 'done') {
   runInTransaction(() => {
     _run(`UPDATE comp_candidates SET processed_at = ?, status = ? WHERE rj_code = ?`, [unixNow(), status, rjCode]);
+  });
+}
+
+/**
+ * 詳細ページ取得/解析が失敗した際に呼ぶ。404等の「確定的に消えた」ケースとは
+ * 異なり、ネットワーク不調や一時的なDLsite側の不調である可能性があるため、
+ * fail_count が maxAttempts に達するまでは processed_at を確定させず due の
+ * まま残す(＝次回のcompScan実行で自然に再試行される)。達した時点でのみ
+ * 諦めて processed_at を確定させる。
+ */
+function recordCompCandidateFetchFail(rjCode, status = 'fetch-failed', maxAttempts = 5) {
+  runInTransaction(() => {
+    const row      = _get('SELECT fail_count FROM comp_candidates WHERE rj_code = ?', [rjCode]);
+    const attempts = (row?.fail_count ?? 0) + 1;
+    if (attempts >= maxAttempts) {
+      _run(`UPDATE comp_candidates SET processed_at = ?, status = ?, fail_count = ? WHERE rj_code = ?`,
+        [unixNow(), status, attempts, rjCode]);
+    } else {
+      _run(`UPDATE comp_candidates SET fail_count = ? WHERE rj_code = ?`, [attempts, rjCode]);
+    }
   });
 }
 
@@ -1698,6 +1728,7 @@ module.exports = {
   addCompCandidates,
   getDueCompCandidates,
   markCompCandidateProcessed,
+  recordCompCandidateFetchFail,
   addCompWorksDirect,
   addCompCandidateScored,
   getCompPending,

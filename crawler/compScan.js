@@ -107,13 +107,17 @@ async function _processOne(rj) {
     html = await _getText(_WORK_URL(rj));
   } catch (e) {
     log.warn('[compScan] detail fetch failed', rj, e.message);
-    // バグ修正: 以前はここで markCompCandidateProcessed を呼んでいなかったため、
-    // comp_candidates は processed_at IS NULL の間ずっと due 扱いになる
-    // (このテーブルには価格巡回のような interval/priority による再試行制御が無い)。
-    // 404で恒久的に取得できない作品(削除済み/ゴーストRJ)が、毎回のcompScan実行で
-    // 際限なく再フェッチされ続けていた。取得失敗も明示的に処理済みとして
-    // 記録し、無限リトライを止める。
-    db.markCompCandidateProcessed(rj, 'fetch-failed');
+    // バグ修正: 以前はどんな失敗理由でも即座に processed_at を確定させていたため、
+    // 一時的なネットワーク不調やDLsite側の瞬断で取得に失敗しただけの総集編候補も
+    // 二度と再解析されなくなっていた(comp_candidatesにはprocessed_at IS NULLの
+    // 間しかdue扱いにならず、Phase Aも既存rj_codeは再投入しないため復活経路がない)。
+    // 404(確定的に削除済み)だけは即座に諦め、それ以外はfail_countで回数管理し、
+    // 閾値未満なら processed_at を確定させずdueのまま残して次回スキャンで再試行する。
+    if (/^HTTP 404$/.test(e.message)) {
+      db.markCompCandidateProcessed(rj, 'gone');
+    } else {
+      db.recordCompCandidateFetchFail(rj, 'fetch-failed');
+    }
     return { rj, ok: false };
   }
 
@@ -139,7 +143,9 @@ async function _processOne(rj) {
     return { rj, ok: true, direct: 0, confirmed: 0, pending: 0 };
   } catch (e) {
     log.warn('[compScan] estimate failed', rj, e.message);
-    db.markCompCandidateProcessed(rj, 'error');
+    // 同上の理由で、推定処理中の失敗(サークル一覧取得の一時的な不調等)も
+    // 即座に確定させず、fail_countで回数管理してから諦める。
+    db.recordCompCandidateFetchFail(rj, 'error');
     return { rj, ok: false };
   }
 }
