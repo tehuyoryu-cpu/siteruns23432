@@ -133,7 +133,7 @@ function _loadLowestPrices() {
 /**
  * 直近 RECENT_LOG_N 件の実質価格ログ(新しい順)。
  * トレンド計算(content.js の calcScore と同じ用途)に使う。
- * sql.js の SQLite が window function 未対応のビルドだった場合に備え、
+ * better-sqlite3が同梱するSQLiteはwindow function標準対応だが、念のため
  * 失敗時は空マップにフォールバックする(致命的にしない)。
  */
 function _loadRecentLogs() {

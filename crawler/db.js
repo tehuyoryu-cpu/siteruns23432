@@ -2,95 +2,104 @@
 
 /**
  * crawler/db.js
- * SQLite access layer â sql.js (pure WASM, no native binaries).
+ * SQLite access layer — better-sqlite3 (native binding, synchronous, direct file I/O).
  *
- * External API is identical to the better-sqlite3 version.
- * Internal implementation uses sql.js with manual file persistence.
+ * 移行の背景 (sql.js → better-sqlite3):
+ *   sql.js は DB 全体をメモリ上のバイト列として保持し、変更のたびに
+ *   `_db.export()` で全体を再シリアライズして丸ごと書き直す方式だった。
+ *   これが DB サイズ(350MB超)に比例して重くなり、`[db] save slow` の
+ *   直接の原因だった(export自体は数十〜数百msだが、export+writeFileの
+ *   合計が数秒〜十数秒かかるケースがあった)。
+ *   better-sqlite3 はネイティブSQLiteに対して直接・同期的に読み書きするため、
+ *   「変更のたびに全体をシリアライズし直す」という構造的コストがそもそも
+ *   存在しない。WALモードにより単一トランザクションの書き込みは
+ *   ページ単位の追記で完結する。
  *
- * Persistence strategy:
- *   _save() is called after every mutating operation.
- *   On startup, the DB file is loaded from disk if it exists.
+ * これに伴う設計変更:
+ *   - _save()/_saveNow() は事実上不要になった（各トランザクション/文の
+ *     実行と同時にディスクへ反映される）。ただし他モジュールから
+ *     db.save() を呼んでいる箇所が複数あるため、互換性のために
+ *     no-op として残す。
+ *   - transaction()/transactionNoSave()/runInTransaction() は
+ *     better-sqlite3 のネイティブ `_db.transaction(fn)` を使うよう統一した。
+ *     これは SAVEPOINT によるネスト対応を標準サポートするため、
+ *     旧コードにあった「ネストするとBEGIN二重発行でエラーになる」という
+ *     制約（recordPriceIssue 等のコメント参照）が解消されている。
+ *   - backup() は better-sqlite3 のオンラインバックアップAPI
+ *     (`_db.backup(destPath)`) を使う。DB全体をJSバッファへロードしてから
+ *     書き出す旧実装と異なり、SQLite本体が安全にページ単位でコピーする。
  *
  * Initialisation:
- *   await db.init()   â must be called once before any other function.
- *   db.open()         â returns the live Database instance (throws if not ready).
+ *   await db.init()   — must be called once before any other function.
+ *                        (better-sqlite3 自体は同期APIだが、呼び出し側の
+ *                        `await db.init()` との互換性のため async のまま維持)
  */
 
-const initSqlJs = require('sql.js');
-const fs         = require('fs');
-const path       = require('path');
-const crypto     = require('crypto');
-const config     = require('../config');
-const log        = require('./logger');
+const Database = require('better-sqlite3');
+const fs        = require('fs');
+const path      = require('path');
+const crypto    = require('crypto');
+const config    = require('../config');
+const log       = require('./logger');
 
-let _db      = null;   // sql.js Database instance
-let _SQL     = null;   // sql.js namespace
-// electron-builder portable exe ã§ã¯ PORTABLE_EXECUTABLE_DIR ã exe ã®ãã£ã¬ã¯ããªãæã
+let _db = null;   // better-sqlite3 Database instance
+// electron-builder portable exe では PORTABLE_EXECUTABLE_DIR が exe のディレクトリを指す
 const _exeDir = process.env.DLSITE_DATA_DIR
   || process.env.PORTABLE_EXECUTABLE_DIR
   || process.cwd();
 const DB_PATH = path.resolve(_exeDir, config.db.path);
 
-// âââ init / open / close ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── init / open / close ─────────────────────────────────────────────────────
 
 /**
- * Async initialisation. Must be awaited once before any DB call.
+ * Initialisation. Must be awaited once before any DB call.
  * Safe to call multiple times (idempotent).
+ * (better-sqlite3 は同期APIだが、呼び出し側の既存の `await db.init()` を
+ *  変更せずに済むよう async function のまま維持している)
  */
 async function init() {
   if (_db) return;
 
-  // Locate the WASM file correctly both in dev and inside a pkg exe.
-  _SQL = await initSqlJs({
-    locateFile: file => {
-      // 1. electron-builder ã§ããã±ã¼ã¸ãããå ´åï¼æ¬çªexeï¼
-      //    extraResources ã§ {resources}/sql-wasm.wasm ã«éç½®ããã
-      if (process.resourcesPath) {
-        return path.join(process.resourcesPath, file);
-      }
-      // 2. pkg ã§ããã±ã¼ã¸ãããå ´å
-      if (process.pkg) {
-        return path.join(path.dirname(process.execPath), file);
-      }
-      // 3. éçºç°å¢
-      return path.join(__dirname, '..', 'node_modules', 'sql.js', 'dist', file);
-    },
-  });
+  const existed = fs.existsSync(DB_PATH);
 
-  if (fs.existsSync(DB_PATH)) {
-    const buf = fs.readFileSync(DB_PATH);
-    _db = new _SQL.Database(buf);
+  try {
+    _db = new Database(DB_PATH);
+  } catch (e) {
+    log.error('[db] failed to open database file', e.message, '— attempting recovery');
+    _db = _recoverFromCorruption();
+  }
+
+  // WAL: 読み取りと書き込みが競合しにくく、コミットも高速。
+  // synchronous=NORMAL は WAL との組み合わせで推奨される設定
+  // （アプリクラッシュに対しては安全、OSクラッシュ/停電時のみ僅かにリスクあり。
+  //  巡回アプリの用途では十分な安全性とパフォーマンスのバランス）。
+  _db.pragma('journal_mode = WAL');
+  _db.pragma('synchronous = NORMAL');
+
+  if (existed) {
     log.info('[db] loaded', DB_PATH);
-    // sql.js/SQLite does not fully validate the file on open — a corrupted
-    // page only throws 'database disk image is malformed' once a query
-    // actually touches it. Without this check, the app appears to work
-    // fine at startup and only fails unpredictably mid-job later (this is
-    // exactly what happened: every job that touched a bad page rolled
-    // back instantly, making 'all'/'endingsoon'/etc. look like they
-    // "finished immediately" while actually crashing on their first write).
-    // Run an explicit integrity check now so we can recover up front.
+    // better-sqlite3/SQLite はファイルを開いた時点では全体を検証しない。
+    // 破損ページは実際にそこへアクセスした時だけ例外を投げるため、
+    // 明示的に整合性チェックしてから使い始める。
     if (!_checkIntegrity()) {
       log.error('[db] integrity check FAILED on load — attempting recovery');
-      _db.close();
-      _db = _recoverFromCorruption(buf);
+      try { _db.close(); } catch { /* ignore */ }
+      _db = _recoverFromCorruption();
     }
   } else {
-    _db = new _SQL.Database();
     log.info('[db] created', DB_PATH);
   }
 
   const schemaChanged = _applySchema();
   if (schemaChanged) {
-    log.info('[db] schema changed — saving...');
-    await _saveNow();
-    log.info('[db] save complete');
+    log.info('[db] schema changed/migrated');
   }
 }
 
-/** Returns the live sql.js Database. Throws if init() was not awaited. */
+/** DBをクローズする。呼び出し側の `await db.close()` との互換性のため async のまま維持。 */
 async function close() {
   if (_db) {
-    await _saveNow();
+    try { _db.pragma('wal_checkpoint(TRUNCATE)'); } catch (e) { log.warn('[db] checkpoint on close failed', e.message); }
     _db.close();
     _db = null;
     log.info('[db] closed');
@@ -100,9 +109,7 @@ async function close() {
 /** true if PRAGMA integrity_check reports 'ok'. */
 function _checkIntegrity() {
   try {
-    const row = _db.exec('PRAGMA integrity_check');
-    const val = row?.[0]?.values?.[0]?.[0];
-    return val === 'ok';
+    return _db.pragma('integrity_check', { simple: true }) === 'ok';
   } catch (e) {
     log.error('[db] integrity_check threw', e.message);
     return false;
@@ -110,20 +117,22 @@ function _checkIntegrity() {
 }
 
 /**
- * Recovery order when the loaded DB fails integrity_check:
- *   1. Quarantine the corrupt file (rename, never delete — for forensics).
+ * Recovery order when the DB file fails to open or fails integrity_check:
+ *   1. Quarantine the corrupt file (copy aside, never delete — for forensics).
  *   2. Try the newest verified backup (backups/*.db + matching .meta.json,
  *      sha256-checked via verifyBackup()).
  *   3. If no valid backup exists, start a fresh empty DB (data loss, but
  *      keeps the app usable instead of erroring on every job forever).
  */
-function _recoverFromCorruption(corruptBuf) {
+function _recoverFromCorruption() {
   const quarantineDir = path.resolve(path.dirname(DB_PATH), 'corrupted');
   try {
     fs.mkdirSync(quarantineDir, { recursive: true });
     const dest = path.join(quarantineDir, `dlsite-corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}.db`);
-    fs.writeFileSync(dest, corruptBuf);
-    log.error('[db] corrupt file quarantined at', dest);
+    if (fs.existsSync(DB_PATH)) {
+      fs.copyFileSync(DB_PATH, dest);
+      log.error('[db] corrupt file quarantined at', dest);
+    }
   } catch (e) {
     log.error('[db] failed to quarantine corrupt file', e.message);
   }
@@ -137,6 +146,7 @@ function _recoverFromCorruption(corruptBuf) {
       .sort((a, b) => b.name.localeCompare(a.name)); // newest first (timestamp in filename)
   } catch { /* no backups dir */ }
 
+  const tmpTest = DB_PATH + '.recovery-test';
   for (const c of candidates) {
     const v = verifyBackup(c.full);
     if (!v.ok) {
@@ -144,27 +154,34 @@ function _recoverFromCorruption(corruptBuf) {
       continue;
     }
     try {
-      const buf = fs.readFileSync(c.full);
-      const restored = new _SQL.Database(buf);
-      const savedDb = _db;
-      _db = restored;
-      if (_checkIntegrity()) {
+      fs.copyFileSync(c.full, tmpTest);
+      const testDb = new Database(tmpTest);
+      const ok = testDb.pragma('integrity_check', { simple: true }) === 'ok';
+      testDb.close();
+      if (ok) {
+        fs.copyFileSync(tmpTest, DB_PATH);
+        try { fs.unlinkSync(DB_PATH + '-wal'); } catch { /* ignore */ }
+        try { fs.unlinkSync(DB_PATH + '-shm'); } catch { /* ignore */ }
+        fs.unlinkSync(tmpTest);
         log.error('[db] RECOVERED from backup', c.name, '— data since this backup is LOST, review corrupted/ and backups/ manually');
-        return restored;
+        return new Database(DB_PATH);
       }
-      _db = savedDb;
-      restored.close();
+      fs.unlinkSync(tmpTest);
       log.warn('[db] backup also failed integrity_check, trying older one', c.name);
     } catch (e) {
       log.warn('[db] backup restore attempt failed', c.name, e.message);
+      try { fs.unlinkSync(tmpTest); } catch { /* ignore */ }
     }
   }
 
   log.error('[db] NO usable backup found — starting with a fresh empty database. Manual recovery from corrupted/ may be possible.');
-  return new _SQL.Database();
+  try { fs.unlinkSync(DB_PATH); } catch { /* ignore */ }
+  try { fs.unlinkSync(DB_PATH + '-wal'); } catch { /* ignore */ }
+  try { fs.unlinkSync(DB_PATH + '-shm'); } catch { /* ignore */ }
+  return new Database(DB_PATH);
 }
 
-// âââ schema âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── schema ──────────────────────────────────────────────────────────────────
 
 function _fixLegacyCompTables() {
   // 旧バージョンで comp_works/comp_pending が異なるカラム構成のまま作成されていた場合、
@@ -175,12 +192,12 @@ function _fixLegacyCompTables() {
   // 必須カラムが無い旧スキーマを検出した場合は安全にDROPしてから通常のスキーマ適用に進む。
   for (const table of ['comp_works', 'comp_pending']) {
     try {
-      const res = _db.exec(`PRAGMA table_info(${table})`);
-      if (!res.length) continue; // テーブル未作成なら何もしない
-      const colNames = res[0].values.map(r => r[1]);
+      const rows = _db.prepare(`PRAGMA table_info(${table})`).all();
+      if (!rows.length) continue; // テーブル未作成なら何もしない
+      const colNames = rows.map(r => r.name);
       if (!colNames.includes('contained_rj')) {
         log.warn('[db] legacy schema detected, dropping and recreating', table);
-        _db.run(`DROP TABLE IF EXISTS ${table}`);
+        _db.exec(`DROP TABLE IF EXISTS ${table}`);
       }
     } catch (e) {
       log.warn('[db] legacy schema check failed', table, e.message);
@@ -192,7 +209,7 @@ function _applySchema() {
   let changed = false;
   _fixLegacyCompTables();
   console.log('[db] _applySchema: creating tables...');
-  _db.run(`
+  _db.exec(`
     CREATE TABLE IF NOT EXISTS works (
       rj_code               TEXT    PRIMARY KEY,
       title                 TEXT,
@@ -212,7 +229,7 @@ function _applySchema() {
       next_check_at         INTEGER DEFAULT 0
     );
 
-    -- forward-only migration: æ¢å­ãã¼ãã«ã¸ã®ã«ã©ã è¿½å 
+    -- forward-only migration: 既存テーブルへのカラム追加
     CREATE TABLE IF NOT EXISTS _migrations (id TEXT PRIMARY KEY);
 
     CREATE TABLE IF NOT EXISTS price_history (
@@ -300,7 +317,7 @@ function _applySchema() {
     CREATE INDEX IF NOT EXISTS idx_price_issues_type    ON price_issues(issue_type);
   `);
 
-  // æ¢å­DBã¸ã®å®å¨ãªã«ã©ã è¿½å  (IF NOT EXISTS ã¯ä½¿ããªãã®ã§try/catch)
+  // 既存DBへの安全なカラム追加 (IF NOT EXISTS は使えないので try/catch)
   const migrations = [
     'ALTER TABLE works ADD COLUMN consecutive_errors INTEGER DEFAULT 0',
     'ALTER TABLE price_history ADD COLUMN is_on_sale    INTEGER DEFAULT 0',
@@ -320,16 +337,15 @@ function _applySchema() {
     'ALTER TABLE circles ADD COLUMN last_gap_checked INTEGER DEFAULT 0',
   ];
 
-
   for (const sql of migrations) {
     try {
-      _db.run(sql);
+      _db.exec(sql);
       log.info('[db] migrated:', sql.slice(0, 60));
       changed = true;
       // next_check_at は新規カラムなので既存行に一度だけ初期値を入れる
       // (due 作品検索を計算式の全件スキャンからインデックス参照に変えるため)
       if (sql.includes('next_check_at')) {
-        _db.run('UPDATE works SET next_check_at = last_checked + check_interval');
+        _db.exec('UPDATE works SET next_check_at = last_checked + check_interval');
         log.info('[db] backfilled next_check_at for existing works');
       }
     }
@@ -340,20 +356,20 @@ function _applySchema() {
   // CREATE TABLE 直後にまとめて作ると、既存DBでは ALTER 前にこの文が実行されてしまい
   // 「no such column: next_check_at」で起動が落ちるバグがあったため、ここに移動した。
   try {
-    _db.run('CREATE INDEX IF NOT EXISTS idx_works_next_check ON works(next_check_at)');
+    _db.exec('CREATE INDEX IF NOT EXISTS idx_works_next_check ON works(next_check_at)');
     // getDueWorks の ORDER BY priority DESC, next_check_at ASC に対応した複合インデックス。
     // priority 単列は別途インデックスがないため、20万件規模でインメモリソートが発生していた。
-    _db.run('CREATE INDEX IF NOT EXISTS idx_works_priority_next ON works(priority DESC, next_check_at ASC)');
+    _db.exec('CREATE INDEX IF NOT EXISTS idx_works_priority_next ON works(priority DESC, next_check_at ASC)');
   } catch (e) {
     log.error('[db] failed to create idx_works_next_check:', e.message);
   }
   // cur_* カラム(非正規化価格)が存在する状態になった後でソート用indexを作成
   try {
-    _db.run('CREATE INDEX IF NOT EXISTS idx_works_cur_discount ON works(cur_discount_rate)');
-    _db.run('CREATE INDEX IF NOT EXISTS idx_works_cur_price    ON works(cur_price)');
-    _db.run('CREATE INDEX IF NOT EXISTS idx_works_on_sale      ON works(is_on_sale)');
+    _db.exec('CREATE INDEX IF NOT EXISTS idx_works_cur_discount ON works(cur_discount_rate)');
+    _db.exec('CREATE INDEX IF NOT EXISTS idx_works_cur_price    ON works(cur_price)');
+    _db.exec('CREATE INDEX IF NOT EXISTS idx_works_on_sale      ON works(is_on_sale)');
     // circleGapScanの再開・ローテーション用（last_gap_checked ASCでの並び替えを高速化）
-    _db.run('CREATE INDEX IF NOT EXISTS idx_circles_gap_checked ON circles(last_gap_checked)');
+    _db.exec('CREATE INDEX IF NOT EXISTS idx_circles_gap_checked ON circles(last_gap_checked)');
   } catch (e) {
     log.error('[db] failed to create cur_* indexes:', e.message);
   }
@@ -364,22 +380,17 @@ function _applySchema() {
   {
     const VALID = ['maniax', 'girls', 'home', 'bl', 'pro'];
     const ph    = VALID.map(() => '?').join(',');
-    const stmt  = _db.prepare(`UPDATE works SET site_id = 'maniax' WHERE site_id NOT IN (${ph})`);
-    stmt.bind(VALID);
-    stmt.step();
-    stmt.free();
-    const rows = _db.getRowsModified();
-    if (rows > 0) { log.info('[db] fixed invalid site_id -> maniax:', rows, '件'); changed = true; }
+    const result = _db.prepare(`UPDATE works SET site_id = 'maniax' WHERE site_id NOT IN (${ph})`).run(...VALID);
+    if (result.changes > 0) { log.info('[db] fixed invalid site_id -> maniax:', result.changes, '件'); changed = true; }
   }
   // ゴーストRJコード（末尾000パターン）の掃除
   // 旧discoveryバグでDBに混入したコードをDBから削除して無駄なAPIリクエストを止める
   try {
-    const ghostStmt = _db.prepare(`DELETE FROM works WHERE rj_code GLOB 'RJ*000' OR rj_code GLOB 'RJ*0000' OR rj_code = 'RJ000000'`);
-    ghostStmt.step();
-    ghostStmt.free();
-    const ghostRows = _db.getRowsModified();
-    if (ghostRows > 0) {
-      log.info('[db] removed ghost RJ codes (trailing 000):', ghostRows, '件');
+    const ghostResult = _db.prepare(
+      `DELETE FROM works WHERE rj_code GLOB 'RJ*000' OR rj_code GLOB 'RJ*0000' OR rj_code = 'RJ000000'`
+    ).run();
+    if (ghostResult.changes > 0) {
+      log.info('[db] removed ghost RJ codes (trailing 000):', ghostResult.changes, '件');
       changed = true;
     }
   } catch (e) {
@@ -402,9 +413,8 @@ function _applySchema() {
         OR rj_code LIKE 'RJ0000000' OR rj_code LIKE 'RJ00000000'
       ) AND consecutive_errors < 99
     `;
-    _db.run(ghostSql);
-    const ghostRows = _db.getRowsModified();
-    if (ghostRows > 0) log.info('[db] ghost RJ codes quarantined:', ghostRows, '件');
+    const ghostResult = _db.prepare(ghostSql).run();
+    if (ghostResult.changes > 0) log.info('[db] ghost RJ codes quarantined:', ghostResult.changes, '件');
   }
 
   // cur_price 非正規化カラムのバックフィル（既存DBの cur_price が NULL の作品のみ）
@@ -412,7 +422,7 @@ function _applySchema() {
     const pending = _get(`SELECT COUNT(*) AS n FROM works WHERE cur_price IS NULL AND rj_code IN (SELECT rj_code FROM price_history)`);
     if (pending && pending.n > 0) {
       console.log('[db] backfilling cur_price for', pending.n, 'works...');
-      _db.run(`
+      _db.exec(`
         UPDATE works SET
           cur_price        = (SELECT price         FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
           cur_sale_price    = (SELECT sale_price    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
@@ -443,22 +453,22 @@ function _applySchema() {
     `);
     if (dupCheck && dupCheck.n > 0) {
       console.log('[db] price_history 重複行を間引き中...', dupCheck.n, '組');
-      _db.run(`
+      _db.exec(`
         DELETE FROM price_history
         WHERE id NOT IN (SELECT MIN(id) FROM price_history GROUP BY rj_code, checked_at)
       `);
       changed = true;
     }
-    _db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_ph_rj_checked_unique ON price_history(rj_code, checked_at)');
+    _db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_ph_rj_checked_unique ON price_history(rj_code, checked_at)');
   } catch (e) {
     console.error('[db] price_history unique index migration error:', e.message);
   }
 
-  console.log('[db] _applySchema: done, changed='+changed);
+  console.log('[db] _applySchema: done, changed=' + changed);
   return changed;
 }
 
-// âââ low-level query helpers âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── low-level query helpers ──────────────────────────────────────────────────
 
 /**
  * Execute a SELECT and return the first row as a plain object, or null.
@@ -466,160 +476,77 @@ function _applySchema() {
  * @param {Array}  params  positional values matching ? placeholders
  */
 function _get(sql, params = []) {
-  const stmt = _db.prepare(sql);
-  stmt.bind(params);
-  const row = stmt.step() ? stmt.getAsObject() : null;
-  stmt.free();
-  return row;
+  return _db.prepare(sql).get(...params) ?? null;
 }
 
 /**
  * Execute a SELECT and return all rows as plain objects.
  */
 function _all(sql, params = []) {
-  const stmt = _db.prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) rows.push(stmt.getAsObject());
-  stmt.free();
-  return rows;
+  return _db.prepare(sql).all(...params);
 }
 
 /**
- * Execute an INSERT / UPDATE / DELETE, then persist to disk.
- */
-/**
- * åçºãã¥ã¼ãã¼ã·ã§ã³ï¼å³æä¿å­ï¼ã
- * ãããå¦çã«ã¯ runInTransaction() ãä½¿ããã¨ã
+ * Execute an INSERT / UPDATE / DELETE.
+ * better-sqlite3 は同期・直接書き込みのため、sql.js版と異なり
+ * 呼び出しごとの明示的な永続化(_save())は不要（トランザクション/文の
+ * 実行と同時にディスクへ反映される）。戻り値の `.changes` で
+ * 影響を受けた行数を参照できる。
+ * @returns {{changes: number, lastInsertRowid: number|bigint}}
  */
 function _run(sql, params = []) {
-  const stmt = _db.prepare(sql);
-  stmt.bind(params);
-  stmt.step();
-  stmt.free();
-  // _save() ã¯å¼ã°ãªã: transaction() ã¾ãã¯æç¤ºç save() ã§å¶å¾¡
+  return _db.prepare(sql).run(...params);
 }
 
-/** è¤æ°ã® _run ãã²ã¨ã¾ã¨ãã«ãã¦æå¾ã«1åã ãä¿å­ã */
+/**
+ * 複数の _run をひとまとめにトランザクションで実行する。
+ * better-sqlite3 のネイティブ `_db.transaction(fn)` を使用。
+ * SAVEPOINT によるネストにも標準対応しているため、他のトランザクション内から
+ * 呼ばれても安全（旧sql.js実装ではBEGIN二重発行でエラーになっていた制約が解消）。
+ */
 function transaction(fn) {
   if (!_db) throw new Error('[db] transaction() called but _db is null (DB not initialized or already closed)');
-  _db.run('BEGIN');
   try {
-    fn();
-    _db.run('COMMIT');
-    _save();
+    _db.transaction(fn)();
   } catch (err) {
-    try { _db.run('ROLLBACK'); } catch (_) {}
     log.error('[db] transaction rolled back:', err.message);
     throw err;
   }
 }
 
 /**
- * transaction() と同じだが _save() を呼ばない。
- * sql.js の保存は export()+writeFileSync で DB 全体を毎回シリアライズし直すため、
- * 大量バッチ処理で毎回呼ぶと件数に比例して遅くなる。呼び出し側で save() の
- * タイミングを間引けるようにするためのバリエーション。
- * （クラッシュ時は直前の明示的な save() 地点まで巻き戻る）
+ * transaction() と同名で残しているが、better-sqlite3化により内部的には
+ * 完全に同一の実装になっている（sql.js版にあった「_save()を呼ばない」という
+ * 区別自体が、_save()がno-op化されたことで意味を持たなくなったため）。
+ * 呼び出し側コードを変更せずに済むよう、関数としては残す。
  */
 function transactionNoSave(fn) {
   if (!_db) throw new Error('[db] transactionNoSave() called but _db is null (DB not initialized or already closed)');
-  _db.run('BEGIN');
   try {
-    fn();
-    _db.run('COMMIT');
+    _db.transaction(fn)();
   } catch (err) {
-    try { _db.run('ROLLBACK'); } catch (_) {}
     log.error('[db] transactionNoSave rolled back:', err.message);
     throw err;
   }
 }
 
-/**
- * è¤æ°ãã¥ã¼ãã¼ã·ã§ã³ããã©ã³ã¶ã¯ã·ã§ã³ã§ã©ãããæå¾ã«1åã ãä¿å­ã
- * @param {Function} fn  dbæä½ãè¡ãåæé¢æ°
- */
+/** transaction() と同一実装（呼び出し側互換のため関数名を維持）。 */
 function runInTransaction(fn) {
   if (!_db) throw new Error('[db] runInTransaction() called but _db is null (DB not initialized or already closed)');
-  _db.run('BEGIN');
-  try {
-    fn();
-    _db.run('COMMIT');
-  } catch (err) {
-    _db.run('ROLLBACK');
-    throw err;
-  }
-  _save();   // â 1åã ã
-}
-
-
-/**
- * Persist the in-memory DB to disk. Debounced, and the actual disk write is
- * asynchronous (non-blocking).
- *
- * 重大バグ修正: 実測ログで export() 自体は35〜120msと高速な一方、
- * save全体としては最大12秒かかるケースがあった。原因は
- * `fs.writeFileSync()` で150MB超のファイルを同期書き込みしていたこと。
- * Node/Electronはシングルスレッドのため、この間はネットワークリクエストや
- * 他のタイマー・巡回処理が完全に停止する。「巡回が途中で止まって見える」
- * 症状の主因はこれだったと考えられる。fs.promises.writeFile による
- * 非同期書き込みに変更し、書き込み中も他の処理をブロックしないようにした。
- * また、書き込み中にクラッシュ/強制終了するとDBファイルが不完全な状態で
- * 上書きされ全損しうるため、一時ファイルに書いてからrenameする方式
- * （renameはファイルシステム上ほぼ原子的）に変更し、安全性も同時に高めた。
- * 加えて、書き込み中に次のsaveが呼ばれても多重に走らないようガードする。
- */
-let _saveTimer = null;
-
-// 重大バグ修正(DB破損の主因と推定): 以前は debounced _doSaveAsync()（非同期、
-// tmpファイルへの書き込み中）と _saveNow()（同期、close()/終了処理から
-// 直接呼ばれる）が同じ DB_PATH+'.tmp' へ独立に書き込みうる構造だった。
-// アプリ終了時に「非同期saveがtmpへ書き込み中」のタイミングで _saveNow() の
-// 同期書き込みが同じパスに割り込むと、2つの書き込みが同一ファイルへ
-// 交差し、どちらのrename()が最後に勝つかも不定になる。結果、サイズや
-// ページ構造が破損した .db が本番パスへrenameされうる。これが実際に
-// 観測された「database disk image is malformed」（起動直後は正常に見えて、
-// 破損したページに触れるまで気づかない）の主因と推定される。
-// 全ての書き込みを単一の Promise チェーンで直列化し、常に「前の書き込みが
-// 完全に終わってから次を始める」ことを保証する。
-let _saveChain = Promise.resolve();
-
-function _save() {
-  if (_saveTimer) return;
-  _saveTimer = setTimeout(() => {
-    _saveTimer = null;
-    _saveChain = _saveChain.then(_writeDbFile).catch(e => log.error('[db] save error:', e.message));
-  }, 3000);
-}
-
-async function _writeDbFile() {
-  const t0   = Date.now();
-  const data = _db.export();
-  const tExport = Date.now() - t0;
-  const tmpPath = DB_PATH + '.tmp';
-  await fs.promises.writeFile(tmpPath, Buffer.from(data));
-  await fs.promises.rename(tmpPath, DB_PATH);
-  const tTotal = Date.now() - t0;
-  if (tTotal > 1000) {
-    log.warn('[db] save slow:', tTotal + 'ms', `(export ${tExport}ms, size ${(data.length/1024/1024).toFixed(1)}MB)`);
-  }
+  _db.transaction(fn)();
 }
 
 /**
- * 即時書き出し（起動時マイグレーション・終了時専用）。
- * 保留中のdebounce保存があればキャンセルして代わりに今すぐ書く一方、
- * 既に進行中の非同期保存があれば必ずそれの完了を待ってから自分の
- * 書き込みを行う（_saveChain で直列化）。async化したため呼び出し側は
- * 必ず await すること（同期呼び出しは上記の破損レースを再発させる）。
+ * 互換用no-op。
+ * sql.js時代は debounce付きの全体export+writeFileが必要だったが、
+ * better-sqlite3は各文/トランザクションの実行と同時に直接ディスクへ
+ * 反映するため、明示的なsave操作は不要になった。
+ * 他モジュール(detailFetcher.js等)から呼ばれている箇所を変更せずに
+ * 済むよう、関数自体は残している。
  */
-async function _saveNow() {
-  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
-  const p = _saveChain.then(_writeDbFile);
-  _saveChain = p.catch(e => log.error('[db] saveNow error:', e.message));
-  await _saveChain;
-}
+function _save() { /* no-op: better-sqlite3 persists synchronously */ }
 
-// âââ works ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── works ────────────────────────────────────────────────────────────────────
 
 function upsertWork(w) {
   _run(`
@@ -665,7 +592,7 @@ function markChecked(rjCode, fields) {
   ]);
 }
 
-/** A: ãã§ããã¨ã©ã¼è¨é²ãé£ç¶ã¨ã©ã¼æ°ã«å¿ãã¦intervalãå»¶ã°ãã */
+/** A: フェッチエラー記録、連続エラー数に応じてintervalを延ばす */
 function recordFetchError(rjCode) {
   const w = getWorkByRj(rjCode);
   if (!w) return;
@@ -850,7 +777,7 @@ function boostWorkUrgent(rjCode, priority, checkInterval) {
   `, [priority, checkInterval, now, rjCode]);
 }
 
-/** â¡ ã»ã¼ã«çµäº: ãµã¼ã¯ã«å¨ä½åã®åªååº¦ã¨ééãéå¸¸å¤ã«æ»ã */
+/** サークル巡回終了: サークル全体の優先度と間隔を通常値に戻す */
 function resetCircleWorksPriority(makerId, priority, checkInterval) {
   _run(`
     UPDATE works
@@ -859,7 +786,7 @@ function resetCircleWorksPriority(makerId, priority, checkInterval) {
   `, [priority, checkInterval, checkInterval, makerId]);
 }
 
-// âââ price_history ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── price_history ─────────────────────────────────────────────────────────────
 
 function getLatestPrice(rjCode) {
   return _get(`
@@ -872,7 +799,7 @@ function getLatestPrice(rjCode) {
 
 /**
  * Insert a price row only when the price has changed vs the last record.
- * Returns true if a row was inserted.
+ * Returns { changed, consecutive_no_change }.
  */
 function savePriceIfChanged(rjCode, priceData) {
   // price_history への ORDER BY 全件スキャンをやめ、works に非正規化した
@@ -942,8 +869,8 @@ function savePriceIfChanged(rjCode, priceData) {
  * 全てここに委譲する。
  *
  * savePriceIfChanged()等の通常経路との違い:
- *   - prepared statementをループ全体で1回だけ用意し、bind/step/resetを
- *     使い回す（_run()は呼び出しごとにprepare()し直すため、数万行規模の
+ *   - prepared statementをループ全体で1回だけ用意し、使い回す
+ *     （_run()は呼び出しごとにprepare()し直すため、数万行規模の
  *     インポートでは無視できないオーバーヘッドになる）。
  *   - price_history へは INSERT OR IGNORE を使う。(rj_code, checked_at) の
  *     UNIQUE INDEX（_applySchemaで追加済み）により、同じファイルを再度
@@ -952,8 +879,9 @@ function savePriceIfChanged(rjCode, priceData) {
  *     一括投入であり、差分検知は通常巡回の役割のため）。
  *
  * ジェネレータ関数: CHUNK件のRJコードを処理するたびに進捗をyieldする。
- * 各yieldの内容がそのまま「その時点までの累計」であり、呼び出し側は
- * 最後にyieldされた値をそのまま最終結果として使える。
+ * チャンクごとに better-sqlite3 のネイティブトランザクションで実行する
+ * （途中で例外が起きても、そのチャンクだけロールバックされ、
+ *  それ以前にyield済みの進捗はそのままディスクに残っている）。
  *
  * @param {Array<{rj_code,title,circle,maker_id,work_type,release_date,price,sale_price,discount_rate,point,checked_at}>} records
  * @param {{chunkSize?: number}} opts
@@ -1015,68 +943,53 @@ function* importHistoryRows(records, { chunkSize = 200 } = {}) {
     WHERE rj_code = ?
   `);
 
-  try {
-    for (let i = 0; i < rjCodes.length; i += chunkSize) {
-      const chunk = rjCodes.slice(i, i + chunkSize);
+  const runChunk = _db.transaction((chunk) => {
+    for (const rj of chunk) {
+      const list   = byRj.get(rj);
+      const latest = [...list].reverse().find(r => r.title) ?? list[list.length - 1];
 
-      _db.run('BEGIN');
-      try {
-        for (const rj of chunk) {
-          const list   = byRj.get(rj);
-          const latest = [...list].reverse().find(r => r.title) ?? list[list.length - 1];
+      workStmt.run(
+        rj, latest.title ?? null, latest.circle ?? null, latest.maker_id ?? null,
+        latest.work_type ?? null, 'maniax', latest.release_date ?? null, 0, now,
+      );
+      worksImported++;
 
-          workStmt.bind([
-            rj, latest.title ?? null, latest.circle ?? null, latest.maker_id ?? null,
-            latest.work_type ?? null, 'maniax', latest.release_date ?? null, 0, now,
-          ]);
-          workStmt.step(); workStmt.reset();
-          worksImported++;
-
-          let lastOnSale = 0, lastRow = null;
-          for (const row of list) {
-            if (row.checked_at == null) { skippedNoChecked++; continue; }
-            const isOnSale = ((row.discount_rate ?? 0) > 0 || row.sale_price != null) ? 1 : 0;
-            priceStmt.bind([
-              rj, row.price ?? null, row.sale_price ?? null, row.point ?? null,
-              row.discount_rate ?? null, isOnSale, 0, row.checked_at,
-            ]);
-            priceStmt.step();
-            if (_db.getRowsModified() > 0) priceRowsImported++; // OR IGNOREで実際に挿入された行のみ
-            priceStmt.reset();
-            lastOnSale = isOnSale;
-            lastRow = row;
-          }
-
-          if (lastRow) {
-            curStmt.bind([
-              lastRow.price ?? null, lastRow.sale_price ?? null, lastRow.discount_rate ?? null,
-              lastRow.point ?? null, 0, lastRow.checked_at, rj,
-            ]);
-            curStmt.step(); curStmt.reset();
-          }
-
-          const priority = lastOnSale ? config.priority.onSale : config.priority.normal;
-          scheduleStmt.bind([now, config.checkInterval.normal, priority, lastOnSale, now, rj]);
-          scheduleStmt.step(); scheduleStmt.reset();
-        }
-        _db.run('COMMIT');
-      } catch (err) {
-        try { _db.run('ROLLBACK'); } catch (_) { /* ignore */ }
-        log.error('[db] importHistoryRows chunk rolled back:', err.message);
-        throw err;
+      let lastOnSale = 0, lastRow = null;
+      for (const row of list) {
+        if (row.checked_at == null) { skippedNoChecked++; continue; }
+        const isOnSale = ((row.discount_rate ?? 0) > 0 || row.sale_price != null) ? 1 : 0;
+        const info = priceStmt.run(
+          rj, row.price ?? null, row.sale_price ?? null, row.point ?? null,
+          row.discount_rate ?? null, isOnSale, 0, row.checked_at,
+        );
+        if (info.changes > 0) priceRowsImported++; // OR IGNOREで実際に挿入された行のみ
+        lastOnSale = isOnSale;
+        lastRow = row;
       }
 
-      processed += chunk.length;
-      yield { processed, total, worksImported, priceRowsImported, skippedNoRj, skippedNoChecked };
-    }
-  } finally {
-    workStmt.free();
-    priceStmt.free();
-    curStmt.free();
-    scheduleStmt.free();
-  }
+      if (lastRow) {
+        curStmt.run(
+          lastRow.price ?? null, lastRow.sale_price ?? null, lastRow.discount_rate ?? null,
+          lastRow.point ?? null, 0, lastRow.checked_at, rj,
+        );
+      }
 
-  _save();
+      const priority = lastOnSale ? config.priority.onSale : config.priority.normal;
+      scheduleStmt.run(now, config.checkInterval.normal, priority, lastOnSale, now, rj);
+    }
+  });
+
+  for (let i = 0; i < rjCodes.length; i += chunkSize) {
+    const chunk = rjCodes.slice(i, i + chunkSize);
+    try {
+      runChunk(chunk);
+    } catch (err) {
+      log.error('[db] importHistoryRows chunk rolled back:', err.message);
+      throw err;
+    }
+    processed += chunk.length;
+    yield { processed, total, worksImported, priceRowsImported, skippedNoRj, skippedNoChecked };
+  }
 }
 
 function getPriceHistory(rjCode) {
@@ -1086,7 +999,7 @@ function getPriceHistory(rjCode) {
   );
 }
 
-// âââ circles ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── circles ─────────────────────────────────────────────────────────────────
 
 function upsertCircle(makerId, circleName) {
   _run(`
@@ -1097,17 +1010,16 @@ function upsertCircle(makerId, circleName) {
   `, [makerId, circleName]);
 }
 
-/** works ãã¼ãã«ã®maker_idå¥ä»¶æ°ã§circlesãåæï¼æ­£ç¢ºãªworks_countï¼ */
+/** works テーブルのmaker_id件数でcirclesを同期（正確なworks_count） */
 function syncCircleWorksCounts() {
   _run(`
     UPDATE circles SET works_count = (
       SELECT COUNT(*) FROM works WHERE works.maker_id = circles.maker_id
     )
   `, []);
-  _save();
 }
 
-/** â  schedulerç¨: on_sale=1 ã®ãµã¼ã¯ã«ä¸è¦§ãè¿ãï¼sql.jså¯¾å¿ï¼ */
+/** scheduler用: on_sale=1 のサークル一覧を返す */
 function getCirclesOnSale() {
   return _all('SELECT maker_id FROM circles WHERE on_sale = 1');
 }
@@ -1131,11 +1043,6 @@ function getCircle(makerId) {
 function addCompCandidates(rjCodes) {
   const now = unixNow();
   let added = 0;
-  // バグ修正: 以前は _run() を直接呼んでおり _save() を一切トリガーしないため、
-  // 総集編候補(comp_candidates)がディスクに永続化されずアプリ終了/クラッシュで
-  // 消えていた(dataブランチ検証: 52万件中236件しか総集編マークが付いていなかった
-  // 実害を確認済み)。runInTransaction() でまとめて実行し、debounce付きsaveを
-  // トリガーする。
   runInTransaction(() => {
     for (const rj of rjCodes) {
       const before = _get('SELECT 1 AS x FROM comp_candidates WHERE rj_code = ?', [rj]);
@@ -1153,7 +1060,6 @@ function getDueCompCandidates(limit = 50) {
 }
 
 function markCompCandidateProcessed(rjCode, status = 'done') {
-  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
   runInTransaction(() => {
     _run(`UPDATE comp_candidates SET processed_at = ?, status = ? WHERE rj_code = ?`, [unixNow(), status, rjCode]);
   });
@@ -1163,7 +1069,6 @@ function markCompCandidateProcessed(rjCode, status = 'done') {
 function addCompWorksDirect(compilationRj, containedRjs) {
   if (!containedRjs.length) return 0;
   const now = unixNow();
-  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
   runInTransaction(() => {
     for (const rj of containedRjs) {
       _run(`
@@ -1180,7 +1085,6 @@ function addCompWorksDirect(compilationRj, containedRjs) {
 function addCompCandidateScored(compilationRj, scoredList, threshold) {
   const now = unixNow();
   let confirmed = 0, pending = 0;
-  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
   runInTransaction(() => {
     for (const { rj, score, reasons } of scoredList) {
       if (score >= threshold) {
@@ -1218,7 +1122,6 @@ function getCompPending({ status = 'pending', limit = 100, offset = 0 } = {}) {
 /** 要確認候補の承認/却下。承認時は comp_works(source='estimated')へ昇格する */
 function decideCompPending(compilationRj, containedRj, decision) {
   const now = unixNow();
-  // バグ修正: _run() 直呼びのため未保存だった → runInTransaction() で保存する
   runInTransaction(() => {
     if (decision === 'approved') {
       const row = _get('SELECT * FROM comp_pending WHERE compilation_rj = ? AND contained_rj = ?', [compilationRj, containedRj]);
@@ -1245,11 +1148,6 @@ function getCompScanProgress() {
 function setCompScanProgress(patch) {
   const cur  = getCompScanProgress();
   const next = { ...cur, ...patch };
-  // バグ修正(本丸): _run() 直呼びのため listing_page の走査進捗が一切ディスクに
-  // 保存されておらず、アプリ再起動のたびに1ページ目からやり直しになっていた
-  // (comp_candidates/comp_works も同様に未保存だったため、総集編マーク機能が
-  // ほぼ機能していなかった。dataブランチ検証: 52万件中236件のみ)。
-  // runInTransaction() で保存する。
   runInTransaction(() => {
     _run(`
       INSERT INTO comp_scan_progress (id, listing_page, listing_done, updated_at)
@@ -1278,16 +1176,16 @@ function getCompStats() {
   `);
   return row ?? { candidates: 0, candidatesDue: 0, compilationsConfirmed: 0, worksMarked: 0, pendingReview: 0 };
 }
+
 // ─── price_issues（定価取得エラー追跡） ────────────────────────────────────────
 
 /** 定価が信頼できる形で取得できなかった作品を記録（既存キーはoccurrences++で集計） */
 function recordPriceIssue(rjCode, issueType, rawFields) {
   const now = unixNow();
-  // 注: detailFetcher._store() から db.transactionNoSave() のコールバック内で
-  // ネストして呼ばれるため、ここを runInTransaction() で囲むと
-  // 「トランザクション内トランザクション」でSQLiteがエラーになる。
-  // 保存は外側の transactionNoSave + runDetailFetch の周期 db.save() に
-  // 委ねる(_run()のまま)。
+  // detailFetcher._store() から db.transactionNoSave() のコールバック内で
+  // ネストして呼ばれることがある。better-sqlite3のtransaction()はSAVEPOINTで
+  // ネストに対応しているため、ここを runInTransaction() で囲んでも安全だが、
+  // 単発のUPDATE/INSERTのみなので _run() 直呼びのままで十分。
   _run(`
     INSERT INTO price_issues (rj_code, issue_type, raw_fields, first_seen, last_seen, occurrences)
     VALUES (?, ?, ?, ?, ?, 1)
@@ -1301,7 +1199,6 @@ function recordPriceIssue(rjCode, issueType, rawFields) {
 
 /** 正常に定価が取れるようになったら呼ぶ（次回発生時はoccurrences=1から再カウント） */
 function clearPriceIssue(rjCode) {
-  // 注: recordPriceIssue と同じ理由でrunInTransaction()化しない（ネスト対策）
   _run(`DELETE FROM price_issues WHERE rj_code = ?`, [rjCode]);
 }
 
@@ -1319,8 +1216,7 @@ function getPriceIssuesCount() {
   return (_get('SELECT COUNT(*) AS n FROM price_issues') ?? { n: 0 }).n;
 }
 
-
-// âââ stats ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── stats ───────────────────────────────────────────────────────────────────
 
 function getStats() {
   // 6本の独立クエリを1本のサブクエリに統合してラウンドトリップを削減
@@ -1337,22 +1233,24 @@ function getStats() {
   return row ?? { totalWorks: 0, onSale: 0, priceChanges: 0, totalCircles: 0, circlesOnSale: 0, dueNow: 0 };
 }
 
-// âââ backup ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── backup ──────────────────────────────────────────────────────────────────
 
 /**
  * DBの世代管理付きバックアップ。
  *
- * 機能追加: 以前は単純に「直近30世代を残す」だけのフラットな保持だったため、
- * 毎日バックアップしていると1ヶ月前より古い状態には一切戻れなかった。
- * 以下の世代管理に変更する:
+ * better-sqlite3のネイティブオンラインバックアップAPI(`_db.backup()`)を使用。
+ * SQLite本体がページ単位で安全にコピーするため、sql.js時代のように
+ * DB全体(350MB超)をまずJSバッファへロードしてから書き出す必要がなく、
+ * 巡回処理をブロックしない。
+ *
+ * 世代管理:
  *   - 直近7日分     : 毎日分をすべて保持
  *   - 直近8週間分   : 週1回分だけ保持（7日より古い分）
  *   - 直近12ヶ月分  : 月1回分だけ保持（8週間より古い分）
  *   - それ以上古い分: 削除
  *
- * また、バックアップごとに件数・チェックサム等のメタデータ(.meta.json)を
- * 併せて保存する。復元時にファイルが壊れていないか、どの時点のスナップ
- * ショットかを確認しやすくするため。
+ * 呼び出し側(scheduler.js)は同期関数として `db.backup()` を呼んでいるため、
+ * 内部の非同期処理は fire-and-forget にしてシグネチャを維持している。
  */
 function backup() {
   if (!_db) return;
@@ -1360,41 +1258,40 @@ function backup() {
     const dir = path.resolve(path.dirname(DB_PATH), 'backups');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const now     = new Date();
-    const stamp   = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const dest    = path.join(dir, `dlsite-${stamp}.db`);
+    const now      = new Date();
+    const stamp    = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const dest     = path.join(dir, `dlsite-${stamp}.db`);
     const metaDest = path.join(dir, `dlsite-${stamp}.meta.json`);
+    const tmpPath  = dest + '.tmp';
 
-    const data = _db.export();
-    const buf  = Buffer.from(data);
+    _db.backup(tmpPath)
+      .then(async () => {
+        await fs.promises.rename(tmpPath, dest);
 
-    // クラッシュ時に不完全なファイルで上書きされないよう、一時ファイル→rename
-    const tmpPath = dest + '.tmp';
-    fs.writeFileSync(tmpPath, buf);
-    fs.renameSync(tmpPath, dest);
+        const buf    = await fs.promises.readFile(dest);
+        const sha256 = crypto.createHash('sha256').update(buf).digest('hex');
+        const counts = {
+          works:        (_get('SELECT COUNT(*) AS n FROM works') ?? { n: 0 }).n,
+          priceHistory: (_get('SELECT COUNT(*) AS n FROM price_history') ?? { n: 0 }).n,
+          circles:      (_get('SELECT COUNT(*) AS n FROM circles') ?? { n: 0 }).n,
+        };
+        let appVersion = null;
+        try { appVersion = require('../package.json').version; } catch { /* ignore */ }
 
-    const sha256 = crypto.createHash('sha256').update(buf).digest('hex');
-    const counts = {
-      works:        (_get('SELECT COUNT(*) AS n FROM works') ?? { n: 0 }).n,
-      priceHistory: (_get('SELECT COUNT(*) AS n FROM price_history') ?? { n: 0 }).n,
-      circles:      (_get('SELECT COUNT(*) AS n FROM circles') ?? { n: 0 }).n,
-    };
-    let appVersion = null;
-    try { appVersion = require('../package.json').version; } catch { /* ignore */ }
+        const meta = {
+          timestamp: now.toISOString(),
+          dbFile:    path.basename(dest),
+          sizeBytes: buf.length,
+          sha256,
+          counts,
+          appVersion,
+        };
+        await fs.promises.writeFile(metaDest, JSON.stringify(meta, null, 2));
 
-    const meta = {
-      timestamp:  now.toISOString(),
-      dbFile:     path.basename(dest),
-      sizeBytes:  buf.length,
-      sha256,
-      counts,
-      appVersion,
-    };
-    fs.writeFileSync(metaDest, JSON.stringify(meta, null, 2));
-
-    log.info('[db] backup saved', dest, `(${(buf.length/1024/1024).toFixed(1)}MB, works=${counts.works})`);
-
-    _pruneBackups(dir);
+        log.info('[db] backup saved', dest, `(${(buf.length / 1024 / 1024).toFixed(1)}MB, works=${counts.works})`);
+        _pruneBackups(dir);
+      })
+      .catch(err => log.error('[db] backup error', err.message));
   } catch (err) {
     log.error('[db] backup error', err.message);
   }
@@ -1477,7 +1374,7 @@ function verifyBackup(dbBackupPath) {
   }
 }
 
-// âââ export (for CSV/JSON API) âââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── export (for CSV/JSON API) ────────────────────────────────────────────────
 
 /**
  * Export all price_history rows joined with work metadata.
@@ -1495,7 +1392,7 @@ function exportAllHistory() {
   `);
 }
 
-// âââ UI query helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── UI query helpers ──────────────────────────────────────────────────────────
 
 /**
  * Paginated works list with latest price joined.
@@ -1555,9 +1452,6 @@ function getSaleWorks(limit = 200) {
   `, [limit]);
 }
 
-
-
-
 // ─── export snapshot (exportShards.js 向け) ──────────────────────────────────
 // ブラウザ拡張機能配信用の軽量JSONを生成するために必要な集計クエリをまとめる。
 // _all/_get は本ファイル内のプライベートヘルパーのため、外部モジュールからは
@@ -1600,8 +1494,9 @@ function getLowestPriceMap() {
 
 /**
  * 直近 limit 件の実質価格ログ(新しい順)を rj_code 別に。
- * sql.js の SQLite ビルドが window function 非対応の場合は例外を投げるので、
- * 呼び出し側(exportShards.js)でフォールバック処理すること。
+ * better-sqlite3が同梱するSQLiteはwindow function(ROW_NUMBER等)を標準サポートしているため
+ * sql.js時代のようなビルド差異による例外は基本的に発生しないが、
+ * 呼び出し側(exportShards.js)の既存フォールバック処理はそのまま活かしておく。
  */
 function getRecentPriceLogMap(limit = 8) {
   const rows = _all(`
@@ -1658,7 +1553,7 @@ function countSuspectedDelisted(minErrors = 2, maxErrors = 3) {
 
 function recoverSuspectedDelisted(minErrors = 2, maxErrors = 3) {
   const now = unixNow();
-  _run(`
+  const result = _run(`
     UPDATE works SET
       priority            = ?,
       consecutive_errors  = 0,
@@ -1673,15 +1568,14 @@ function recoverSuspectedDelisted(minErrors = 2, maxErrors = 3) {
     minErrors,
     maxErrors,
   ]);
-  const affected = _db.getRowsModified();
+  const affected = result.changes;
   if (affected > 0) {
     log.info('[db] recoverSuspectedDelisted:', affected, '件を通常優先度に復旧', { minErrors, maxErrors });
-    _save();
   }
   return affected;
 }
 
-/** å¨RJã³ã¼ããSetã§è¿ãï¼discoveryé«éç§åç¨ï¼ */
+/** 全RJコードをSetで返す（discovery高速化用） */
 // rj_code の全件取得は discovery が6時間毎に呼ぶため、インメモリキャッシュで高速化する。
 // upsertWork が呼ばれたときにキャッシュを無効化する（次回 getAllRjCodes() 時に再構築）。
 /**
@@ -1818,4 +1712,3 @@ module.exports = {
   getPriceIssuesCount,
   importHistoryRows,
 };
-

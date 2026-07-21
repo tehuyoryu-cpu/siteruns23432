@@ -136,9 +136,10 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
   // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
   const VALID_SITES = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
 
-  // sql.js の保存(_save)は DB 全体を毎回シリアライズし直すコストがあるため、
-  // バッチごとに毎回保存せず SAVE_EVERY_N_BATCHES 回に1回だけ明示的に保存する。
-  // (20000件規模だと毎バッチ保存は非常に遅くなるため)
+  // better-sqlite3移行後、db.save()は各文/トランザクションの実行と同時に
+  // ディスクへ反映されるためno-opになっている。このバッチ間引きロジック自体は
+  // 現在は実質的な効果を持たないが、db.save()呼び出し箇所を減らす分だけ
+  // わずかにオーバーヘッドが下がるため、害はないのでそのまま残している。
   const SAVE_EVERY_N_BATCHES = 5;
   let batchesSinceSave = 0;
 
@@ -150,7 +151,7 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
   // バッチ(50件)単位のHTTPリクエストを config.fetch.concurrency 件まで並列実行する
   // ワーカープール。以前は concurrency 設定が定義されているのに使われておらず、
   // 'turbo'(ぶっ飛ばし)モードも rateLimit を縮めるだけで実質ほぼ逐次処理のままだった。
-  // (sql.js への書き込み自体はNodeのシングルスレッド実行内で同期的に行われるため、
+  // (better-sqlite3への書き込み自体はNodeのシングルスレッド実行内で同期的に行われるため、
   //  await の合間に他のPromiseの同期区間が割り込むことはなく安全)
   async function _runConcurrentBatches(works, site) {
     const chunks = [];

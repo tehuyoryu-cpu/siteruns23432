@@ -15,9 +15,9 @@
     "dist": "electron-builder --win --x64"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "cheerio": "^1.0.0",
-    "node-cron": "^3.0.3",
-    "sql.js": "^1.14.1"
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -43,13 +43,13 @@
     ],
     "extraResources": [
       {
-        "from": "node_modules/sql.js/dist/sql-wasm.wasm",
-        "to": "sql-wasm.wasm"
-      },
-      {
         "from": "server/public",
         "to": "public"
       }
+    ],
+    "asarUnpack": [
+      "**/better-sqlite3/**",
+      "**/*.node"
     ],
     "win": {
       "target": [
