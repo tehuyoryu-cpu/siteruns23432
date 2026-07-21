@@ -12,7 +12,8 @@
     "fetch": "node main.js --mode=fetch",
     "export-shards": "node main.js --mode=export-shards",
     "export-shards:push": "node main.js --mode=export-shards --push=1",
-    "dist": "electron-builder --win --x64"
+    "dist": "electron-builder --win --x64",
+    "postinstall": "node scripts/postinstall-rebuild.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
