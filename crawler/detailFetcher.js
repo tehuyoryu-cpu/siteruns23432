@@ -428,17 +428,18 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // 作品詳細ページ(/work/=/product_id/...)へ直接アクセスして本当に存在
   // しないか確認する。閾値に達していない作品まで毎回確認すると負荷が増える
   // ため、delisted化の瀬戸際にある作品だけに絞る。
-  const notFoundKeys = new Set();
+  //
+  // 効率化: works は db.getDueWorks() の `SELECT * FROM works ...` 結果を
+  // そのまま引き継いでいるため、各要素に consecutive_errors が既に載っている。
+  // 以前はここで notFoundKeys ごとに db.getWorkByRj() を再クエリしていたが、
+  // 同期SQLクエリをバッチ件数分繰り返す無駄な往復だった。works配列を直接
+  // 参照するだけで済む。
+  const toVerify = [];
   for (const w of works) {
     const rj      = w.rj_code.toUpperCase();
     const rjNopad = rj.replace(/^RJ0+/, 'RJ');
-    if (!(rj in normalizedBody || rjNopad in normalizedBody)) notFoundKeys.add(w.rj_code);
-  }
-
-  const toVerify = [];
-  for (const rjCode of notFoundKeys) {
-    const w = db.getWorkByRj(rjCode);
-    if ((w?.consecutive_errors ?? 0) >= 1) toVerify.push(rjCode);
+    if (rj in normalizedBody || rjNopad in normalizedBody) continue;   // API上で見つかった
+    if ((w.consecutive_errors ?? 0) >= 1) toVerify.push(w.rj_code);
   }
 
   const verifiedAlive = new Set();
@@ -453,7 +454,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
           verifiedAlive.add(rjCode);
           log.warn('[detail] API missing but detail page confirms existence — rescuing from delisting', rjCode);
         }
-        await sleep(300);
+        if (vi < toVerify.length) await sleep(300);   // 次がある場合のみ待機(最後の1件で無駄な待機をしない)
       }
     };
     await Promise.all(Array.from({ length: Math.min(VERIFY_CONCURRENCY, toVerify.length) }, verifyWorker));
