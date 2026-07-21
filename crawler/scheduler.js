@@ -251,6 +251,32 @@ function _startPrevMonthScanJob() {
   log.info('[scheduler] prevMonthScan job scheduled (monthly 2nd 04:00)');
 }
 
+// ─── 隔離(delisted)作品の定期再サンプリングジョブ ───────────────────────────────
+// recordApiMissing() で「本当に消えた」と判定された作品は check_interval が最大
+// 180日まで延び、getDueWorks() の対象からほぼ外れる。これは巡回帯域の無駄遣いを
+// 防ぐ設計だが、副作用として「実は再公開されていた」作品を最大180日気づけない
+// ままになるバグがあった。discovery系スキャンでの再出現検知（_upsertの救済処理）
+// は一覧に載った場合のみ効くため、それ以外の経路（例: 検索されにくい旧作が
+// ひっそり再公開された等）は救えない。
+// そこで少数(既定100件)を毎日サンプリングして強制的に next_check_at=now へ戻し、
+// 通常の価格更新パイプラインに乗せる。本当に削除済みならdetailFetcher.jsが
+// 次のチェックで再び recordApiMissing() により隔離するだけなので安全。
+function _startQuarantineResampleJob() {
+  cron.schedule('40 3 * * *', () => {
+    try {
+      const targets = db.getQuarantinedWorks(100);
+      if (!targets.length) return;
+      db.transaction(() => {
+        for (const { rj_code } of targets) db.salvageWork(rj_code);
+      });
+      log.info('[scheduler] quarantineResample: revived', targets.length, '件を再チェック対象に戻しました');
+    } catch (err) {
+      log.error('[scheduler] quarantineResample error', err.message);
+    }
+  });
+  log.info('[scheduler] quarantineResample job scheduled (daily 03:40, 100件)');
+}
+
 // ─── public API ──────────────────────────────────────────────────────────────
 
 async function start() {
@@ -264,6 +290,7 @@ async function start() {
   _startExportShardsJob();
   _startSessionRewarmJob();
   _startCompScanJob();
+  _startQuarantineResampleJob();
 
   log.info('[scheduler] running initial passes on startup');
 

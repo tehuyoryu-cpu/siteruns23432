@@ -67,7 +67,7 @@ function _isMonthRollover() {
 }
 
 /** FSR URL を指定日付(月初)から全ページスキャンして新着RJを収集 */
-async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
+async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = null) {
   const date = dateStr ?? _monthStart();
   const tmpl = DISCOVERY_FSR[site];
   if (!tmpl) return 0;
@@ -95,7 +95,7 @@ async function _scanFsrMonthly(site, knownRjs, dateStr = null) {
     }
     failCount = 0;
 
-    count += _upsert(items, site, knownRjs);
+    count += _upsert(items, site, knownRjs, delistedRjs);
     log.info('[discovery] monthly', { site, date, page, parsed: items.length, newAdded: count });
     // 100件未満は通常「最終ページ」の合図だが、一時的な取得失敗/パース漏れで
     // 途中のページがたまたま短くなることがある。1回だけなら疑って継続し、
@@ -118,24 +118,25 @@ async function runDiscovery() {
   const prevMonth = _isMonthRollover() ? _monthStart(-1) : null;
   log.info('[discovery] start — monthly FSR', { month, prevMonth: prevMonth ?? '(skip)' });
   try {
-    const knownRjs = _loadKnown();
+    const knownRjs    = _loadKnown();
+    const delistedRjs = _loadDelisted();
     const results  = {};
 
     // 今月分を収集
-    results.maniax = await _scanFsrMonthly('maniax', knownRjs);
-    results.bl     = await _scanFsrMonthly('bl',     knownRjs);
-    results.girls  = await _scanFsrMonthly('girls',  knownRjs);
+    results.maniax = await _scanFsrMonthly('maniax', knownRjs, delistedRjs);
+    results.bl     = await _scanFsrMonthly('bl',     knownRjs, delistedRjs);
+    results.girls  = await _scanFsrMonthly('girls',  knownRjs, delistedRjs);
 
     // 月が変わったばかり(1〜5日)の場合、前月末リリース分の取りこぼしをカバー
     // （月またぎで起動していなかった期間のRJを拾う）
     if (prevMonth) {
       log.info('[discovery] rollover: scanning previous month', prevMonth);
-      results.maniax_prev = await _scanFsrMonthly('maniax', knownRjs, prevMonth);
-      results.bl_prev     = await _scanFsrMonthly('bl',     knownRjs, prevMonth);
-      results.girls_prev  = await _scanFsrMonthly('girls',  knownRjs, prevMonth);
+      results.maniax_prev = await _scanFsrMonthly('maniax', knownRjs, delistedRjs, prevMonth);
+      results.bl_prev     = await _scanFsrMonthly('bl',     knownRjs, delistedRjs, prevMonth);
+      results.girls_prev  = await _scanFsrMonthly('girls',  knownRjs, delistedRjs, prevMonth);
     }
 
-    results.circle = await _collectCircles(knownRjs);
+    results.circle = await _collectCircles(knownRjs, delistedRjs);
     const total = Object.values(results).reduce((a, b) => a + b, 0);
     log.info('[discovery] done', { total, ...results });
     return { discovered: total, sources: results };
@@ -151,10 +152,11 @@ async function runDiscovery() {
 async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {}) {
   log.info('[discovery] fullScan start', { sale, maxPages });
 
-  const knownRjs  = _loadKnown();   // ページをまたいで使い回す
-  const fsrUrls   = config.dlsite.fsrUrls ?? {};
-  let   grandTotal = 0;
-  const sites     = {};
+  const knownRjs    = _loadKnown();   // ページをまたいで使い回す
+  const delistedRjs = _loadDelisted();
+  const fsrUrls     = config.dlsite.fsrUrls ?? {};
+  let   grandTotal  = 0;
+  const sites       = {};
 
   for (const [site, urls] of Object.entries(fsrUrls)) {
     if (_discoveryAborted()) { log.warn('[discovery] fullScan aborted (before site)', { site }); break; }
@@ -193,7 +195,7 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
       }
       failCount = 0;
 
-      const added = _upsert(items, site, knownRjs);
+      const added = _upsert(items, site, knownRjs, delistedRjs);
       siteTotal += added;
       grandTotal += added;
 
@@ -228,7 +230,7 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
   return { grandTotal, sites };
 }
 
-async function _collectCircles(knownRjs) {
+async function _collectCircles(knownRjs, delistedRjs = null) {
   // セール中を優先し、最も長くチェックされていないサークルをローテーション
   const toCheck = db.getCirclesForDiscovery(30);
   const CONC    = 5;  // 同時リクエスト数
@@ -253,7 +255,7 @@ async function _collectCircles(knownRjs) {
             });
             return 0;
           }
-          return _upsert(items, site, knownRjs);
+          return _upsert(items, site, knownRjs, delistedRjs);
         })
       )
     );
@@ -350,9 +352,24 @@ async function _confirm404(url) {
 
 // ─── DB書き込み ──────────────────────────────────────────────────────────────
 
-function _upsert(items, siteId, knownRjs) {
-  const newItems = items.filter(i => i.rjCode && !knownRjs.has(i.rjCode));
-  if (!newItems.length) return 0;
+/**
+ * @param {Set<string>} knownRjs      DB既知のRJコード(discovery全体で使い回す)
+ * @param {Set<string>|null} delistedRjs  隔離(priority=delisted)中のRJコード。
+ *   渡された場合、一覧に再出現した「既知だが隔離中」の作品を salvageWork() で
+ *   救済する。これは「本当に消えた」と一度判定した作品が実は再公開されていた
+ *   場合の唯一の早期検知経路（さもなくば最大180日間隔まで気づけない）。
+ *   本当に削除済みだった場合でも、次回チェックでAPI不在が確認されれば
+ *   recordApiMissing() が再び隔離するだけなので安全。
+ */
+function _upsert(items, siteId, knownRjs, delistedRjs = null) {
+  const newItems     = [];
+  const salvageItems = [];
+  for (const item of items) {
+    if (!item.rjCode) continue;
+    if (!knownRjs.has(item.rjCode)) { newItems.push(item); continue; }
+    if (delistedRjs && delistedRjs.has(item.rjCode)) salvageItems.push(item);
+  }
+  if (!newItems.length && !salvageItems.length) return 0;
 
   db.transaction(() => {
     for (const item of newItems) {
@@ -378,6 +395,21 @@ function _upsert(items, siteId, knownRjs) {
         });
       }
     }
+
+    for (const item of salvageItems) {
+      db.salvageWork(item.rjCode);
+      delistedRjs.delete(item.rjCode);
+      if (item.price !== null) {
+        db.savePriceIfChanged(item.rjCode, {
+          price:         item.price,
+          sale_price:    item.salePrice    ?? null,
+          discount_rate: item.discountRate ?? null,
+          point:         null,
+          is_on_sale:    item.isOnSale ? 1 : 0,
+        });
+      }
+      log.info('[discovery] salvaged delisted work (reappeared in listing)', item.rjCode);
+    }
   });
 
   return newItems.length;
@@ -385,6 +417,11 @@ function _upsert(items, siteId, knownRjs) {
 
 function _loadKnown() {
   return db.getAllRjCodes();
+}
+
+/** 隔離(priority=delisted)中のRJコードSetを読み込む(_upsertの再出現救済用) */
+function _loadDelisted() {
+  return db.getDelistedRjCodes();
 }
 
 // ─── 割引終了間近(24時間以内)収集 ────────────────────────────────────────────
@@ -395,10 +432,11 @@ function _loadKnown() {
 async function runEndingSoonScan({ onProgress = null } = {}) {
   log.info('[discovery] endingSoonScan start');
 
-  const knownRjs = _loadKnown();
-  const fsrUrls  = config.dlsite.fsrUrls ?? {};
-  const priority = config.priority.endingSoon;
-  const interval = config.checkInterval.endingSoon;
+  const knownRjs    = _loadKnown();
+  const delistedRjs = _loadDelisted();
+  const fsrUrls     = config.dlsite.fsrUrls ?? {};
+  const priority    = config.priority.endingSoon;
+  const interval    = config.checkInterval.endingSoon;
 
   let grandTotal = 0, newCount = 0, boostedCount = 0;
   const sites = {};
@@ -451,6 +489,13 @@ async function runEndingSoonScan({ onProgress = null } = {}) {
             });
             knownRjs.add(item.rjCode);
             newCount++;
+          } else if (delistedRjs.has(item.rjCode)) {
+            // 隔離(delisted)中の作品が一覧に再出現 = 再公開の証拠。
+            // consecutive_errors をリセットして救済する
+            // (本当に削除済みなら次回チェックで recordApiMissing が再び隔離するだけ)
+            db.salvageWork(item.rjCode);
+            delistedRjs.delete(item.rjCode);
+            log.info('[discovery] salvaged delisted work via endingSoon', item.rjCode);
           }
 
           if (item.price !== null) {
@@ -517,8 +562,9 @@ async function runNewReleaseScan({ onProgress = null } = {}) {
   const sinceDate = _oneYearAgo();
   log.info('[discovery] newReleaseScan start', { sinceDate });
 
-  const knownRjs = _loadKnown();
-  const fsrUrls  = config.dlsite.fsrUrls ?? {};
+  const knownRjs    = _loadKnown();
+  const delistedRjs = _loadDelisted();
+  const fsrUrls     = config.dlsite.fsrUrls ?? {};
 
   let grandTotal = 0;
   const sites = {};
@@ -554,7 +600,7 @@ async function runNewReleaseScan({ onProgress = null } = {}) {
       }
       failCount = 0;
 
-      const added = _upsert(items, site, knownRjs);
+      const added = _upsert(items, site, knownRjs, delistedRjs);
       siteTotal  += added;
       grandTotal += added;
 

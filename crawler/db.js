@@ -1684,6 +1684,52 @@ function recoverSuspectedDelisted(minErrors = 2, maxErrors = 3) {
 /** å¨RJã³ã¼ããSetã§è¿ãï¼discoveryé«éç§åç¨ï¼ */
 // rj_code の全件取得は discovery が6時間毎に呼ぶため、インメモリキャッシュで高速化する。
 // upsertWork が呼ばれたときにキャッシュを無効化する（次回 getAllRjCodes() 時に再構築）。
+/**
+ * 「本当に消えた/非公開になった」と判定済み(priority=delisted)の作品に
+ * 救済処置を与える。真の削除だった場合でも安全: 次回チェックでAPIに
+ * 存在しなければ detailFetcher.js が再び recordApiMissing() で隔離するだけ。
+ *
+ * 呼び出し元は2種類:
+ *   1. discovery系スキャンでそのRJが再びDLsiteの一覧に出現した場合
+ *      （再公開の直接的な証拠なので即座に救済する）
+ *   2. scheduler の定期隔離再サンプリングジョブ（getQuarantinedWorks）
+ *      （180日隔離されたままだと再公開されても最大180日気づけないため、
+ *      定期的に少数を強制的にdueへ戻して確認する）
+ */
+function salvageWork(rjCode) {
+  const now = unixNow();
+  _run(`
+    UPDATE works SET
+      consecutive_errors = 0,
+      priority             = ?,
+      check_interval        = ?,
+      next_check_at         = ?
+    WHERE rj_code = ?
+  `, [config.priority.normal, config.checkInterval.normal, now, rjCode]);
+}
+
+/**
+ * 隔離(priority=delisted)中の作品を、最後にチェックした時刻が古い順に
+ * limit件だけ返す。定期的にこの中からサンプリングしてsalvageWork()し、
+ * 「本当に消えた」まま180日待たずに再公開を検知できるようにする。
+ */
+function getQuarantinedWorks(limit = 100) {
+  return _all(`
+    SELECT rj_code FROM works
+    WHERE priority = ?
+    ORDER BY last_checked ASC
+    LIMIT ?
+  `, [config.priority.delisted, limit]);
+}
+
+/** 隔離(priority=delisted)中の全RJコードをSetで返す(discovery再出現検知用) */
+function getDelistedRjCodes() {
+  return new Set(
+    _all('SELECT rj_code FROM works WHERE priority = ?', [config.priority.delisted])
+      .map(r => r.rj_code)
+  );
+}
+
 let _rjCodesCache = null;
 function _invalidateRjCache() { _rjCodesCache = null; }
 function getAllRjCodes() {
@@ -1751,6 +1797,9 @@ module.exports = {
   getRecentPriceLogMap,
   countSuspectedDelisted,
   recoverSuspectedDelisted,
+  salvageWork,
+  getQuarantinedWorks,
+  getDelistedRjCodes,
   getSampleRjForSite,
   addCompCandidates,
   getDueCompCandidates,
