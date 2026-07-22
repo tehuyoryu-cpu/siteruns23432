@@ -276,9 +276,12 @@ async function _collectCircles(knownRjs, delistedRjs = null) {
 const _404_CONFIRM_RETRIES = 2;      // 404を「確定終端」と判断するまでの再確認回数
 const _404_CONFIRM_DELAY   = 1500;   // 再確認の間隔(ms)。回数ごとに線形に伸ばす
 
+// 'discovery' を渡すことで、停止ボタン押下時に進行中のfetch/バックオフ待機も
+// 即座に中断できるようにする（以前は _discoveryAborted() がループの合間しか
+// チェックされず、中止が反映されるまで最大数十秒かかっていた）。
 async function _fetchWithPrice(url) {
   try {
-    const res = await fetchWithRetry(url);
+    const res = await fetchWithRetry(url, {}, 'discovery');
     if (res.status === 404) {
       // バグ修正: サークルプロフィールページ(/circle/profile/=/...)は、ページ番号が
       // 実際の範囲を超えると200+空リストではなく404を返す仕様だった。これを
@@ -327,7 +330,7 @@ async function _confirm404(url) {
     await sleep(_404_CONFIRM_DELAY * (i + 1));
     let res;
     try {
-      res = await fetchWithRetry(url);
+      res = await fetchWithRetry(url, {}, 'discovery');
     } catch (e) {
       log.warn('[discovery] 404confirm: retry fetch error, continuing to confirm', url, e.message);
       continue;
