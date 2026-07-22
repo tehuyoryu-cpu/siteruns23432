@@ -447,6 +447,28 @@ function _applySchema() {
     if (ghostResult.changes > 0) log.info('[db] ghost RJ codes quarantined:', ghostResult.changes, '件');
   }
 
+  // バグ修正: comp_candidates（総集編候補キュー）にも同じ末尾000ゴーストパターンが
+  // 混入しており、compScanが毎回404を出し続けて無駄なリクエストを送っていた。
+  // works テーブルの清掃はこちらには効かない（別テーブルのため）ので、
+  // 同じ条件でここも清掃する。processed_at IS NULL（＝due中）のものだけを対象にし、
+  // 既に処理済みの履歴レコードは触らない。
+  try {
+    const compGhostResult = _db.prepare(`
+      DELETE FROM comp_candidates
+      WHERE processed_at IS NULL AND (
+        rj_code LIKE '%000'   OR rj_code LIKE '%0000'
+        OR rj_code LIKE '%00000' OR rj_code LIKE 'RJ000000'
+        OR rj_code LIKE 'RJ0000000' OR rj_code LIKE 'RJ00000000'
+      )
+    `).run();
+    if (compGhostResult.changes > 0) {
+      log.info('[db] removed ghost RJ codes from comp_candidates:', compGhostResult.changes, '件');
+      changed = true;
+    }
+  } catch (e) {
+    console.error('[db] comp_candidates ghost cleanup error:', e.message);
+  }
+
   // cur_price 非正規化カラムのバックフィル（既存DBの cur_price が NULL の作品のみ）
   try {
     const pending = _get(`SELECT COUNT(*) AS n FROM works WHERE cur_price IS NULL AND rj_code IN (SELECT rj_code FROM price_history)`);
@@ -1117,10 +1139,17 @@ function addCompCandidates(rjCodes) {
   return added;
 }
 
-/** 詳細解析がまだの候補(processed_at IS NULL)を取得。古い順(FIFO)で公平に処理する */
+/**
+ * 詳細解析がまだの候補(processed_at IS NULL)を取得。古い順(FIFO)で公平に処理する。
+ * 末尾000のゴーストRJコードは除外する（parser.js側で新規混入は止めたが、
+ * 過去分の取りこぼしや将来の別経路からの混入に備えた防御的フィルタ）。
+ */
 function getDueCompCandidates(limit = 50) {
   return _all(
-    `SELECT rj_code FROM comp_candidates WHERE processed_at IS NULL ORDER BY discovered_at ASC LIMIT ?`,
+    `SELECT rj_code FROM comp_candidates
+     WHERE processed_at IS NULL
+       AND rj_code NOT LIKE '%000'
+     ORDER BY discovered_at ASC LIMIT ?`,
     [limit]
   ).map(r => r.rj_code);
 }

@@ -308,7 +308,14 @@ async function estimateContents(compRJ, html, io) {
   const { fetchText, fetchJson, sleep, shouldContinue = () => true } = io;
 
   const CIRCLE_URL = (id, p) => `https://www.dlsite.com/maniax/fsr/=/maker_id/${id}/per_page/100/page/${p}/show_type/1`;
-  const INFO_URL   = rj => `https://www.dlsite.com/home/product/info/=/product_id/${rj}.json`;
+  // バグ修正: 拡張機能版から移植した際に site_id が 'home' 固定のまま
+  // 残っていた。'home' は config.dlsite.sites（実際にウォームアップ/巡回
+  // している maniax/bl/girls）に含まれないファミリーで、product/info/=
+  // エンドポイントもセッションが確立されていないため恒常的に404していた
+  // （data実測: 1セッションで180件超）。compScanのPhase A(一覧走査)は
+  // 現状maniaxジャンル515のみを対象にしており、CIRCLE_URLも既にmaniax
+  // 固定になっているため、ここもmaniaxに揃える。
+  const INFO_URL   = rj => `https://www.dlsite.com/maniax/product/info/=/product_id/${rj}.json`;
   const MAX_API = 30;
 
   const comp = parseCompMeta(html, compRJ);

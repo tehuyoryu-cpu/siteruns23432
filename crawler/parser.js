@@ -319,6 +319,21 @@ function parseWorkListWithPrice(html) {
       }
     }
 
+    // バグ修正: db.js のコメントは「parser.jsの除外フィルタ追加前にDBに入った
+    // ものを一括クリーンアップ」としていたが、実際にはそのフィルタがここに
+    // 一度も実装されていなかった。末尾000パターンのRJコード（旧discoveryバグ
+    // 由来のゴーストコード、db.jsのゴースト清掃ロジックが対象とするのと同じ
+    // パターン）がFSR/一覧ページのHTML内の断片から誤検出され続け、discovery
+    // だけでなくcompScan（総集編候補収集）にも新規に混入し続けていた
+    // （実測: compScan detail fetch の失敗の8割以上がこのパターンだった）。
+    // db.js側の清掃は既存データへの対症療法にしかならないため、抽出元である
+    // ここで新規混入自体を止める。
+    let ghostSkipped = 0;
+    for (const rj of [...found.keys()]) {
+      if (_isGhostRj(rj)) { found.delete(rj); ghostSkipped++; }
+    }
+    if (ghostSkipped > 0) log.debug('[parser] ghost RJ codes skipped', ghostSkipped);
+
     const result = [...found.values()];
     log.debug('[parser] parseWorkListWithPrice', result.length, 'codes');
     return result;
@@ -339,6 +354,14 @@ function _rj(str) {
   if (!str) return null;
   const m = str.match(/\b(RJ\d{6,8})\b/i);
   return m ? m[1].toUpperCase() : null;
+}
+
+// db.js のゴーストRJコード清掃ロジック
+// (GLOB 'RJ*000' / 'RJ*0000' / 'RJ000000' 相当) と揃えたパターン。
+// 末尾が000で終わるRJコードは、旧discoveryバグ由来の実在しない
+// 断片コードであることがほとんどのため、抽出段階で除外する。
+function _isGhostRj(rj) {
+  return /000$/.test(rj);
 }
 
 function _jpyText(text) {
