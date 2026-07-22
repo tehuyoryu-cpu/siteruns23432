@@ -39,6 +39,7 @@ const detailFetcher = require('./detailFetcher');
 const importData = require('./importData');
 const compScan = require('./compScan');
 const { runExportShards } = require('./exportShards');
+const { abortNow, resetAbortFlag } = require('./abortSignals');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
 // 即requireしていた。electron-builderのfilesリストにscripts/**が含まれていなかった
 // ため、パッケージ化されたexe(app.asar)内にこのファイルが同梱されず、apiServer.js
@@ -145,6 +146,11 @@ function handleStop(job, res) {
   }
   if (!global._crawlerAbort) global._crawlerAbort = {};
   global._crawlerAbort[abortFlag] = true;
+  // バグ修正: 真偽値フラグだけではループの合間（次のバッチ/次のfetch開始時）
+  // にしかチェックされず、進行中のfetchやリトライ待機（最大60秒超）が
+  // 終わるまで停止が反映されなかった。abortSignals経由で該当ジョブ系統の
+  // fetch・バックオフ待機を即座に中断させる。
+  abortNow(abortFlag);
   log.info('[api] stop requested for', job, '(abort flag:', abortFlag + ')');
   return _json(res, { ok: true, message: (_JOB_LABELS[job] ?? job) + 'の停止を要求しました' });
 }
@@ -179,6 +185,10 @@ async function handleRun(job, res) {
   if (_abortFlagForThisJob) {
     if (!global._crawlerAbort) global._crawlerAbort = {};
     global._crawlerAbort[_abortFlagForThisJob] = false;
+    // 前回中止時に abort() 済みの AbortController を使い回すと、fetch側の
+    // 中断チェックが新規実行の初回リクエストから即座にtrueになってしまうため、
+    // 真偽値フラグと同様にこちらも新しい実行のたびにリセットする。
+    resetAbortFlag(_abortFlagForThisJob);
   }
   _jobRunning[job] = true;
   if (sharedKey) {
@@ -238,6 +248,7 @@ async function handleRun(job, res) {
       if (shared['detail']) {
         if (!global._crawlerAbort) global._crawlerAbort = {};
         global._crawlerAbort.detail = true;
+        abortNow('detail');   // 進行中のfetch/バックオフ待機も即座に中断する
         _sseSend('log', '価格更新を中断して全て巡回を優先します...');
         log.info('[api] all: aborting running detail fetch...');
         const abortStart = Date.now();
@@ -249,6 +260,7 @@ async function handleRun(job, res) {
           }, 150);
         });
         global._crawlerAbort.detail = false;
+        resetAbortFlag('detail');
         log.info('[api] all: detail fetch stopped');
       }
       shared['detail'] = true;   // detail ロック確保
@@ -346,6 +358,7 @@ async function handleRun(job, res) {
       if (shared['detail']) {
         if (!global._crawlerAbort) global._crawlerAbort = {};
         global._crawlerAbort.detail = true;
+        abortNow('detail');   // 進行中のfetch/バックオフ待機も即座に中断する
         _sseSend('log', '価格更新を中断してぶっ飛ばし開始...');
         const abortStart = Date.now();
         await new Promise(resolve => {
@@ -356,6 +369,7 @@ async function handleRun(job, res) {
           }, 150);
         });
         global._crawlerAbort.detail = false;
+        resetAbortFlag('detail');
       }
       shared['detail'] = true;
       myDetailToken = Symbol('api-turbo');
@@ -446,6 +460,7 @@ async function handleRun(job, res) {
       // 総集編マーク Phase A: ジャンル515一覧を巡回し、総集編“作品”RJを収集する
       if (!global._crawlerAbort) global._crawlerAbort = {};
       global._crawlerAbort.comp = false;   // 停止ボタンからの中断要求フラグをリセット
+      resetAbortFlag('comp');
       Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await compScan.runListingScan({
         shouldContinue: () => !global._crawlerAbort?.comp,
@@ -468,6 +483,7 @@ async function handleRun(job, res) {
       // 総集編マーク Phase B: 候補の詳細解析（直接抽出→サークル推定）
       if (!global._crawlerAbort) global._crawlerAbort = {};
       global._crawlerAbort.comp = false;   // 停止ボタンからの中断要求フラグをリセット
+      resetAbortFlag('comp');
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
       const result = await compScan.runDetailScan({
         limit: 200,
