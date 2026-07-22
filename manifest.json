@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-07-22T10:28:28.560Z",
+  "totalWorks": 530865,
+  "dataShards": 1024,
+  "idxShards": 64,
+  "writtenDataShards": 1024,
+  "writtenIdxShards": 64,
+  "hashAlgo": "fnv1a-32",
+  "recentLogSize": 8,
+  "schema": {
+    "p": "price (定価)",
+    "s": "sale_price (セール価格, null省略)",
+    "d": "discount_rate (%, null省略)",
+    "os": "is_on_sale (1のときのみ存在)",
+    "po": "is_point_only (1のときのみ存在)",
+    "dd": "直近365日のセール日数 (0のときは省略)",
+    "lp": "過去最安値 (定価と同額なら省略)",
+    "lg": "直近価格ログ、新しい順 (空なら省略)",
+    "c": "総集編に収録されている場合のみ 1 (comp_works確定分のみ、未収録時は省略)"
+  }
+}
