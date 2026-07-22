@@ -56,6 +56,20 @@ const DB_PATH = path.resolve(_exeDir, config.db.path);
  * Safe to call multiple times (idempotent).
  * (better-sqlite3 は同期APIだが、呼び出し側の既存の `await db.init()` を
  *  変更せずに済むよう async function のまま維持している)
+ *
+ * バグ修正（起動が遅い）: 以前はここで PRAGMA integrity_check を毎回同期実行し、
+ * DBファイル全体を読み切ってから起動を完了させていた。実測では 140MB のDBで
+ * コールドキャッシュ時 3.9秒、quick_check に変えても 2.8秒(ボトルネックは
+ * pragmaの種類ではなくファイル全体を読む量そのもの)。本番DB(354.9MB)では
+ * 起動のたびに10秒近くブロックしていた計算になる。electron-main.js は
+ * createWindow() をこの db.init() の完了後まで待つため、ウィンドウ表示自体が
+ * 遅延していた。これは今回の(sql.js→better-sqlite3)移行で新規に追加した
+ * チェックで、旧sql.js版には存在しなかった。
+ * 「ファイルを開いた時点では全体を検証しない」というbetter-sqlite3/SQLiteの
+ * 特性自体は正しいが、対策として全件事前スキャンする代わりに、実際にクエリが
+ * 壊れたページへアクセスして SQLITE_CORRUPT 系のエラーが起きた瞬間に検知する
+ * リアクティブ方式に変更した(_get/_all/_run 参照)。ファイルが開けないレベルの
+ * 破損は従来通り起動時に検知・復旧する。
  */
 async function init() {
   if (_db) return;
@@ -69,6 +83,18 @@ async function init() {
     _db = _recoverFromCorruption();
   }
 
+  // バグ修正: better-sqlite3が同梱するSQLiteは foreign_keys プラグマの
+  // デフォルトが ON だった(sql.js版は暗黙的にOFFだったため、これまで一度も
+  // 表面化していなかった)。price_history に張られた
+  // FOREIGN KEY (rj_code) REFERENCES works(rj_code) が実際に効くようになった結果、
+  // ゴーストRJコード削除(DELETE FROM works ...)が、対応するprice_history行が
+  // 残っている場合に "FOREIGN KEY constraint failed" で失敗するようになっていた。
+  // ON DELETE CASCADE は元のスキーマに無く、既存の巨大なprice_historyテーブルを
+  // それを付けて作り直すのは現実的でないため、旧sql.js版と同じ「FK制約を
+  // 強制しない」挙動に明示的に揃えることで対処する(price_historyに親のいない
+  // 行が残る可能性はあるが、これは元々の挙動と同じであり新規のリスクではない)。
+  _db.pragma('foreign_keys = OFF');
+
   // WAL: 読み取りと書き込みが競合しにくく、コミットも高速。
   // synchronous=NORMAL は WAL との組み合わせで推奨される設定
   // （アプリクラッシュに対しては安全、OSクラッシュ/停電時のみ僅かにリスクあり。
@@ -78,14 +104,6 @@ async function init() {
 
   if (existed) {
     log.info('[db] loaded', DB_PATH);
-    // better-sqlite3/SQLite はファイルを開いた時点では全体を検証しない。
-    // 破損ページは実際にそこへアクセスした時だけ例外を投げるため、
-    // 明示的に整合性チェックしてから使い始める。
-    if (!_checkIntegrity()) {
-      log.error('[db] integrity check FAILED on load — attempting recovery');
-      try { _db.close(); } catch { /* ignore */ }
-      _db = _recoverFromCorruption();
-    }
   } else {
     log.info('[db] created', DB_PATH);
   }
@@ -106,8 +124,13 @@ async function close() {
   }
 }
 
-/** true if PRAGMA integrity_check reports 'ok'. */
-function _checkIntegrity() {
+/**
+ * true if PRAGMA integrity_check reports 'ok'.
+ * 重い処理（DBサイズに比例、354.9MB規模で数秒〜10秒程度）のため、
+ * 起動時には自動実行しない。手動メンテナンス操作（将来的なダッシュボードの
+ * 「DB整合性チェック」ボタン等）や、破損が疑われた際の調査用に公開している。
+ */
+function checkIntegrity() {
   try {
     return _db.pragma('integrity_check', { simple: true }) === 'ok';
   } catch (e) {
@@ -477,20 +500,48 @@ function _applySchema() {
 
 // ─── low-level query helpers ──────────────────────────────────────────────────
 
+// 起動時の全件integrity_check(重い)を廃止した代わりのリアクティブな安全網。
+// 実際にクエリが壊れたページへアクセスしてSQLITE_CORRUPT系のエラーが
+// 発生した場合にのみ検知し、ログに大きく出す。1プロセスの生存期間中に
+// 何度も同じ警告を出さないよう一度きりのフラグで抑制する。
+let _corruptionWarned = false;
+function _isCorruptionError(e) {
+  return e?.code === 'SQLITE_CORRUPT' || /database disk image is malformed|file is not a database/i.test(e?.message ?? '');
+}
+function _reportCorruption(e, sql) {
+  if (_corruptionWarned) return;
+  _corruptionWarned = true;
+  log.error('[db] ⚠ データベース破損の疑いを検出しました:', e.message,
+    'SQL:', String(sql).slice(0, 120));
+  log.error('[db] アプリを再起動してください。再起動時にファイルが開けない場合は',
+    'backups/ フォルダから自動復旧を試みます。開ける場合でも、早めに db.backup() で',
+    '現在の状態をバックアップしてから調査することを推奨します。');
+}
+
 /**
  * Execute a SELECT and return the first row as a plain object, or null.
  * @param {string} sql
  * @param {Array}  params  positional values matching ? placeholders
  */
 function _get(sql, params = []) {
-  return _db.prepare(sql).get(...params) ?? null;
+  try {
+    return _db.prepare(sql).get(...params) ?? null;
+  } catch (e) {
+    if (_isCorruptionError(e)) _reportCorruption(e, sql);
+    throw e;
+  }
 }
 
 /**
  * Execute a SELECT and return all rows as plain objects.
  */
 function _all(sql, params = []) {
-  return _db.prepare(sql).all(...params);
+  try {
+    return _db.prepare(sql).all(...params);
+  } catch (e) {
+    if (_isCorruptionError(e)) _reportCorruption(e, sql);
+    throw e;
+  }
 }
 
 /**
@@ -502,7 +553,12 @@ function _all(sql, params = []) {
  * @returns {{changes: number, lastInsertRowid: number|bigint}}
  */
 function _run(sql, params = []) {
-  return _db.prepare(sql).run(...params);
+  try {
+    return _db.prepare(sql).run(...params);
+  } catch (e) {
+    if (_isCorruptionError(e)) _reportCorruption(e, sql);
+    throw e;
+  }
 }
 
 /**
@@ -1681,6 +1737,7 @@ function getSampleRjForSite(siteId) {
 module.exports = {
   init,
   close,
+  checkIntegrity,
   runInTransaction,
   upsertWork,
   markChecked,
