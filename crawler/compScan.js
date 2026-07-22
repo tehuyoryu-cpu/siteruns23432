@@ -31,13 +31,16 @@ const _LISTING_URL = page =>
   `https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/ana_flg/all/order%5B0%5D/trend/genre%5B0%5D/515/options_and_or/and/per_page/100/page/${page}/show_type/1`;
 const _WORK_URL = rj => `https://www.dlsite.com/maniax/work/=/product_id/${rj}.html`;
 
+// 'comp' を渡すことで、停止ボタン押下時に進行中のfetch/バックオフ待機も
+// 即座に中断できるようにする（以前はループの合間のshouldContinue()チェックのみで、
+// 中止が反映されるまで最大数十秒かかっていた）。
 async function _getText(url) {
-  const res = await fetchWithRetry(url);
+  const res = await fetchWithRetry(url, {}, 'comp');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
 }
 async function _getJson(url) {
-  const res = await fetchWithRetry(url);
+  const res = await fetchWithRetry(url, {}, 'comp');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
