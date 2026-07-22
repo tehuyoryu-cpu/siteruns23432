@@ -103,8 +103,19 @@ function parseProductInfo(rjCode, body) {
         price     = officialPrice;
         salePrice = (priceCur != null && priceCur !== officialPrice) ? priceCur : null;
         if (salePrice == null) {
-          priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
-          log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields (official_price fallback)', rjCode, priceIssue.raw);
+          // バグ修正: is_sale=true だが official_price と price が同額(=実際の
+          // 値引きは無い)場合、下のpriceCurのみのブランチ(バグ修正③)と全く同じ
+          // 理由でポイント還元キャンペーン等であることがほとんどであり、データ
+          // 不備ではない。しかしofficial_priceブランチはpriceCurのみのブランチ
+          // より優先評価されるため、③の修正が適用される前にここでambiguous誤検知
+          // していた(1回の巡回で数千件のWARN + price_issues誤登録が発生)。
+          // discRateが未設定/0のときは正常な定価・ポイント還元として扱い、
+          // discRateが100以上(全額還元等の異常値)のときのみ真に定価不明として
+          // priceIssueに記録する。
+          if (discRate != null && discRate >= 100) {
+            priceIssue = { type: 'price_work_missing_high_discount', raw: { official_price: d.official_price, regular_price: d.regular_price, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
+            log.warn('[parser] official_price fallback with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
+          }
         }
       } else if (priceWork != null) {
         // price_work(通常価格らしきフィールド)はあるが、セール価格側の
