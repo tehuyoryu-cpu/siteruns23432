@@ -519,7 +519,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
 async function _verifyRjExists(rjCode, site) {
   const url = `${BASE}/${site}/work/=/product_id/${rjCode}.html`;
   try {
-    const res = await fetchWithRetry(url, { headers: { Accept: 'text/html' } });
+    const res = await fetchWithRetry(url, { headers: { Accept: 'text/html' } }, 'detail');
     if (res.status === 404) return 'gone';
     if (res.ok) return 'exists';
     log.warn('[detail] verifyRjExists non-ok/non-404 response', rjCode, res.status);
@@ -539,7 +539,7 @@ async function _apiFetch(works, site) {
   try {
     const res = await fetchWithRetry(url, {
       headers: { Accept: 'application/json, */*' },
-    });
+    }, 'detail');
     if (!res.ok) {
       log.error('[detail] API HTTP error', res.status, site, `${works.length}件`,
         works.slice(0,3).map(w=>w.rj_code).join(','));
