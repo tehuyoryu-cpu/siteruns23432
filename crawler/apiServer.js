@@ -135,8 +135,14 @@ const _SCHEDULER_RUNNING_KEY_BY_JOB = {
 };
 
 function handleStop(job, res) {
-  const abortFlag = _ABORT_FLAG_BY_JOB[job];
-  if (!abortFlag) {
+  // バグ修正/機能追加: 'turbo' は detail(価格更新) と discovery(新作収集/終了間近収集)を
+  // 同時並行で実行するようになったため、停止操作も両方のabortフラグを立てる必要がある。
+  // 単一文字列を返す _ABORT_FLAG_BY_JOB[job] だけでは detail 側しか止まらず、
+  // newrelease/endingsoonの走査が停止操作後も動き続けてしまうバグになる。
+  const abortFlags = job === 'turbo'
+    ? ['detail', 'discovery']
+    : [_ABORT_FLAG_BY_JOB[job]].filter(Boolean);
+  if (!abortFlags.length) {
     return _json(res, { ok: false, message: (_JOB_LABELS[job] ?? job) + 'は短時間で完了するため停止操作は不要です' });
   }
   const schedKey = _SCHEDULER_RUNNING_KEY_BY_JOB[job];
@@ -145,13 +151,15 @@ function handleStop(job, res) {
     return _json(res, { ok: false, message: '実行中の' + (_JOB_LABELS[job] ?? job) + 'はありません' });
   }
   if (!global._crawlerAbort) global._crawlerAbort = {};
-  global._crawlerAbort[abortFlag] = true;
-  // バグ修正: 真偽値フラグだけではループの合間（次のバッチ/次のfetch開始時）
-  // にしかチェックされず、進行中のfetchやリトライ待機（最大60秒超）が
-  // 終わるまで停止が反映されなかった。abortSignals経由で該当ジョブ系統の
-  // fetch・バックオフ待機を即座に中断させる。
-  abortNow(abortFlag);
-  log.info('[api] stop requested for', job, '(abort flag:', abortFlag + ')');
+  for (const abortFlag of abortFlags) {
+    global._crawlerAbort[abortFlag] = true;
+    // バグ修正: 真偽値フラグだけではループの合間（次のバッチ/次のfetch開始時）
+    // にしかチェックされず、進行中のfetchやリトライ待機（最大60秒超）が
+    // 終わるまで停止が反映されなかった。abortSignals経由で該当ジョブ系統の
+    // fetch・バックオフ待機を即座に中断させる。
+    abortNow(abortFlag);
+  }
+  log.info('[api] stop requested for', job, '(abort flags:', abortFlags.join(',') + ')');
   return _json(res, { ok: true, message: (_JOB_LABELS[job] ?? job) + 'の停止を要求しました' });
 }
 
@@ -181,14 +189,22 @@ async function handleRun(job, res) {
   // そのため一度でも停止ボタンを押すと、同じ系統(discovery/detail/comp)の
   // 以降のジョブが起動直後に即座に中断扱いになってしまうバグがあった。
   // 新しい実行を開始するたびに、このジョブが使う中止フラグを確実にリセットする。
-  const _abortFlagForThisJob = _ABORT_FLAG_BY_JOB[job];
-  if (_abortFlagForThisJob) {
+  // 機能追加: 'turbo' は detail(価格更新) + discovery(新作収集/終了間近収集) を
+  // 並列実行するため、両方のabortフラグを新規実行のたびにリセットする必要がある。
+  // 片方だけリセットすると、前回の停止操作が残っていたもう片方の系統が
+  // 開始直後から中断扱いになってしまう。
+  const _abortFlagsForThisJob = job === 'turbo'
+    ? ['detail', 'discovery']
+    : [_ABORT_FLAG_BY_JOB[job]].filter(Boolean);
+  if (_abortFlagsForThisJob.length) {
     if (!global._crawlerAbort) global._crawlerAbort = {};
-    global._crawlerAbort[_abortFlagForThisJob] = false;
-    // 前回中止時に abort() 済みの AbortController を使い回すと、fetch側の
-    // 中断チェックが新規実行の初回リクエストから即座にtrueになってしまうため、
-    // 真偽値フラグと同様にこちらも新しい実行のたびにリセットする。
-    resetAbortFlag(_abortFlagForThisJob);
+    for (const f of _abortFlagsForThisJob) {
+      global._crawlerAbort[f] = false;
+      // 前回中止時に abort() 済みの AbortController を使い回すと、fetch側の
+      // 中断チェックが新規実行の初回リクエストから即座にtrueになってしまうため、
+      // 真偽値フラグと同様にこちらも新しい実行のたびにリセットする。
+      resetAbortFlag(f);
+    }
   }
   _jobRunning[job] = true;
   if (sharedKey) {
@@ -354,40 +370,61 @@ async function handleRun(job, res) {
       }
 
     } else if (job === 'turbo') {
-      // ぶっ飛ばしモード: rateLimit 最小・全 due 作品を処理
-      if (shared['detail']) {
-        if (!global._crawlerAbort) global._crawlerAbort = {};
-        global._crawlerAbort.detail = true;
-        abortNow('detail');   // 進行中のfetch/バックオフ待機も即座に中断する
-        _sseSend('log', '価格更新を中断してぶっ飛ばし開始...');
-        const abortStart = Date.now();
-        await new Promise(resolve => {
-          const t = setInterval(() => {
-            if (!shared['detail'] || Date.now() - abortStart > 15_000) {
-              clearInterval(t); resolve();
-            }
-          }, 150);
-        });
-        global._crawlerAbort.detail = false;
-        resetAbortFlag('detail');
-      }
-      shared['detail'] = true;
+      // ぶっ飛ばしモード: 価格更新(detail)・新作収集(newrelease)・終了間近収集(endingsoon)を
+      // 同時並行で実行する。3つは互いに別々のFSR/APIエンドポイントを叩く独立した処理のため、
+      // 直列(discover→…→fetch)で回すより1周あたりの所要時間を大きく短縮できる。
+      //
+      // detail は 'detail' ロック、newrelease/endingsoon は 'discovery' ロックを使う
+      // （discover/fullscan等と同じ系統）。turbo開始時にどちらかが既に実行中なら、
+      // 既存の detail 中断ロジックと同じパターンでいったん中断してから引き継ぐ。
+      const _abortAndTakeLock = async (lockKey, label) => {
+        if (shared[lockKey]) {
+          if (!global._crawlerAbort) global._crawlerAbort = {};
+          global._crawlerAbort[lockKey] = true;
+          abortNow(lockKey);   // 進行中のfetch/バックオフ待機も即座に中断する
+          _sseSend('log', `${label}を中断してぶっ飛ばしに合流します...`);
+          const abortStart = Date.now();
+          await new Promise(resolve => {
+            const t = setInterval(() => {
+              if (!shared[lockKey] || Date.now() - abortStart > 15_000) {
+                clearInterval(t); resolve();
+              }
+            }, 150);
+          });
+          global._crawlerAbort[lockKey] = false;
+          resetAbortFlag(lockKey);
+        }
+        shared[lockKey] = true;
+      };
+
+      await _abortAndTakeLock('detail', '価格更新');
       myDetailToken = Symbol('api-turbo');
       shared._detailOwner = myDetailToken;
-      _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 全due作品を高速並列処理します');
-      Object.assign(_progress, { job, found: 0, total: 0, startedAt: Math.floor(Date.now() / 1000), done: false });
-      // rateLimit縮小だけでなく concurrency(同時並列リクエスト数) も引き上げる。
-      // バグ修正: 以前は config.fetch.rateLimit/concurrency をグローバルに
-      // 一時上書きしてから finally で戻していたが、これはモジュール全体で
-      // 共有される状態のため、ブースト中に他の処理が同じ config を参照すると
-      // レース状態になりうる。runDetailFetch に直接オーバーライド値を渡し、
-      // グローバルは一切変更しない。
-      {
-        // バグ修正: 99999 は「実質無制限」のつもりの値だったが、実装上は
-        // ハードキャップとして扱われるため、due作品数がこれを超えると
-        // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
-        // Infinity にすることで、真に due が枯渇するまで処理を続ける。
-        const r = await detailFetcher.runDetailFetch(Infinity, {
+
+      await _abortAndTakeLock('discovery', '収集系ジョブ');
+      myDiscoveryToken = Symbol('api-turbo-discovery');
+      shared._discoveryOwner = myDiscoveryToken;
+
+      _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 価格更新・新作収集・終了間近収集を並列実行します');
+      // subJobs: newrelease/endingsoon の進捗はダッシュボードのメイン進捗バー
+      // (found/total)には反映しない（価格更新の件数と混ざって意味不明になるため）。
+      // ログパネルへは既存の [discovery] ログ転送(SSE 'log')でそのまま流れる。
+      Object.assign(_progress, {
+        job, found: 0, total: 0,
+        startedAt: Math.floor(Date.now() / 1000), done: false,
+        subJobs: { newrelease: {}, endingsoon: {} },
+      });
+
+      // バグ修正: 99999 は「実質無制限」のつもりの値だったが、実装上は
+      // ハードキャップとして扱われるため、due作品数がこれを超えると
+      // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
+      // Infinity にすることで、真に due が枯渇するまで処理を続ける。
+      //
+      // 3つとも Promise.all で並列起動する。newrelease/endingsoon側で例外が
+      // 起きても .catch() で握りつぶし、価格更新(detail)の結果は必ず持ち帰る
+      // （収集系がエラーで落ちただけで「ぶっ飛ばし全体が失敗」にはしたくない）。
+      const [detailR, newReleaseR, endingSoonR] = await Promise.all([
+        detailFetcher.runDetailFetch(Infinity, {
           rateLimit:   200,
           concurrency: Math.max(config.fetch.concurrency ?? 1, 6),
           onProgress: ({ processed, priceChanges, total }) => {
@@ -395,12 +432,40 @@ async function handleRun(job, res) {
             _sseSend('progress', { processed, priceChanges, total });
             if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
           },
-        });
-        _lastResult[job] = { ok: true, ...r, finishedAt: Date.now() };
-        const msg = `ぶっ飛ばし完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`;
-        _sseSend(r?.priceChanges > 0 ? 'change' : 'log', msg);
-        if (r?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(r.priceChanges);
-      }
+        }),
+        runNewReleaseScan({
+          onProgress: ({ site, page, found, total }) => {
+            _progress.subJobs.newrelease = { site, page, found: total };
+            _sseSend('progress', { job: 'newrelease', site, page, found: total });
+          },
+        }).catch(e => {
+          log.error('[api] turbo: newReleaseScan error (continuing)', e.message);
+          _sseSend('warn', `新作収集エラー: ${e.message} — 価格更新・終了間近収集は続行します`);
+          return { grandTotal: 0, error: e.message };
+        }),
+        runEndingSoonScan({
+          onProgress: ({ site, page, found, total }) => {
+            _progress.subJobs.endingsoon = { site, page, found: total };
+            _sseSend('progress', { job: 'endingsoon', site, page, found: total });
+          },
+        }).catch(e => {
+          log.error('[api] turbo: endingSoonScan error (continuing)', e.message);
+          _sseSend('warn', `終了間近収集エラー: ${e.message} — 価格更新・新作収集は続行します`);
+          return { grandTotal: 0, newCount: 0, boostedCount: 0, error: e.message };
+        }),
+      ]);
+
+      _lastResult[job] = {
+        ok: true, ...detailR,
+        newRelease: newReleaseR, endingSoon: endingSoonR,
+        finishedAt: Date.now(),
+      };
+      const msg =
+        `ぶっ飛ばし完了 — 価格更新:${detailR?.processed ?? 0}件 変動:${detailR?.priceChanges ?? 0}件` +
+        ` / 新作収集:新規${newReleaseR?.grandTotal ?? 0}件` +
+        ` / 終了間近:新規${endingSoonR?.newCount ?? 0}件・優先度UP${endingSoonR?.boostedCount ?? 0}件`;
+      _sseSend(detailR?.priceChanges > 0 ? 'change' : 'log', msg);
+      if (detailR?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(detailR.priceChanges);
 
     } else if (job === 'endingsoon') {
       // 割引終了まで24時間以内(soon/1)の作品を優先度最優先で収集する
@@ -579,8 +644,10 @@ async function handleRun(job, res) {
     // 'all' は detail ロックを保持したまま Phase2/3 を実行するため最後に解放する。
     // discovery ロックは Phase 1 内で既に解放済みのはずだが、例外発生時の保険として
     // ここでも自分のトークンが残っていれば解放する。
+    // 'turbo' は detail(価格更新) と discovery(新作収集/終了間近収集) の両方を
+    // Promise.all で並列保持したまま実行するため、両方ともここで解放する。
     if (job === 'all' || job === 'turbo') releaseDetail();
-    if (job === 'all') releaseDiscovery();
+    if (job === 'all' || job === 'turbo') releaseDiscovery();
     _progress.done = true;
   }
 }

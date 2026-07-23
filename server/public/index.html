@@ -673,7 +673,7 @@ body { animation: fadeInDown .35s ease both; }
       <svg viewBox="0 0 16 16"><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="#006600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="3.5" fill="#006600"/></svg>
       全て巡回
     </button>
-    <button class="tb-btn" id="btnTurbo" onclick="runJob('turbo')" data-desc="rateLimit最小・全due作品を一括処理。PCに高負荷がかかります" title="ぶっ飛ばし — 全due作品を高速一括処理" style="color:#c0392b;font-weight:bold">
+    <button class="tb-btn" id="btnTurbo" onclick="runJob('turbo')" data-desc="価格更新・新作収集・終了間近収集を同時並列で実行(rateLimit最小・concurrency最大)。PCに高負荷がかかります" title="ぶっ飛ばし — 価格更新+新作収集+終了間近収集を並列実行" style="color:#c0392b;font-weight:bold">
       <svg viewBox="0 0 16 16"><path d="M8 1l1.8 4.5L15 6.4l-3.8 3.4 1 5.2L8 12.5l-4.2 2.5 1-5.2L1 6.4l5.2-.9z" fill="#e74c3c"/></svg>
       ぶっ飛ばし
     </button>
@@ -1491,6 +1491,10 @@ function _showJobResult(job, status) {
   if (job === 'discover')    setStatus('RJ収集完了 — 新規: ' + (r.discovered ?? 0) + ' 件');
   else if (job === 'fetch')  setStatus('価格更新完了 — 処理: ' + (r.processed ?? 0) + ' 件 / 変化: ' + (r.priceChanges ?? 0) + ' 件');
   else if (job === 'all')    setStatus('全て巡回完了 — 新規: ' + (r.discovered ?? 0) + '件 / 価格更新: ' + (r.processed ?? 0) + '件 / 変動: ' + (r.priceChanges ?? 0) + '件');
+  else if (job === 'turbo')  setStatus(
+    '🚀 ぶっ飛ばし完了 — 価格更新: ' + (r.processed ?? 0) + '件 (変動 ' + (r.priceChanges ?? 0) + '件)' +
+    ' / 新作収集: 新規' + (r.newRelease?.grandTotal ?? 0) + '件' +
+    ' / 終了間近: 新規' + (r.endingSoon?.newCount ?? 0) + '件・優先度UP' + (r.endingSoon?.boostedCount ?? 0) + '件');
   else if (job?.startsWith('fullscan')) setStatus('全収集完了 — ' + (status.fullScanProgress?.grandTotal ?? 0) + ' 件');
   else if (job === 'circlegap') setStatus(
     (r.stopped ? 'サークル欠落診断を停止 — ' : 'サークル欠落診断完了 — ') +
