@@ -587,7 +587,32 @@ async function _apiFetch(works, site) {
       await _recordApiEmptyAndMaybeRecover(site);
       return null;
     }
-    // 成功(部分成功含む)したのでストリーク・サーキットともにクリアする
+    // バグ修正: 以前は returnedKeys > 0 でありさえすれば(たとえ50件要求して
+    // 1件しか返らなくても)無条件に「成功」としてストリークをリセットしていた。
+    // そのため、CDN/APIが慢性的に「ほぼ空だが完全にゼロではない」応答を返し
+    // 続ける状態(2026-07-23 05:03/05:37のログで確認: 1バッチあたり要求50件中
+    // 実質2〜3件しか返らない状態が延々と繰り返された)では、空応答ストリークが
+    // 一度も閾値(5)に達せず、既存の自動セッション再確立(_recordApiEmptyAndMaybeRecover)
+    // が永久に発動しないという盲点があった。マッチ率が著しく低い(既定20%未満)
+    // 応答は「実質的に空」とみなし、空応答と同じストリーク/回復判定に乗せる。
+    // ただし返ってきた分のデータ自体は無駄にしない(bodyはそのまま返して
+    // _processBatch側で通常どおり保存させる)。
+    // バッチが小さいと比率が安定しないため、CDN汚染判定と同様に
+    // 最低件数(SEVERE_PARTIAL_MIN_BATCH)以上のバッチにのみ適用する。
+    const SEVERE_PARTIAL_MIN_BATCH  = 4;
+    const SEVERE_PARTIAL_RATIO      = 0.2;
+    const isSeverelyPartial =
+      works.length >= SEVERE_PARTIAL_MIN_BATCH &&
+      returnedKeys < works.length * SEVERE_PARTIAL_RATIO;
+
+    if (isSeverelyPartial) {
+      log.warn('[detail] API response severely degraded (near-empty, counted toward recovery streak)', site,
+        `got ${returnedKeys} / requested ${works.length}`);
+      await _recordApiEmptyAndMaybeRecover(site);
+      return body;
+    }
+
+    // 成功(通常の部分成功含む)したのでストリーク・サーキットともにクリアする
     _recordApiSuccess(site);
     if (returnedKeys < works.length * 0.5) {
       log.warn('[detail] API returned partial data', site,
