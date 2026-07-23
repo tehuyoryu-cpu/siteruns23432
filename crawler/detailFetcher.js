@@ -11,6 +11,7 @@ const parser = require('./parser');
 const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
 const { pushDebugBundle } = require('../scripts/pushDebugBundle');
+const { getAbortSignal } = require('./abortSignals');
 
 const BASE  = config.dlsite.baseUrl;
 const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Info API 上限
@@ -284,6 +285,18 @@ function saveDiscoveredPrice(rjCode, priceData) {
 async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.rateLimit) {
   const result = { processed: 0, priceChanges: 0, errors: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0 };
 
+  // バグ修正: 停止ボタン/turboの横取り等でこのジョブ系統(detail)が中止された
+  // 場合、以前はここをすり抜けて _apiFetch が「aborted」エラーで失敗 →
+  // 通常の失敗と区別されずバイナリ分割(50→25×2)して再試行 → 当然その再試行も
+  // 即座に「aborted」で失敗 → recordFetchError で該当作品全ての次回チェック
+  // 間隔を延ばしてしまう、という無駄かつ有害な連鎖が起きていた
+  // (2026-07-23 05:27のログで確認: 中断直後に "batch fail, splitting" と
+  //  "API fetch error aborted" が多数連発していた)。
+  // 中止要求が既に来ている場合は、fetchも分割もDB更新も一切行わず即座に
+  // 空の結果を返す。該当作品は due のまま残るため、次回実行時に
+  // ペナルティなしで再試行される。
+  if (getAbortSignal('detail').aborted) return result;
+
   // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
   // fetchError扱いにする（priorityは下げない・intervalのみ延長）。
   if (_shouldSkipRequest(site)) {
@@ -296,6 +309,12 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   }
 
   let body = await _apiFetch(works, site);
+
+  // ここでも中止が割り込んでいないか再確認する。_apiFetch実行中に停止ボタンが
+  // 押された場合、bodyはnullになるが、これは「DLsiteが応答しなかった」のではなく
+  // 「こちらから中断した」ことによるnullなので、以降の分割・recordFetchErrorの
+  // 対象にしてはならない。
+  if (!body && getAbortSignal('detail').aborted) return result;
 
   // 失敗→バイナリ分割（半分ずつ、最大1段階まで）→個別エラー記録
   // SUB=10 固定にすると works.length < SUB の場合に無限ループするため halving を使う
@@ -321,6 +340,18 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     log.warn('[detail] batch fail, splitting', works.length);
     const mid = Math.ceil(works.length / 2);
     const r1 = await _processBatch(works.slice(0, mid), site, depth + 1, rateLimit);
+    if (getAbortSignal('detail').aborted) {
+      // 1つ目の分割が中止で打ち切られたなら、2つ目のための待機・fetchも省略する
+      result.processed    += r1.processed;
+      result.priceChanges += r1.priceChanges;
+      result.errors       += r1.errors;
+      result.apiMissing    += r1.apiMissing;
+      result.contaminated  += r1.contaminated;
+      result.fetchFail      += r1.fetchFail;
+      result.storeError    += r1.storeError;
+      result.verifiedAlive += r1.verifiedAlive;
+      return result;
+    }
     await sleep(Math.max(rateLimit ?? 0, 300));
     const r2 = await _processBatch(works.slice(mid), site, depth + 1, rateLimit);
     result.processed    += r1.processed    + r2.processed;
