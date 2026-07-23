@@ -16,6 +16,15 @@ module.exports = {
     concurrency:  3,
     rateLimit:    700,    // DLsite安定動作確認済み
     batchSize:    50,
+    // 'turbo'/'all'ジョブ用のブースト値。
+    // 調整: 以前は concurrency:6/rateLimit:200ms(baseの約3.5倍の負荷)で固定していたが、
+    // 2026-07-23 05:03台のログで「API returned partial data」（要求件数の半分未満しか
+    // 返らない部分応答）が短時間に連発しているのを確認した。turboはdetail(価格更新)に加え
+    // newrelease/endingsoon(discovery系)も同時並列実行するため、実際の同時アクセス数は
+    // これよりさらに多い。DLsite側が明示的な429を返さず黙って部分応答/劣化するケースが
+    // あるとみられるため、負荷をbase設定寄りに緩和して部分応答の発生頻度を下げる。
+    turboConcurrency: 4,
+    turboRateLimit:   350,
   },
 
   cron: {
