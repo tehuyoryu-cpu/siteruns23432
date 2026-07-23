@@ -19,6 +19,7 @@ const { runDiscovery, runFullScan } = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
 const compScan = require('./compScan');
+const { resetAbortFlag } = require('./abortSignals');
 
 // ─── discovery job ───────────────────────────────────────────────────────────
 
@@ -34,6 +35,15 @@ function _startDiscoveryJob() {
     const myToken = Symbol('scheduler-discovery');
     global._crawlerRunning.discovery = true;
     global._crawlerRunning._discoveryOwner = myToken;
+    // バグ修正: apiServer.js の handleRun() は起動のたびに resetAbortFlag('discovery')
+    // を呼ぶが、この cron ジョブは runDiscovery() を直接呼ぶため handleRun() を
+    // 経由せず、この呼び出しが漏れていた。そのため、一度でも中止操作
+    // （停止ボタン/turboの横取り/アプリ終了時の中断シグナル等）で
+    // AbortController が abort() 済みになると、以降このcronが起動しても
+    // 二度とfetchが成功せず「discoveryが中断された状態のまま」に見える
+    // バグがあった（AbortSignalは一度abortすると同じControllerでは戻せない）。
+    global._crawlerAbort && (global._crawlerAbort.discovery = false);
+    resetAbortFlag('discovery');
     try   { await runDiscovery(); }
     catch (err) { log.error('[scheduler] discovery error', err.message); }
     finally {
@@ -62,6 +72,10 @@ function _startDetailJob() {
     global._crawlerRunning.detail                 = true;
     global._crawlerRunning._detailOwner           = myToken;
     global._crawlerRunning.schedulerDetailRunning = true;   // all-job の abort-wait が監視するフラグ
+    // バグ修正: discovery側と同様、cronから直接呼ぶ経路では
+    // resetAbortFlag('detail') が漏れていた（詳細はdiscoveryジョブ側コメント参照）。
+    global._crawlerAbort && (global._crawlerAbort.detail = false);
+    resetAbortFlag('detail');
     try   {
       await runDetailFetch(500, {
         onProgress: ({ processed, priceChanges, total }) => {
@@ -191,6 +205,11 @@ function _startCompScanJob() {
     if (global._crawlerRunning.compListing) { log.warn('[scheduler] comp_listing still running, skip'); return; }
     if (!global._crawlerAbort) global._crawlerAbort = {};
     global._crawlerAbort.comp = false;   // ダッシュボードの停止ボタンからの中断要求フラグをリセット
+    // バグ修正: 真偽値フラグは元々ここでリセットされていたが、abortSignals.js の
+    // AbortController側は未リセットのままだった。真偽値をfalseに戻しても
+    // fetchWithRetry側は abort() 済みのsignalを見続けるため、一度中止操作が
+    // 走るとcomp系スキャンが以後ずっと即時abortedで失敗し続けるバグがあった。
+    resetAbortFlag('comp');
     global._crawlerRunning.compListing = true;
     try { await compScan.runListingScan({ shouldContinue: () => !global._crawlerAbort?.comp }); }
     catch (err) { log.error('[scheduler] comp_listing error', err.message); }
@@ -203,6 +222,11 @@ function _startCompScanJob() {
     if (global._crawlerRunning.compDetail) { log.warn('[scheduler] comp_detail still running, skip'); return; }
     if (!global._crawlerAbort) global._crawlerAbort = {};
     global._crawlerAbort.comp = false;   // ダッシュボードの停止ボタンからの中断要求フラグをリセット
+    // バグ修正: 真偽値フラグは元々ここでリセットされていたが、abortSignals.js の
+    // AbortController側は未リセットのままだった。真偽値をfalseに戻しても
+    // fetchWithRetry側は abort() 済みのsignalを見続けるため、一度中止操作が
+    // 走るとcomp系スキャンが以後ずっと即時abortedで失敗し続けるバグがあった。
+    resetAbortFlag('comp');
     global._crawlerRunning.compDetail = true;
     try { await compScan.runDetailScan({ limit: 200, shouldContinue: () => !global._crawlerAbort?.comp }); }
     catch (err) { log.error('[scheduler] comp_detail error', err.message); }
@@ -225,6 +249,10 @@ function _startPrevMonthScanJob() {
     const myToken = Symbol('scheduler-prev-month-scan');
     global._crawlerRunning.discovery = true;
     global._crawlerRunning._discoveryOwner = myToken;
+    // バグ修正: このジョブも runFullScan() 経由で discovery 系のfetchWithRetryを
+    // 直接呼ぶため、他のdiscovery系cronと同様に resetAbortFlag が必要。
+    global._crawlerAbort && (global._crawlerAbort.discovery = false);
+    resetAbortFlag('discovery');
     log.info('[scheduler] prevMonthScan start — scanning last month FSR');
     try {
       // 前月1日を計算
@@ -308,6 +336,8 @@ async function start() {
     const myInitToken = Symbol('scheduler-initial-discovery');
     global._crawlerRunning.discovery = true;
     global._crawlerRunning._discoveryOwner = myInitToken;
+    global._crawlerAbort && (global._crawlerAbort.discovery = false);
+    resetAbortFlag('discovery');
     runDiscovery()
       .catch(err => log.error('[scheduler] initial discovery error', err.message))
       .finally(() => {
@@ -328,6 +358,8 @@ async function start() {
     global._crawlerRunning.detail                 = true;
     global._crawlerRunning._detailOwner           = myToken;
     global._crawlerRunning.schedulerDetailRunning = true;
+    global._crawlerAbort && (global._crawlerAbort.detail = false);
+    resetAbortFlag('detail');
     runDetailFetch(500, {
       onProgress: ({ processed, priceChanges, total }) => {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
