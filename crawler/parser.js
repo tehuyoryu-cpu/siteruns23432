@@ -95,11 +95,18 @@ function parseProductInfo(rjCode, body) {
       } else if (priceCur != null && discRate != null && discRate > 0 && discRate < 100) {
         salePrice = priceCur;
         price     = Math.round(priceCur * 100 / (100 - discRate));
-      } else if (officialPrice != null) {
+      } else if (officialPrice > 0) {
         // price_workは無いが公式定価フィールド(official_price/regular_price)は
         // ある。price_curとの差が取れないため割引額は不明扱いだが、定価の値
         // 自体はofficial_priceの方がprice_workより信頼できるため、ambiguous
         // 分岐へ流す前にこちらを優先する。
+        // バグ修正: official_price/regular_priceが「未設定(null)」ではなく
+        // 文字通り0で返ってくるAPI応答が実在した(観測: is_point_only誤判定
+        // データの全件がこのパターン)。旧実装は`!= null`判定だったため
+        // officialPrice=0を「有効な定価」として採用してしまい、
+        // price=0・sale_price=実売価格 という壊れたデータがDBに保存され
+        // 続けていた(定価とセール価格が正しく取れない不具合の主因)。
+        // >0 を要求することで、0は「未設定」と同様に次のフォールバックへ回す。
         price     = officialPrice;
         salePrice = (priceCur != null && priceCur !== officialPrice) ? priceCur : null;
         if (salePrice == null) {
@@ -147,12 +154,14 @@ function parseProductInfo(rjCode, body) {
           priceIssue = { type: 'price_work_missing_high_discount', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
           log.warn('[parser] price_work missing with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
         }
-      } else if (officialPrice != null || campaignPrice != null || restorePrice != null) {
+      } else if (officialPrice > 0 || campaignPrice != null || restorePrice != null) {
         // price_work/priceともに欠損だが、official_price/regular_priceや
         // discountオブジェクトの断片(campaign_price/restore_priceのどちらか
         // 一方のみ等)は残っている場合の最終手段。0円で上書きするよりは、
         // 得られる中で最も定価らしい値を使う方が実害が小さい。
-        price     = officialPrice ?? restorePrice ?? campaignPrice;
+        // バグ修正: officialPrice=0(データ不備)を有効値として拾わないよう
+        // >0 を要求する(上のブランチと同じ理由)。
+        price     = (officialPrice > 0 ? officialPrice : null) ?? restorePrice ?? campaignPrice;
         salePrice = null;
         priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, discount: discObj, price_work: d.price_work, price: d.price } };
         log.warn('[parser] price_work/price欠損だがofficial_price等から代替', rjCode, priceIssue.raw);
