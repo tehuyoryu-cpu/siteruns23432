@@ -656,7 +656,8 @@ function _store(rjCode, body) {
   // そのまま保持する(在庫/優先度スケジューリングは is_on_sale フラグだけで
   // 十分機能するため、work情報・巡回スケジュールの更新は通常通り行う)。
   const priceUnreliable = priceIssue?.type === 'no_price_field'
-    || priceIssue?.type === 'price_work_missing_high_discount';
+    || priceIssue?.type === 'price_work_missing_high_discount'
+    || priceIssue?.type === 'invalid_price_combo';
 
   // バグ修正(重大): savePriceIfChanged() は { changed, consecutive_no_change }
   // という「オブジェクト」を返す(changed=falseのときも！)。以前はこれを
