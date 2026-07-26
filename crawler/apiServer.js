@@ -969,6 +969,20 @@ function createServer() {
         return;
       }
 
+      if (pathname === '/api/digest') {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        try {
+          const limit   = Math.min(2000, Math.max(1, parseInt(query.limit ?? '300', 10) || 300));
+          const content = _readTail(log.getDigestLogPath(), 2 * 1024 * 1024);
+          res.end(content.split('\n').filter(Boolean).slice(-limit).join('\n'));
+        } catch (e) {
+          res.end('(digestログなし: ' + e.message + ')');
+        }
+        return;
+      }
+
+      if (pathname === '/api/events') return _json(res, handleEvents(query));
+
       // 進捗パネルなどクライアント側エラーをサーバーのエラーログに記録
       if (pathname === '/api/client-error' && req.method === 'POST') {
         let body = '';
@@ -1064,6 +1078,33 @@ function _readTail(filePath, maxBytes = 2 * 1024 * 1024) {
   } finally {
     fs.closeSync(fd);
   }
+}
+
+// events.jsonl の末尾を読み、level/job/キーワードでフィルタして新しい順に返す。
+// ダッシュボードの「イベント検索」機能から使う。1行JSONが壊れている場合は無視する
+// （ローテーション境界で末尾が途中で切れているケースなどを想定）。
+function handleEvents(query) {
+  const level = (query.level ?? '').toLowerCase();
+  const job   = query.job ?? '';
+  const q     = (query.q ?? '').toLowerCase();
+  const limit = Math.min(1000, Math.max(1, parseInt(query.limit ?? '200', 10) || 200));
+
+  let events = [];
+  try {
+    const content = _readTail(log.getEventsLogPath(), 4 * 1024 * 1024);
+    events = content.split('\n').filter(Boolean).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean);
+  } catch {
+    return [];
+  }
+
+  if (level) events = events.filter(e => e.level === level);
+  if (job)   events = events.filter(e => e.job === job);
+  if (q)     events = events.filter(e => JSON.stringify(e).toLowerCase().includes(q));
+
+  events.reverse(); // 新しい順
+  return events.slice(0, limit);
 }
 
 function _csvEscape(v) {

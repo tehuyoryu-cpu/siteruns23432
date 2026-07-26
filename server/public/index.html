@@ -737,6 +737,14 @@ body { animation: fadeInDown .35s ease both; }
       <svg viewBox="0 0 16 16"><path d="M8 1.5L1 14h14L8 1.5z" fill="none" stroke="#cc6600" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v4" stroke="#cc6600" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.8" fill="#cc6600"/></svg>
       定価エラー
     </button>
+    <button class="tb-btn" onclick="showDigest()" title="ジョブ要約" data-desc="各ジョブ実行の要約(処理件数・価格変動・エラー数・所要時間)を1行ずつ確認します">
+      <svg viewBox="0 0 16 16"><rect x="2" y="1.5" width="12" height="13" rx="1" fill="#fff" stroke="#0055aa"/><path d="M4.5 5h7M4.5 8h7M4.5 11h4" stroke="#0055aa" stroke-width="1.2" stroke-linecap="round"/></svg>
+      ジョブ要約
+    </button>
+    <button class="tb-btn" onclick="showEvents()" title="イベント検索" data-desc="レベル・ジョブ種別・キーワードで構造化ログ(events.jsonl)を横断検索します">
+      <svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="#555" stroke-width="1.4"/><path d="M10 10l4 4" stroke="#555" stroke-width="1.4" stroke-linecap="round"/></svg>
+      イベント検索
+    </button>
   </div>
 
   <div class="tb-group">
@@ -835,6 +843,58 @@ body { animation: fadeInDown .35s ease both; }
       <span class="modal-close" onclick="closeErrLog()">✕</span>
     </div>
     <div class="modal-body" id="errLogBody" style="color:#330000;background:#fff8f8">読み込み中...</div>
+  </div>
+</div>
+
+<!-- ジョブ要約モーダル -->
+<div class="modal-overlay" id="digestModal" onclick="if(event.target===this)closeDigest()">
+  <div class="modal-box">
+    <div class="modal-header" style="background:linear-gradient(to bottom,#003d7a,#0055aa)">
+      🧾 ジョブ要約 — digest.log
+      <button class="modal-copy-btn" onclick="copyModalText('digestBody')" title="コピー">📄 コピー</button>
+      <span class="modal-close" onclick="closeDigest()">✕</span>
+    </div>
+    <div class="modal-body" id="digestBody" style="color:#00264d;background:#f4f8ff">読み込み中...</div>
+  </div>
+</div>
+
+<!-- イベント検索モーダル -->
+<div class="modal-overlay" id="eventsModal" onclick="if(event.target===this)closeEvents()">
+  <div class="modal-box" style="max-width:920px">
+    <div class="modal-header">
+      🔎 イベント検索 — events.jsonl
+      <button class="modal-copy-btn" onclick="copyModalText('eventsBody')" title="コピー">📄 コピー</button>
+      <span class="modal-close" onclick="closeEvents()">✕</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;padding:6px 12px;border-bottom:1px solid #ccc;background:#f5f5f5;flex-wrap:wrap">
+      <select id="evLevel" onchange="loadEvents()" style="font-size:11px;height:22px">
+        <option value="">全レベル</option>
+        <option value="error">ERROR</option>
+        <option value="warn">WARN</option>
+        <option value="info">INFO</option>
+      </select>
+      <select id="evJob" onchange="loadEvents()" style="font-size:11px;height:22px">
+        <option value="">全ジョブ</option>
+        <option value="discover">discover</option>
+        <option value="fetch">fetch</option>
+        <option value="saleboost">saleboost</option>
+        <option value="all">all</option>
+        <option value="turbo">turbo</option>
+        <option value="endingsoon">endingsoon</option>
+        <option value="circlegap">circlegap</option>
+        <option value="fullscan">fullscan</option>
+        <option value="fullscan_sale">fullscan_sale</option>
+        <option value="pushdata">pushdata</option>
+        <option value="newrelease">newrelease</option>
+        <option value="import">import</option>
+        <option value="comp_listing">comp_listing</option>
+        <option value="comp_detail">comp_detail</option>
+      </select>
+      <input id="evSearch" type="text" placeholder="キーワード検索..." oninput="onEventsSearchInput()" style="flex:1;min-width:160px;font-size:11px;height:20px;padding:0 6px">
+      <label style="font-size:11px;color:#555;white-space:nowrap"><input type="checkbox" id="evAggOnly" onchange="loadEvents()"> 集約サマリのみ</label>
+      <label style="font-size:11px;color:#555;white-space:nowrap"><input type="checkbox" id="evDigestOnly" onchange="loadEvents()"> ジョブ要約のみ</label>
+    </div>
+    <div class="modal-body" id="eventsBody" style="font-size:11px">読み込み中...</div>
   </div>
 </div>
 
@@ -1479,6 +1539,73 @@ async function showErrorLog() {
   } catch (e) { body.textContent = '取得失敗: ' + e.message; }
 }
 function closeErrLog() { document.getElementById('errLogModal').classList.remove('open'); }
+
+// ── ジョブ要約モーダル ────────────────────────────────────────────────────────
+async function showDigest() {
+  document.getElementById('digestModal').classList.add('open');
+  const body = document.getElementById('digestBody');
+  body.textContent = '読み込み中...';
+  try {
+    const r = await fetch('/api/digest');
+    const text = await r.text();
+    body.textContent = text.trim() || '（まだジョブが実行されていません）';
+    body.scrollTop = body.scrollHeight;
+  } catch (e) { body.textContent = '取得失敗: ' + e.message; }
+}
+function closeDigest() { document.getElementById('digestModal').classList.remove('open'); }
+
+// ── イベント検索モーダル ──────────────────────────────────────────────────────
+let _eventsSearchTimer = null;
+function onEventsSearchInput() {
+  clearTimeout(_eventsSearchTimer);
+  _eventsSearchTimer = setTimeout(loadEvents, 300);
+}
+
+async function showEvents() {
+  document.getElementById('eventsModal').classList.add('open');
+  await loadEvents();
+}
+function closeEvents() { document.getElementById('eventsModal').classList.remove('open'); }
+
+async function loadEvents() {
+  const body = document.getElementById('eventsBody');
+  body.textContent = '読み込み中...';
+  const level     = document.getElementById('evLevel').value;
+  const job       = document.getElementById('evJob').value;
+  const q         = document.getElementById('evSearch').value.trim();
+  const aggOnly   = document.getElementById('evAggOnly').checked;
+  const digestOnly = document.getElementById('evDigestOnly').checked;
+
+  const params = new URLSearchParams({ limit: '400' });
+  if (level) params.set('level', level);
+  if (job)   params.set('job', job);
+  if (q)     params.set('q', q);
+
+  try {
+    const r = await fetch('/api/events?' + params.toString());
+    let events = await r.json();
+    if (aggOnly)    events = events.filter(e => e.aggregated);
+    if (digestOnly) events = events.filter(e => e.type === 'job_digest');
+    if (!events.length) { body.textContent = '該当するイベントがありません'; return; }
+
+    body.innerHTML = events.map(e => {
+      const cls = e.level === 'error' ? 'log-error' : e.level === 'warn' ? 'log-warn' : '';
+      let text;
+      if (e.type === 'job_digest') {
+        const rest = Object.entries(e)
+          .filter(([k]) => !['ts', 'type', 'job'].includes(k))
+          .map(([k, v]) => `${k}:${v}`).join(' ');
+        text = `${e.ts} [digest:${e.job}] ${rest}`;
+      } else {
+        const tag = e.aggregated ? `(集約 ×${e.count}) ` : '';
+        text = `${e.ts} [${(e.level ?? 'info').toUpperCase()}] ${tag}${e.msg ?? ''}`;
+      }
+      return cls ? `<span class="${cls}">${esc(text)}</span>` : esc(text);
+    }).join('\n');
+  } catch (e) {
+    body.textContent = '取得失敗: ' + e.message;
+  }
+}
 
 // ── ジョブ完了後の結果表示 ──────────────────────────────────────────────────
 function _showJobResult(job, status) {
