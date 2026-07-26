@@ -174,12 +174,35 @@ function parseProductInfo(rjCode, body) {
     } else {
       // セール中でない場合も、price_workより公式性の高いofficial_price/
       // regular_priceが使えるなら優先する。
-      price     = officialPrice ?? priceWork ?? priceCur ?? 0;
+      // バグ修正: officialPrice/priceWorkが0で返るデータ不備を`??`が
+      // 素通りさせてしまう問題(セール分岐と同根)をここでも同様に対策。
+      price     = (officialPrice > 0 ? officialPrice : null) ?? (priceWork > 0 ? priceWork : null) ?? priceCur ?? 0;
       salePrice = null;
     }
 
     // 最終安全チェック: price が null/undefined のときは 0 にする（APIが価格を返さなかった場合）
     if (price == null) price = 0;
+
+    // ── 体質的な安全網 ───────────────────────────────────────────────────────
+    // 上のブランチロジックがどの経路を通っても、最終的なprice/salePriceの
+    // 組み合わせが物理的にありえない場合は、個別ブランチを都度直すのではなく
+    // ここで一括して弾く。official_price=0バグのように「未知のAPIフィールド
+    // 不備」は今後も個別パターンとして発生しうるため、対症療法を重ねるより
+    // 「壊れたデータはそもそもDBへ書き込ませない」最終防波堤を設ける方が
+    // 構造的な耐性になる(呼び出し元 detailFetcher._store は priceIssue が
+    // あるとDB書き込みをスキップし既存値を保持する仕組みに既に対応済み)。
+    if (!priceIssue) {
+      if (price < 0 || (salePrice != null && salePrice < 0)) {
+        priceIssue = { type: 'invalid_price_combo', raw: { price, sale_price: salePrice, reason: 'negative_price' } };
+      } else if (price === 0 && salePrice != null && salePrice > 0) {
+        priceIssue = { type: 'invalid_price_combo', raw: { price, sale_price: salePrice, reason: 'zero_price_with_sale' } };
+      } else if (salePrice != null && price > 0 && salePrice >= price) {
+        priceIssue = { type: 'invalid_price_combo', raw: { price, sale_price: salePrice, reason: 'sale_price_not_lower' } };
+      }
+      if (priceIssue) {
+        log.warn('[parser] invalid price combination detected — treating as unreliable', rjCode, priceIssue.raw);
+      }
+    }
 
     // 割引率が未設定なら price/salePrice から計算
     if (!disc && price && salePrice) {
