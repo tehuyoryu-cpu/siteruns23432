@@ -4,5 +4,13 @@ node_modules/
 *.db-wal
 .env
 logs/
+dlsite-tracker.log
+dlsite-tracker.*.log
+dlsite-error.log
+dlsite-error.*.log
+digest.log
+digest.*.log
+events.jsonl
+events.*.jsonl
 data-export/
 .github-token

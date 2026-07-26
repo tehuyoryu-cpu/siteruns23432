@@ -44,8 +44,15 @@ function _startDiscoveryJob() {
     // バグがあった（AbortSignalは一度abortすると同じControllerでは戻せない）。
     global._crawlerAbort && (global._crawlerAbort.discovery = false);
     resetAbortFlag('discovery');
-    try   { await runDiscovery(); }
-    catch (err) { log.error('[scheduler] discovery error', err.message); }
+    const _t0 = Date.now();
+    try   {
+      const r = await runDiscovery();
+      log.digest('discover', { trigger: 'cron', discovered: r?.discovered ?? 0, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
+    }
+    catch (err) {
+      log.error('[scheduler] discovery error', err.message);
+      log.digest('discover', { trigger: 'cron', ok: false, error: err.message, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
+    }
     finally {
       if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myToken) {
         global._crawlerRunning.discovery = false;
@@ -76,14 +83,19 @@ function _startDetailJob() {
     // resetAbortFlag('detail') が漏れていた（詳細はdiscoveryジョブ側コメント参照）。
     global._crawlerAbort && (global._crawlerAbort.detail = false);
     resetAbortFlag('detail');
+    const _t0 = Date.now();
     try   {
-      await runDetailFetch(500, {
+      const r = await runDetailFetch(500, {
         onProgress: ({ processed, priceChanges, total }) => {
           if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
         },
       });
+      log.digest('fetch', { trigger: 'cron', ...r, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
     }
-    catch (err) { log.error('[scheduler] detail error', err.message); }
+    catch (err) {
+      log.error('[scheduler] detail error', err.message);
+      log.digest('fetch', { trigger: 'cron', ok: false, error: err.message, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
+    }
     finally {
       global._crawlerRunning.schedulerDetailRunning = false;
       // 自分が確保したロックの場合のみ解放する（横取りされていたら何もしない）
@@ -338,8 +350,13 @@ async function start() {
     global._crawlerRunning._discoveryOwner = myInitToken;
     global._crawlerAbort && (global._crawlerAbort.discovery = false);
     resetAbortFlag('discovery');
+    const _t0init = Date.now();
     runDiscovery()
-      .catch(err => log.error('[scheduler] initial discovery error', err.message))
+      .then(r => log.digest('discover', { trigger: 'startup', discovered: r?.discovered ?? 0, duration: ((Date.now() - _t0init) / 1000).toFixed(1) + 's' }))
+      .catch(err => {
+        log.error('[scheduler] initial discovery error', err.message);
+        log.digest('discover', { trigger: 'startup', ok: false, error: err.message, duration: ((Date.now() - _t0init) / 1000).toFixed(1) + 's' });
+      })
       .finally(() => {
         if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myInitToken) {
           global._crawlerRunning.discovery = false;
@@ -360,12 +377,17 @@ async function start() {
     global._crawlerRunning.schedulerDetailRunning = true;
     global._crawlerAbort && (global._crawlerAbort.detail = false);
     resetAbortFlag('detail');
+    const _t0initD = Date.now();
     runDetailFetch(500, {
       onProgress: ({ processed, priceChanges, total }) => {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
       },
     })
-      .catch(err => log.error('[scheduler] initial detail error', err.message))
+      .then(r => log.digest('fetch', { trigger: 'startup', ...r, duration: ((Date.now() - _t0initD) / 1000).toFixed(1) + 's' }))
+      .catch(err => {
+        log.error('[scheduler] initial detail error', err.message);
+        log.digest('fetch', { trigger: 'startup', ok: false, error: err.message, duration: ((Date.now() - _t0initD) / 1000).toFixed(1) + 's' });
+      })
       .finally(() => {
         global._crawlerRunning.schedulerDetailRunning = false;
         if (global._crawlerRunning && global._crawlerRunning._detailOwner === myToken) {

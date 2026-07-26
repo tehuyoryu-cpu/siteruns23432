@@ -222,6 +222,7 @@ async function handleRun(job, res) {
   // スキップする）ため、ここでは確保せず Phase 1 内で自分自身が必要な時だけ確保する。
   // detail ロックは try ブロック内で abort 後に確保する（'all'/'turbo'）
   _lastResult[job] = null;
+  const _jobStart = Date.now();
 
   _json(res, { ok: true, message: `${job} started` });
 
@@ -612,6 +613,7 @@ async function handleRun(job, res) {
           _sseSend('progress', { site, page, found: total });
         },
       });
+      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
       Object.assign(_progress, { done: true });
       log.info('[api] fullScan done', result);
     }
@@ -649,6 +651,19 @@ async function handleRun(job, res) {
     if (job === 'all' || job === 'turbo') releaseDetail();
     if (job === 'all' || job === 'turbo') releaseDiscovery();
     _progress.done = true;
+
+    // ジョブ単位のサマリを digest.log / events.jsonl に記録する。
+    // _lastResult[job] の形はジョブごとにまちまちなので、finishedAt を除いて
+    // そのままフラットに渡す（新しいジョブ種別が増えても自動で対応できる）。
+    const r = _lastResult[job];
+    const digestFields = { duration: ((Date.now() - _jobStart) / 1000).toFixed(1) + 's' };
+    if (r) {
+      for (const [k, v] of Object.entries(r)) {
+        if (k === 'finishedAt') continue;
+        digestFields[k] = v;
+      }
+    }
+    log.digest(job, digestFields);
   }
 }
 

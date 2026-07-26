@@ -1010,6 +1010,7 @@ app.on('before-quit', (event) => {
 
   if (!_isCrawlerBusy()) {
     (async () => {
+      try { log.flush?.(); } catch {}
       try { await db?.close(); } catch (e) { log.error('[electron] db close error', e.message); }
       _quitFinalizing = true;
       app.quit();
@@ -1034,6 +1035,7 @@ app.on('before-quit', (event) => {
     global._crawlerAbort.discovery = false;
     global._crawlerAbort.detail    = false;
     global._crawlerAbort.comp      = false;
+    try { log.flush?.(); } catch {}
     try { await db?.close(); } catch (e) { console.error('[electron] db close error', e.message); }
     _quitFinalizing = true;
     app.quit();
