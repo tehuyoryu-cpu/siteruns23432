@@ -530,6 +530,10 @@ let _corruptionWarned = false;
 function _isCorruptionError(e) {
   return e?.code === 'SQLITE_CORRUPT' || /database disk image is malformed|file is not a database/i.test(e?.message ?? '');
 }
+function _isUniqueConstraintError(e) {
+  return e?.code === 'SQLITE_CONSTRAINT_UNIQUE' || e?.code === 'SQLITE_CONSTRAINT_PRIMARYKEY'
+    || /UNIQUE constraint failed/i.test(e?.message ?? '');
+}
 function _reportCorruption(e, sql) {
   if (_corruptionWarned) return;
   _corruptionWarned = true;
@@ -910,20 +914,52 @@ function savePriceIfChanged(rjCode, priceData) {
   }
 
   const now = unixNow();
-  _run(`
-    INSERT INTO price_history
-      (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
-    VALUES (?,?,?,?,?,?,?,?)
-  `, [
-    rjCode,
-    priceData.price         ?? null,
-    priceData.sale_price    ?? null,
-    priceData.point         ?? null,
-    priceData.discount_rate ?? null,
-    priceData.is_on_sale    ?? 0,
-    priceData.is_point_only ?? 0,
-    now,
-  ]);
+  // バグ修正: 中断→新規実行の切替時など、ごく稀に同一rj_codeが同一秒内に
+  // 二重処理されることがあり、price_history の UNIQUE(rj_code, checked_at)
+  // に衝突してエラーになっていた(観測: 同一ミリ秒で複数RJが同時にstore
+  // error扱いになりrecordFetchErrorが呼ばれていた)。実際の価格データ自体は
+  // 正しく取得できているため、この衝突だけで作品単位の処理を丸ごと
+  // 失敗にするのは過剰。checked_atを1秒ずらして再試行し、それでも
+  // 失敗する場合のみ履歴行だけを諦める(works.cur_*の更新は必ず継続する)。
+  let insertedAt = now;
+  try {
+    _run(`
+      INSERT INTO price_history
+        (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
+      VALUES (?,?,?,?,?,?,?,?)
+    `, [
+      rjCode,
+      priceData.price         ?? null,
+      priceData.sale_price    ?? null,
+      priceData.point         ?? null,
+      priceData.discount_rate ?? null,
+      priceData.is_on_sale    ?? 0,
+      priceData.is_point_only ?? 0,
+      insertedAt,
+    ]);
+  } catch (e) {
+    if (!_isUniqueConstraintError(e)) throw e;
+    insertedAt = now + 1;
+    log.warn('[db] price_history checked_at collision (concurrent duplicate write), retrying +1s', rjCode);
+    try {
+      _run(`
+        INSERT INTO price_history
+          (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
+        VALUES (?,?,?,?,?,?,?,?)
+      `, [
+        rjCode,
+        priceData.price         ?? null,
+        priceData.sale_price    ?? null,
+        priceData.point         ?? null,
+        priceData.discount_rate ?? null,
+        priceData.is_on_sale    ?? 0,
+        priceData.is_point_only ?? 0,
+        insertedAt,
+      ]);
+    } catch (e2) {
+      log.warn('[db] price_history insert still failing after retry, skipping history row (works.cur_* will still be updated)', rjCode, e2.message);
+    }
+  }
 
   // works の非正規化カラムも同期更新（一覧表示の高速化用キャッシュ）
   _run(`
@@ -941,7 +977,7 @@ function savePriceIfChanged(rjCode, priceData) {
     priceData.discount_rate ?? null,
     priceData.point         ?? null,
     priceData.is_point_only ?? 0,
-    now,
+    insertedAt,
     rjCode,
   ]);
 
