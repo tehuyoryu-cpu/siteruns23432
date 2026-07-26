@@ -194,7 +194,11 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
         throttledWait = true;
         continue;
       }
-      if (!res.ok) log.warn(`[fetch] ${res.status}`, url);
+      // 404は呼び出し元(discovery.js の _fetchWithPrice)が「最終ページ到達」の
+      // 正常な終端シグナルとして扱う既知の仕様。ここでWARN扱いにすると、
+      // 実際は正常終了なのにエラーが起きたかのようなログノイズになる。
+      if (!res.ok && res.status !== 404) log.warn(`[fetch] ${res.status}`, url);
+      else if (!res.ok) log.debug(`[fetch] ${res.status} (expected end-of-pages)`, url);
       return res;
     } catch (e) {
       if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);
