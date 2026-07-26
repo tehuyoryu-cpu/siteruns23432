@@ -54,8 +54,12 @@ const API = 'https://api.github.com';
 //   ② 全fetch呼び出しにタイムアウト(30秒)とリトライ(最大3回・指数バックオフ、
 //      429/5xx/タイムアウトが対象)を追加する。
 const CHUNK_SIZE          = 150;   // 1回のtree作成リクエストに含める最大ファイル数
-const REQUEST_TIMEOUT_MS  = 30_000;
-const MAX_RETRY            = 3;
+// バグ修正: git/trees は既存treeが大きいほど(今回のように base_tree に
+// 1000件超が積み上がった終盤チャンクなど)処理に30秒以上かかることが
+// 実際に観測された(3回リトライしても毎回タイムアウトしてpush失敗)。
+// タイムアウトを45秒に、リトライ回数も4回に緩和する。
+const REQUEST_TIMEOUT_MS  = 45_000;
+const MAX_RETRY            = 4;
 const RETRY_BASE_DELAY_MS = 1500;
 
 function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
