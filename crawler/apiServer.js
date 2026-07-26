@@ -89,7 +89,7 @@ const _jobRunning = {
   discover: false, fetch: false, saleboost: false,
   fullscan: false, fullscan_sale: false, all: false, turbo: false,
   endingsoon: false, circlegap: false, pushdata: false, newrelease: false,
-  import: false, comp_listing: false, comp_detail: false,
+  import: false, comp_listing: false, comp_detail: false, pushdebug: false,
 };
 const _lastResult = {};
 const _progress = {
@@ -114,6 +114,7 @@ const _JOB_LABELS = {
   import:        'データインポート',
   comp_listing:  '総集編一覧走査',
   comp_detail:   '総集編詳細解析',
+  pushdebug:     'デバッグ情報Push',
 };
 
 // ─── 中止（停止）機構 ─────────────────────────────────────────────────────────
@@ -602,6 +603,25 @@ async function handleRun(job, res) {
       }
       Object.assign(_progress, { done: true });
 
+    } else if (job === 'pushdebug') {
+      // 手動デバッグPushボタン: ジョブ完了を待たず、いま現在のログ/DB統計を
+      // debugブランチへ即時pushする（不具合調査でAI/開発者が即座に参照したい時用）。
+      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
+      _sseSend('log', 'デバッグ情報(ログ・DB統計)をGitHub debugブランチへpush中...');
+      const { pushDebugBundle } = require('../scripts/pushDebugBundle');
+      const pushResult = await pushDebugBundle({ job: 'manual' });
+
+      if (pushResult?.ok) {
+        _lastResult[job] = { ok: true, ...pushResult, finishedAt: Date.now() };
+        _sseSend('change', `デバッグ情報push完了 — ${pushResult.files}ファイル`);
+        log.info('[api] pushdebug done', pushResult);
+      } else {
+        _lastResult[job] = { ok: false, skipped: !!pushResult?.skipped, error: pushResult?.reason ?? pushResult?.error ?? '不明なエラー', finishedAt: Date.now() };
+        _sseSend('warn', `デバッグ情報pushスキップ/失敗 — ${pushResult?.reason ?? pushResult?.error ?? '不明なエラー'}`);
+        log.warn('[api] pushdebug skipped/failed', pushResult);
+      }
+      Object.assign(_progress, { done: true });
+
     } else if (job === 'fullscan' || job === 'fullscan_sale') {
       const sale = job === 'fullscan_sale';
       Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
@@ -916,7 +936,7 @@ function createServer() {
         return;
       }
 
-      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata|newrelease|comp_listing|comp_detail)$/);
+      const runMatch = pathname.match(/^\/api\/run\/(discover|fetch|saleboost|all|fullscan|fullscan_sale|turbo|endingsoon|circlegap|pushdata|newrelease|comp_listing|comp_detail|pushdebug)$/);
       if (runMatch) {
         if (req.method !== 'POST') { res.writeHead(405); res.end('POST only'); return; }
         handleRun(runMatch[1], res);

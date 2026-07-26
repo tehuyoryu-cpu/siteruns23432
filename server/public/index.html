@@ -753,6 +753,10 @@ body { animation: fadeInDown .35s ease both; }
       <svg viewBox="0 0 16 16"><path d="M8 11V3M5 6l3-3 3 3" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.5 11v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V11" stroke="#0055aa" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
       今すぐPush
     </button>
+    <button class="tb-btn" id="btnPushdebug" onclick="runJob('pushdebug')" data-desc="現在のログ・DB統計・直近エラーをGitHubのdebugブランチへ即座にpushします。ClaudeなどAIに調査を頼む前にこれを押すと最新状態を参照させられます" title="デバッグ情報Push — 不具合調査用にログ状態をGitHubへ反映" style="color:#7a3fc0;font-weight:bold">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#7a3fc0" stroke-width="1.3"/><path d="M8 4.5v4l2.5 1.5" stroke="#7a3fc0" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      デバッグPush
+    </button>
     <button class="tb-btn" id="btnSettings" onclick="showSettings()" title="設定 — GitHub連携" data-desc="拡張機能向けデータをGitHubへ自動配信するためのトークンを設定します">
       <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" fill="none" stroke="#555" stroke-width="1.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="#555" stroke-width="1.3" stroke-linecap="round"/></svg>
       設定
@@ -1628,6 +1632,7 @@ function _showJobResult(job, status) {
     'チェック: ' + (r.checked ?? 0) + '/' + (r.totalCircles ?? '?') + 'サークル / 発見した欠落: ' + (r.totalMissing ?? 0) + '件' +
     (r.stopped ? '（続きから再開可能）' : ''));
   else if (job === 'pushdata') setStatus('GitHub push完了 — ' + (r.files ?? 0) + 'ファイル (' + (r.exportResult?.works ?? 0) + '作品) / commit:' + (r.commit ?? '').slice(0, 7));
+  else if (job === 'pushdebug') setStatus('デバッグ情報push完了 — ' + (r.files ?? 0) + 'ファイル（debugブランチに反映済み）');
   else if (job === 'newrelease') setStatus('新作収集完了 — 新規: ' + (r.grandTotal ?? 0) + ' 件');
   else if (job === 'comp_listing') setStatus('総集編一覧走査完了 — 新規候補: ' + (r.added ?? 0) + ' 件');
   else if (job === 'comp_detail')  setStatus('総集編詳細解析完了 — 処理: ' + (r.processed ?? 0) + '件 / 確定: ' + ((r.direct ?? 0) + (r.confirmed ?? 0)) + '件 / 要確認: ' + (r.pending ?? 0) + '件');

@@ -66,6 +66,27 @@ DLsite の価格履歴を自動収集するデスクトップアプリ。
 
 ---
 
+## 不具合調査（Claude / AIアシスタント向け）
+
+巡回ジョブが完了するたびに、直近ログ・DB統計・エラー一覧が `debug` ブランチへ
+自動push される（`scripts/pushDebugBundle.js`）。ユーザーがログをコピペしなくても、
+このリポジトリを `fetch` するだけで直近の実行状態を把握できる。
+
+```bash
+git fetch origin debug
+git show origin/debug:debug-summary.md   # まずこれを読む
+```
+
+`debug-summary.md` に、DB統計・直近ジョブ要約・直近WARN/ERROR（集約済み）が
+1枚にまとまっている。より詳しく調べたい場合は同ブランチの `latest.log` /
+`latest-error.log` / `digest-recent.log` / `events-recent.jsonl` /
+`price-issues.json` を参照する（詳細は同ブランチの README.md 参照）。
+
+ジョブ完了を待たずに今すぐ最新状態をpushしたい場合は、アプリのツールバー
+「デバッグPush」ボタンでも同じ処理を即時実行できる。
+
+---
+
 ## ビルド（開発者向け）
 
 ```bash
