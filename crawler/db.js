@@ -1387,6 +1387,11 @@ function getPriceIssuesCount() {
   return (_get('SELECT COUNT(*) AS n FROM price_issues') ?? { n: 0 }).n;
 }
 
+/** 単一RJコードのissueを取得（前回の疑わしい値と今回を比較するために使う） */
+function getPriceIssue(rjCode) {
+  return _get('SELECT * FROM price_issues WHERE rj_code = ?', [rjCode]);
+}
+
 // ─── stats ───────────────────────────────────────────────────────────────────
 
 function getStats() {
@@ -1906,5 +1911,6 @@ module.exports = {
   clearPriceIssue,
   getPriceIssues,
   getPriceIssuesCount,
+  getPriceIssue,
   importHistoryRows,
 };

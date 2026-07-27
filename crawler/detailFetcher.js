@@ -696,9 +696,49 @@ function _store(rjCode, body) {
 
   const { work, price, priceIssue } = parsed;
 
+  // ── セール価格が定価として固定される現象の検知 ──────────────────────────
+  // DLsiteのセールが終了した直後、CDNキャッシュ残留やAPI応答の一時的な
+  // 不整合により is_sale=false で返ってきた price_work/price が、実は
+  // まだ古いセール価格のままのことがある。これをそのまま「定価」として
+  // 保存すると、以後ずっと安い金額が定価扱いになり、割引率計算・最安値
+  // アラート等が全て狂う恒久的なデータ破損になる。
+  //
+  // 検知方法: 直前の巡回でセール中(existing.is_on_sale=1)だった作品が、
+  // 今回is_on_sale=falseに切り替わったのに、新しい「定価」が直前の
+  // セール価格(cur_sale_price)以下になっているケースを疑わしいとみなす。
+  // ただし本当に定価改定(値下げ)された正当なケースもゼロではないため、
+  // 即座に拒否はせず、次回巡回でも同じ値が再現された場合のみ受け入れる
+  // (price_issuesテーブルのoccurrences/raw_fieldsを使って前回値と比較する)。
+  let staleSalePriceSuspected = false;
+  if (!priceIssue && price.is_on_sale === 0 && price.price != null) {
+    const existingForStaleCheck = db.getWorkByRj(rjCode);
+    if (existingForStaleCheck?.is_on_sale === 1 &&
+        existingForStaleCheck.cur_sale_price != null &&
+        price.price <= existingForStaleCheck.cur_sale_price) {
+      const prior = db.getPriceIssue(rjCode);
+      let priorPrice = null;
+      if (prior?.issue_type === 'sale_price_as_regular_suspected') {
+        try { priorPrice = JSON.parse(prior.raw_fields ?? '{}').new_price ?? null; } catch { /* ignore */ }
+      }
+      if (priorPrice === price.price) {
+        // 2回連続で同じ値 → 一時的な不整合ではなく実際の値下げの可能性が
+        // 高いと判断し、通常通り保存を許可する。
+        db.clearPriceIssue(rjCode);
+      } else {
+        staleSalePriceSuspected = true;
+        db.recordPriceIssue(rjCode, 'sale_price_as_regular_suspected', {
+          new_price: price.price, prev_regular: existingForStaleCheck.cur_price,
+          prev_sale: existingForStaleCheck.cur_sale_price, is_sale: false,
+        });
+        log.warn('[detail] sale price may have stuck as regular price — holding previous price, will confirm next check',
+          rjCode, { new_price: price.price, prev_regular: existingForStaleCheck.cur_price, prev_sale: existingForStaleCheck.cur_sale_price });
+      }
+    }
+  }
+
   if (priceIssue) {
     db.recordPriceIssue(rjCode, priceIssue.type, priceIssue.raw);
-  } else {
+  } else if (!staleSalePriceSuspected) {
     // 過去にissueが記録されていて今回は正常に取れた場合はクリアする
     db.clearPriceIssue(rjCode);
   }
@@ -713,7 +753,8 @@ function _store(rjCode, body) {
   // 十分機能するため、work情報・巡回スケジュールの更新は通常通り行う)。
   const priceUnreliable = priceIssue?.type === 'no_price_field'
     || priceIssue?.type === 'price_work_missing_high_discount'
-    || priceIssue?.type === 'invalid_price_combo';
+    || priceIssue?.type === 'invalid_price_combo'
+    || staleSalePriceSuspected;
 
   // バグ修正(重大): savePriceIfChanged() は { changed, consecutive_no_change }
   // という「オブジェクト」を返す(changed=falseのときも！)。以前はこれを
