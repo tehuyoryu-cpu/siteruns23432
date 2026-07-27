@@ -802,6 +802,44 @@ function _recoverDelisted() {
   }
 }
 
+// severely-partial API応答を信頼してしまっていたバグ(detailFetcher.js、修正済み)により
+// is_on_sale/circles.on_saleが広範囲(観測時点で全works中99%超)で誤ってON化していた
+// 事象からの1回限りの復旧。詳細は db.js の resetAllSaleFlags() のコメント参照。
+function _recoverFalseSale() {
+  if (!db) {
+    dialog.showMessageBox(_win, { message: 'DBが初期化されていません。しばらく待ってから再度お試しください。', type: 'warning' });
+    return;
+  }
+  let before;
+  try {
+    before = db.countSuspectedFalseSale();
+  } catch (e) {
+    dialog.showMessageBox(_win, { message: `件数確認に失敗しました: ${e.message}`, type: 'error' });
+    return;
+  }
+  if (before === 0) {
+    dialog.showMessageBox(_win, { message: 'is_on_sale=1の作品は見つかりませんでした。', type: 'info' });
+    return;
+  }
+  const choice = dialog.showMessageBoxSync(_win, {
+    type: 'question',
+    buttons: ['実行', 'キャンセル'],
+    defaultId: 1,
+    cancelId: 1,
+    message:
+      `is_on_sale=1の作品が ${before} 件あります（データ汚染により実態と乖離している疑いがあります）。\n` +
+      `全てis_on_sale=0・通常優先度に戻し、次回の巡回で再判定します。実行しますか？\n\n` +
+      `※本当にセール中の作品は次回の価格更新パスで正しく再検出されるため安全です。`,
+  });
+  if (choice !== 0) return;
+  try {
+    const { works, circles } = db.resetAllSaleFlags();
+    dialog.showMessageBox(_win, { message: `復旧完了: 作品${works}件・サークル${circles}件のセールフラグをリセットしました。`, type: 'info' });
+  } catch (e) {
+    dialog.showMessageBox(_win, { message: `復旧処理に失敗しました: ${e.message}`, type: 'error' });
+  }
+}
+
 function _buildAppMenu() {
   // ロック判定は apiServer.js の handleRun() に一本化（事前ロックしない）
   const runItem = (label, job, accel) => ({
@@ -831,6 +869,10 @@ function _buildAppMenu() {
         {
           label: '誤delisted作品を復旧（1回限りのメンテナンス）',
           click: _recoverDelisted,
+        },
+        {
+          label: 'セール判定汚染を復旧（1回限りのメンテナンス）',
+          click: _recoverFalseSale,
         },
         { type: 'separator' },
         {
