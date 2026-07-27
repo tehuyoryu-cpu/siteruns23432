@@ -59,6 +59,16 @@ const _NETWORK_ERRORS   = new Set([
   'ERR_NETWORK_IO_SUSPENDED', 'ERR_INTERNET_DISCONNECTED',
   'ERR_NETWORK_CHANGED', 'ERR_CONNECTION_RESET',
   'ERR_TIMED_OUT', 'net::ERR_NETWORK_IO_SUSPENDED',
+  // バグ修正(2026-07-27 実運用で確認): ERR_NAME_NOT_RESOLVED(DNS解決失敗)が
+  // このSetにも下の正規表現にも一致しておらず、_isNetworkError()がfalseを
+  // 返していた。そのためDNSリゾルバの一時的な不調時にグローバルポーズが
+  // 発動せず、concurrency分のワーカー全員が個別にリトライを繰り返す形と
+  // なり、turboジョブで500件中500件が全滅する事象につながった
+  // (debug-summary.mdで確認: 5回連続空応答→再ウォーム→回復せず、その後
+  //  ERR_NAME_NOT_RESOLVEDが連発してバッチ全滅)。DNS障害はネットワーク断と
+  // 同様に全ワーカーが足並みを揃えて待つべき系統的失敗のため追加する。
+  'ERR_NAME_NOT_RESOLVED', 'net::ERR_NAME_NOT_RESOLVED',
+  'ERR_ADDRESS_UNREACHABLE', 'ERR_CONNECTION_REFUSED',
 ]);
 const _PAUSE_DURATION   = 30_000;   // 30秒待機してからリトライ
 
@@ -78,7 +88,8 @@ function _cappedBackoff(ms) {
 }
 
 function _isNetworkError(msg) {
-  return _NETWORK_ERRORS.has(msg) || /ERR_NETWORK|NETWORK_IO_SUSPENDED|ECONNRESET|ETIMEDOUT/.test(msg);
+  return _NETWORK_ERRORS.has(msg) ||
+    /ERR_NETWORK|NETWORK_IO_SUSPENDED|ECONNRESET|ETIMEDOUT|NAME_NOT_RESOLVED|ENOTFOUND|EAI_AGAIN|ECONNREFUSED/.test(msg);
 }
 
 /**
