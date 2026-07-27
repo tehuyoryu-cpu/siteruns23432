@@ -261,6 +261,7 @@ function _applySchema() {
       price         INTEGER,
       sale_price    INTEGER,
       point         INTEGER,
+      point_rate    INTEGER,
       discount_rate INTEGER,
       is_on_sale    INTEGER DEFAULT 0,
       is_point_only INTEGER DEFAULT 0,
@@ -365,6 +366,13 @@ function _applySchema() {
     // (compScan.js側で判定)に達するまでは processed_at を確定させず
     // due のまま残して次回スキャンで再試行できるようにする。
     'ALTER TABLE comp_candidates ADD COLUMN fail_count INTEGER DEFAULT 0',
+    // 精度改善: pointカラムがdl_point(付与ポイント絶対値)とpoint_rate(還元率%)を
+    // ??で混同していたため、消費者(ダッシュボード/拡張機能)側で数値の意味が
+    // 判別できなかった(例: 5という値が「5ポイント」なのか「還元率5%」なのか不明)。
+    // 還元率専用カラムを分離する。旧pointカラムは「絶対値」の意味に統一する
+    // （parser.js側もこのタイミングで合わせて修正）。
+    'ALTER TABLE price_history ADD COLUMN point_rate INTEGER',
+    'ALTER TABLE works ADD COLUMN cur_point_rate INTEGER',
   ];
 
   for (const sql of migrations) {
@@ -480,6 +488,7 @@ function _applySchema() {
           cur_sale_price    = (SELECT sale_price    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
           cur_discount_rate = (SELECT discount_rate FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
           cur_point         = (SELECT point         FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
+          cur_point_rate    = (SELECT point_rate    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
           cur_is_point_only = (SELECT is_point_only FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1),
           price_checked_at  = (SELECT checked_at    FROM price_history ph WHERE ph.rj_code = works.rj_code ORDER BY ph.checked_at DESC LIMIT 1)
         WHERE cur_price IS NULL AND rj_code IN (SELECT rj_code FROM price_history)
@@ -894,7 +903,7 @@ function savePriceIfChanged(rjCode, priceData) {
   // price_history への ORDER BY 全件スキャンをやめ、works に非正規化した
   // cur_* カラムと直接比較する（30万件規模でも O(1) lookup）
   const last = _get(
-    `SELECT cur_price, cur_sale_price, cur_discount_rate, cur_point, is_on_sale, cur_is_point_only
+    `SELECT cur_price, cur_sale_price, cur_discount_rate, cur_point, cur_point_rate, is_on_sale, cur_is_point_only
      FROM works WHERE rj_code = ?`, [rjCode]
   );
 
@@ -904,6 +913,7 @@ function savePriceIfChanged(rjCode, priceData) {
     last.cur_sale_price     !== (priceData.sale_price    ?? null) ||
     last.cur_discount_rate  !== (priceData.discount_rate ?? null) ||
     last.cur_point          !== (priceData.point         ?? null) ||
+    last.cur_point_rate     !== (priceData.point_rate    ?? null) ||
     last.is_on_sale         !== (priceData.is_on_sale    ?? 0)    ||
     last.cur_is_point_only  !== (priceData.is_point_only ?? 0);
 
@@ -925,13 +935,14 @@ function savePriceIfChanged(rjCode, priceData) {
   try {
     _run(`
       INSERT INTO price_history
-        (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
-      VALUES (?,?,?,?,?,?,?,?)
+        (rj_code, price, sale_price, point, point_rate, discount_rate, is_on_sale, is_point_only, checked_at)
+      VALUES (?,?,?,?,?,?,?,?,?)
     `, [
       rjCode,
       priceData.price         ?? null,
       priceData.sale_price    ?? null,
       priceData.point         ?? null,
+      priceData.point_rate    ?? null,
       priceData.discount_rate ?? null,
       priceData.is_on_sale    ?? 0,
       priceData.is_point_only ?? 0,
@@ -944,13 +955,14 @@ function savePriceIfChanged(rjCode, priceData) {
     try {
       _run(`
         INSERT INTO price_history
-          (rj_code, price, sale_price, point, discount_rate, is_on_sale, is_point_only, checked_at)
-        VALUES (?,?,?,?,?,?,?,?)
+          (rj_code, price, sale_price, point, point_rate, discount_rate, is_on_sale, is_point_only, checked_at)
+        VALUES (?,?,?,?,?,?,?,?,?)
       `, [
         rjCode,
         priceData.price         ?? null,
         priceData.sale_price    ?? null,
         priceData.point         ?? null,
+        priceData.point_rate    ?? null,
         priceData.discount_rate ?? null,
         priceData.is_on_sale    ?? 0,
         priceData.is_point_only ?? 0,
@@ -968,6 +980,7 @@ function savePriceIfChanged(rjCode, priceData) {
       cur_sale_price     = ?,
       cur_discount_rate  = ?,
       cur_point          = ?,
+      cur_point_rate     = ?,
       cur_is_point_only  = ?,
       price_checked_at   = ?
     WHERE rj_code = ?
@@ -976,6 +989,7 @@ function savePriceIfChanged(rjCode, priceData) {
     priceData.sale_price    ?? null,
     priceData.discount_rate ?? null,
     priceData.point         ?? null,
+    priceData.point_rate    ?? null,
     priceData.is_point_only ?? 0,
     insertedAt,
     rjCode,
@@ -1579,6 +1593,7 @@ function searchWorks({ q = '', sort = 'priority', onSale = false, page = 1, limi
     `SELECT w.*,
        w.cur_price AS price, w.cur_sale_price AS sale_price,
        w.cur_discount_rate AS discount_rate, w.cur_is_point_only AS is_point_only,
+       w.cur_point AS point, w.cur_point_rate AS point_rate,
        w.price_checked_at AS ph_checked_at
      ${baseFrom} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
     [...params, limit, offset]
@@ -1595,6 +1610,7 @@ function getSaleWorks(limit = 200) {
     SELECT w.*,
       w.cur_price AS price, w.cur_sale_price AS sale_price,
       w.cur_discount_rate AS discount_rate, w.cur_is_point_only AS is_point_only,
+      w.cur_point AS point, w.cur_point_rate AS point_rate,
       w.price_checked_at AS checked_at
     FROM works w
     WHERE w.is_on_sale = 1
@@ -1614,6 +1630,7 @@ function getExportBaseWorks() {
     SELECT rj_code, maker_id,
            cur_price AS price, cur_sale_price AS sale_price,
            cur_discount_rate AS discount_rate,
+           cur_point AS point, cur_point_rate AS point_rate,
            is_on_sale, cur_is_point_only AS is_point_only
     FROM works
     WHERE cur_price IS NOT NULL

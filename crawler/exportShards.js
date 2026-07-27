@@ -87,6 +87,10 @@ async function runExportShards() {
     if (w.discount_rate  != null) entry.d  = w.discount_rate;
     if (w.is_on_sale)              entry.os = 1;
     if (w.is_point_only)           entry.po = 1;
+    // 精度改善: 従来 w.point は「付与ポイント絶対値」と「還元率%」が
+    // dbの旧pointカラムに混在していたため配信していなかった。point_rate
+    // カラム分離後は還元率(%)として単位が確定したので配信対象に含める。
+    if (w.point_rate      != null) entry.pr = w.point_rate;
 
     const dd = discountDaysMap.get(rj);
     if (dd) entry.dd = dd;
@@ -207,6 +211,7 @@ function _writeOutput(dataShards, idxShards, totalWorks) {
       d:  'discount_rate (%, null省略)',
       os: 'is_on_sale (1のときのみ存在)',
       po: 'is_point_only (1のときのみ存在)',
+      pr: 'point_rate (ポイント還元率%, 未取得時は省略)',
       dd: '直近365日のセール日数 (0のときは省略)',
       lp: '過去最安値 (定価と同額なら省略)',
       lg: '直近価格ログ、新しい順 (空なら省略)',

@@ -209,8 +209,15 @@ function parseProductInfo(rjCode, body) {
       disc = Math.round((1 - salePrice / price) * 100);
     }
 
-    // ポイント（dl_point / point_rate / rate_free など複数フィールド名が存在）
-    const point = _int(d.point ?? d.dl_point ?? d.point_rate ?? d.dl_point_rate ?? d.rate_review);
+    // ポイント: 精度改善 — 従来は付与ポイントの「絶対値」(dl_point等)と
+    // 「還元率%」(point_rate等)を1つのpointフィールドへ ?? で無差別に
+    // 混同していたため、DBに保存された数値の単位が不明だった
+    // (例: 値が5のとき「5ポイント付与」なのか「還元率5%」なのか判別不能)。
+    // さらに d.rate_review はレビュー評価点であり、ポイント還元とは無関係の
+    // フィールドをフォールバックに含めてしまっていた誤りも合わせて修正する。
+    // 絶対値(point)と還元率(point_rate)を別カラムに分離して保存する。
+    const point     = _int(d.point ?? d.dl_point);
+    const pointRate = _int(d.point_rate ?? d.dl_point_rate);
 
     // is_on_sale の区別: discount あり vs ポイント還元のみ
     // 精度改善: 生のAPIフィールドdiscRateではなく、上のロジックで確定した
@@ -252,6 +259,7 @@ function parseProductInfo(rjCode, body) {
         price,
         sale_price:     salePrice,
         point,
+        point_rate:     pointRate,
         discount_rate:  disc,
         is_on_sale:     isOnSale ? 1 : 0,
         is_point_only:  isPointCampaign ? 1 : 0,
