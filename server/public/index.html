@@ -629,6 +629,10 @@ body { animation: fadeInDown .35s ease both; }
 <body>
 
 <!-- ツールバー -->
+<div id="versionWarnBanner" style="display:none;background:#fff3cd;border-bottom:1px solid #e0c060;color:#664400;padding:6px 12px;font-size:11.5px;align-items:center;gap:8px">
+  ⚠ <span id="versionWarnText"></span>
+  <a href="#" onclick="window.open('https://github.com/tehuyoryu-cpu/siteruns23432/commits/main','_blank');return false" style="color:#664400;text-decoration:underline;margin-left:auto">GitHubで確認</a>
+</div>
 <div class="toolbar">
   <div class="tb-group">
     <span class="tb-group-label">表示</span>
@@ -1119,6 +1123,7 @@ let _charts = {}, _searchTimer = null;
   setInterval(() => loadWorks(_page), 60000);
   await refreshLockStatus();
   setInterval(refreshLockStatus, 5000);
+  checkVersionDrift(); // 起動時1回のみ（10分キャッシュはサーバー側で管理）
 
   // Electron 起動時: IPC でジョブ完了/開始通知を受け取りUIに反映
   if (window.electronAPI) {
@@ -2306,7 +2311,28 @@ function copyModalText(id) {
 
 
 
-// ── ロック状態の可視化 ────────────────────────────────────────────────────────
+// ── リモートHEADとの乖離警告 ────────────────────────────────────────────────
+// 並行セッションが多いプロジェクトで「古いビルドのコードを見て直している」
+// 事故を防ぐ。開発環境(buildInfo.json無し)ではchecked:falseが返り、何も表示しない。
+async function checkVersionDrift() {
+  try {
+    const r = await fetch('/api/version-check');
+    const d = await r.json();
+    const banner = document.getElementById('versionWarnBanner');
+    const text   = document.getElementById('versionWarnText');
+    if (!d.checked || d.upToDate) { banner.style.display = 'none'; return; }
+    const shortLocal  = (d.localSha  || '').slice(0, 7);
+    const shortRemote = (d.remoteSha || '').slice(0, 7);
+    text.textContent =
+      `このexeは古いビルドです（実行中: ${shortLocal} / GitHub最新: ${shortRemote}` +
+      (d.remoteMessage ? ` "${d.remoteMessage}"` : '') +
+      `）。最新コードで作業・修正しているつもりが、実際の挙動が反映されていない可能性があります。`;
+    banner.style.display = 'flex';
+  } catch {
+    // バージョンチェック自体の失敗は静かに無視（本来の機能を妨げない）
+  }
+}
+
 // discovery/detail等のロック横取りバグは過去に何度も発生しているため、
 // /api/run/status のlocks/abortFlagsを常時ポーリングして即座に気づけるようにする。
 async function refreshLockStatus() {

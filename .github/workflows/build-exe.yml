@@ -24,6 +24,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Write build info (commit SHA baked into the exe)
+        shell: bash
+        run: |
+          echo "{\"sha\":\"${{ github.sha }}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"runNumber\":${{ github.run_number }}}" > crawler/buildInfo.json
+          cat crawler/buildInfo.json
+
       - name: Build Windows portable exe
         run: npx electron-builder --win portable --x64
         env:

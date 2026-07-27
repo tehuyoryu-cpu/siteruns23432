@@ -14,3 +14,4 @@ events.jsonl
 events.*.jsonl
 data-export/
 .github-token
+crawler/buildInfo.json

@@ -738,6 +738,65 @@ function handleImport({ path: filePath, format = 'auto' }, res) {
 }
 
 
+// ── 機能追加③: リモートHEADとの乖離警告 ────────────────────────────────────────
+// このexeがビルドされた時点のcommit sha(build-exe.ymlがビルド直前に
+// crawler/buildInfo.jsonへ焼き込む)と、GitHub上の現在のmainブランチHEADを
+// 比較する。並行して複数セッション/AIが作業しがちなこのプロジェクトでは
+// 「古いビルドのコードを見ながら別の変更を加えてpushしてしまう」事故が
+// 起こりうるため、ズレていればダッシュボードに警告を出す。
+// 開発時(npm start、buildInfo.json無し)は静かにスキップする。
+let _buildInfoCache; // undefined=未読込, null=ファイル無し(開発時)
+function _loadBuildInfo() {
+  if (_buildInfoCache !== undefined) return _buildInfoCache;
+  try {
+    const p = require('path').join(__dirname, 'buildInfo.json');
+    _buildInfoCache = JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    _buildInfoCache = null;
+  }
+  return _buildInfoCache;
+}
+
+const _VERSION_CHECK_CACHE_MS = 10 * 60 * 1000; // GitHub API負荷軽減のため10分キャッシュ
+let _versionCheckCache = null, _versionCheckCacheAt = 0;
+
+async function handleVersionCheck() {
+  const buildInfo = _loadBuildInfo();
+  if (!buildInfo?.sha) {
+    return { checked: false, reason: 'buildInfo.json未検出（開発環境、または旧ビルド）' };
+  }
+  const now = Date.now();
+  if (_versionCheckCache && now - _versionCheckCacheAt < _VERSION_CHECK_CACHE_MS) {
+    return _versionCheckCache;
+  }
+  try {
+    const owner = config.github?.owner, repo = config.github?.repo;
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/main`, {
+      headers: { Accept: 'application/vnd.github.v3+json', 'User-Agent': 'dlsite-price-tracker' },
+    });
+    if (!res.ok) {
+      return { checked: false, reason: `GitHub API HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    const remoteSha = data.sha;
+    const result = {
+      checked:    true,
+      localSha:   buildInfo.sha,
+      remoteSha,
+      builtAt:    buildInfo.builtAt ?? null,
+      runNumber:  buildInfo.runNumber ?? null,
+      upToDate:   remoteSha === buildInfo.sha,
+      remoteMessage: (data.commit?.message ?? '').split('\n')[0].slice(0, 120),
+      remoteDate: data.commit?.committer?.date ?? null,
+    };
+    _versionCheckCache = result;
+    _versionCheckCacheAt = now;
+    return result;
+  } catch (e) {
+    return { checked: false, reason: e.message };
+  }
+}
+
 function handleRunStatus() {
   const elapsed = _progress.startedAt
     ? Math.floor(Date.now() / 1000) - _progress.startedAt : 0;
@@ -972,6 +1031,8 @@ function createServer() {
       if (pathname === '/api/run/status') return _json(res, handleRunStatus());
 
       if (pathname === '/api/diag/raw') return _json(res, await handleDiagRawRj(query));
+
+      if (pathname === '/api/version-check') return _json(res, await handleVersionCheck());
 
       if (pathname === '/api/settings' && req.method === 'GET') {
         return _json(res, handleSettingsGet());
