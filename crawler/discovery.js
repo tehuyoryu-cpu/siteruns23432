@@ -147,6 +147,35 @@ async function runDiscovery() {
   }
 }
 
+/**
+ * 指定した月初日付(YYYY-MM-DD)を起点に maniax/bl/girls の月次FSRを走査する。
+ *
+ * バグ修正: scheduler.js の prevMonthScan ジョブは以前 runFullScan() に
+ * dateOverride を渡していたが、runFullScan() はそのオプションを一切
+ * 受け取らず・使用しておらず、実質「日付フィルタなしの通常全件走査
+ * (trend順)」を毎月2日に実行しているだけだった(前月分のみを狙い撃ちで
+ * 救済する、という本来の目的を全く果たしていなかった)。
+ * _scanFsrMonthly() は既に dateStr 引数で任意の月初日付を受け付けられる
+ * ため(runDiscovery() 内の prevMonth 救済と同じ仕組み)、これを外部から
+ * 呼べる形でラップしてエクスポートする。
+ */
+async function runMonthlyScan(dateStr, { onProgress = null } = {}) {
+  log.info('[discovery] monthlyScan start', { dateStr });
+  const knownRjs    = _loadKnown();
+  const delistedRjs = _loadDelisted();
+  const results = {};
+
+  for (const site of ['maniax', 'bl', 'girls']) {
+    if (_discoveryAborted()) { log.warn('[discovery] monthlyScan aborted', { site }); break; }
+    results[site] = await _scanFsrMonthly(site, knownRjs, delistedRjs, dateStr);
+    onProgress?.({ site, dateStr, found: results[site] });
+  }
+
+  const total = Object.values(results).reduce((a, b) => a + b, 0);
+  log.info('[discovery] monthlyScan done', { dateStr, total, ...results });
+  return { discovered: total, sources: results };
+}
+
 // ─── 全収集 (FSR) ────────────────────────────────────────────────────────────
 
 async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {}) {
@@ -864,6 +893,7 @@ function _withDebugPush(jobName, fn) {
 
 module.exports = {
   runDiscovery:      _withDebugPush('discovery',   runDiscovery),
+  runMonthlyScan:    _withDebugPush('monthlyscan', runMonthlyScan),
   runFullScan:       _withDebugPush('fullscan',    runFullScan),
   runEndingSoonScan: _withDebugPush('endingsoon',  runEndingSoonScan),
   runNewReleaseScan: _withDebugPush('newrelease',  runNewReleaseScan),

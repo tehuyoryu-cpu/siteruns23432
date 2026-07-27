@@ -15,7 +15,7 @@ const cron   = require('node-cron');
 const config = require('../config');
 const db     = require('./db');
 const log    = require('./logger');
-const { runDiscovery, runFullScan } = require('./discovery');
+const { runDiscovery, runMonthlyScan } = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
 const compScan = require('./compScan');
@@ -263,8 +263,8 @@ function _startPrevMonthScanJob() {
     const myToken = Symbol('scheduler-prev-month-scan');
     global._crawlerRunning.discovery = true;
     global._crawlerRunning._discoveryOwner = myToken;
-    // バグ修正: このジョブも runFullScan() 経由で discovery 系のfetchWithRetryを
-    // 直接呼ぶため、他のdiscovery系cronと同様に resetAbortFlag が必要。
+    // バグ修正: このジョブも discovery 系のfetchWithRetryを直接呼ぶため、
+    // 他のdiscovery系cronと同様に resetAbortFlag が必要。
     global._crawlerAbort && (global._crawlerAbort.discovery = false);
     resetAbortFlag('discovery');
     log.info('[scheduler] prevMonthScan start — scanning last month FSR');
@@ -273,11 +273,15 @@ function _startPrevMonthScanJob() {
       const now  = new Date();
       const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-01`;
-      const result = await runFullScan({
-        sale: false, maxPages: 0,
-        dateOverride: dateStr,   // discovery.js 側で参照（未実装の場合は無視される）
-        onProgress: ({ site, page, found }) => {
-          log.debug('[scheduler] prevMonthScan', { site, page, found });
+      // バグ修正: 以前は runFullScan({ dateOverride }) を呼んでいたが、
+      // runFullScan() は dateOverride を一切参照しておらず、実際には
+      // 日付フィルタなしの通常全件走査(trend順)が毎月2日に実行される
+      // だけで、「前月分だけを狙い撃ちで救済する」という目的を全く
+      // 果たしていなかった。runDiscovery() 内の月またぎ救済と同じ
+      // _scanFsrMonthly(dateStr) 経路を使う runMonthlyScan() に差し替える。
+      const result = await runMonthlyScan(dateStr, {
+        onProgress: ({ site, found }) => {
+          log.debug('[scheduler] prevMonthScan', { site, dateStr, found });
         },
       });
       log.info('[scheduler] prevMonthScan done', result);
