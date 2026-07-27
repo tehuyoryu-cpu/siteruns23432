@@ -41,10 +41,29 @@ const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Inf
 const EMPTY_STREAK_THRESHOLD = 5;
 const REWARM_COOLDOWN_MS     = 60_000; // 再ウォームアップの最短間隔(連発防止)
 
+// バグ修正(2026-07-27 実運用で確認): 空応答streakが閾値に達し再ウォーム
+// アップを実行しても、診断結果(年齢確認ゲート不在+Cookie正常)から見て
+// セッションは元々健全だったと分かるケースがある。この場合、再ウォーム後も
+// 同じペースで空応答/劣化応答が継続する — 原因はセッション切れではなく
+// product/info/ajaxエンドポイント単体へのレート制限/スロットリングだった
+// と推測される。再ウォームは何も直さないため、同じ濃度でリクエストを
+// 送り続けても再発するだけ。診断が「健全」だったサイトには一定時間だけ
+// 並列度を落とし待機時間を増やすバックオフをかけ、DLsite側の警戒が
+// 収まるのを待つ。_lastRewarmAt 同様、runDetailFetch()の呼び出しをまたいで
+// 維持する(1回の巡回内だけでなく、次回の巡回でも抑制を継続させるため)。
+const RATE_LIMIT_BACKOFF_MS     = 5 * 60_000; // 疑わしい場合の抑制継続時間
+const RATE_LIMIT_BACKOFF_EXTRA  = 1500;       // バックオフ中に追加する待機(ms)
+
 const _siteEmptyStreak       = {};  // site -> 連続空応答回数
 const _circuitOpenBySite     = {};  // site -> このrunDetailFetch()呼び出し中は打ち切り中か
 const _rewarmInProgressBySite = {}; // site -> 再ウォームアップ実行中か(重複起動防止)
+const _siteBackoffUntil      = {};  // site -> レート制限疑いによる抑制の終了時刻(epoch ms)
 let   _lastRewarmAt          = 0;   // runDetailFetch()をまたいでもクールダウンを維持する
+
+/** レート制限疑いによる抑制期間中かどうか */
+function _isInRateLimitBackoff(site) {
+  return (_siteBackoffUntil[site] ?? 0) > Date.now();
+}
 
 function _resetSessionHealthState() {
   // circuit/streak は実行ごとにリセットする(前回打ち切ったサイトも今回はまず
@@ -101,6 +120,18 @@ async function _recordApiEmptyAndMaybeRecover(site) {
     // もう一度チャンスを与える(ここが従来の構造的不具合の修正点)。
     _siteEmptyStreak[site]   = 0;
     _circuitOpenBySite[site] = false;
+
+    // 再ウォームの診断結果を見て、そもそもセッションが健全だったかを判定する。
+    // gateAbsent(年齢確認ゲートが出ていない=既に通過済み)かつ
+    // cookieObtained(年齢確認Cookieが存在)が両方成立していれば、今回の
+    // 空応答streakはセッション切れが原因ではなかったと分かる。この場合は
+    // レート制限を疑い、このサイトへのリクエストを一定時間だけ抑制する。
+    const diag = global._lastWarmUpDiag?.results?.[site];
+    if (diag?.cookieObtained && diag?.gateAbsent) {
+      _siteBackoffUntil[site] = Date.now() + RATE_LIMIT_BACKOFF_MS;
+      log.warn(`[detail] ${site}: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — ` +
+        `セッション切れではなくレート制限の可能性が高いため、${Math.round(RATE_LIMIT_BACKOFF_MS / 60000)}分間このサイトへの並列度を抑制します`);
+    }
   } catch (e) {
     log.error('[detail] session re-warmup failed', site, e.message);
     _circuitOpenBySite[site] = true;
@@ -159,6 +190,9 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
     for (let i = 0; i < works.length; i += BATCH) chunks.push(works.slice(i, i + BATCH));
     let nextIdx = 0;
     let aborted = false;
+    // レート制限疑いのバックオフ中は、並列度を1まで落とし待機時間も
+    // 増やして負荷を下げる（詳細は _siteBackoffUntil のコメント参照）。
+    const inBackoff = _isInRateLimitBackoff(site);
 
     async function worker() {
       while (nextIdx < chunks.length) {
@@ -187,13 +221,16 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency 
         // リクエストパターンになるのを避ける。
         if (effRateLimit > 0 && nextIdx < chunks.length) {
           const rl = effRateLimit;
-          const jittered = Math.round(rl * 0.8 + Math.random() * rl * 0.4);
+          const jittered = Math.round(rl * 0.8 + Math.random() * rl * 0.4)
+            + (inBackoff ? RATE_LIMIT_BACKOFF_EXTRA : 0);
           await sleep(jittered);
         }
       }
     }
 
-    const poolSize = Math.max(1, Math.min(effConcurrency ?? 1, chunks.length));
+    const poolSize = inBackoff
+      ? 1
+      : Math.max(1, Math.min(effConcurrency ?? 1, chunks.length));
     await Promise.all(Array.from({ length: poolSize }, () => worker()));
     return aborted;
   }
