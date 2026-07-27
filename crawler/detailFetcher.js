@@ -699,10 +699,23 @@ async function _apiFetch(works, site) {
       returnedKeys < works.length * SEVERE_PARTIAL_RATIO;
 
     if (isSeverelyPartial) {
-      log.warn('[detail] API response severely degraded (near-empty, counted toward recovery streak)', site,
+      // バグ修正(重大・データ破壊): 以前はここで body をそのまま _processBatch に渡し、
+      // 返ってきた少数件については通常どおり価格保存・is_on_sale更新・サークルの
+      // on_sale伝播(_handleCircleSale→boostCircleWorks)まで信頼して実行していた。
+      // しかし「著しく劣化した応答」はCDN/中間プロキシが別クエリ由来の断片データを
+      // 混入させている可能性が高く(cdn_cache_min廃止後も観測される)、この少数件の
+      // 中身自体が汚染されている(誤ってis_sale=1等)危険がある。
+      // 実際に本番DBで「セール中 531000/534619件」「セール中サークル 48994/49353件」
+      // という99%超が恒常的にon_sale扱いになる異常が発生しており、severely partial
+      // レスポンスに含まれる汚染データがcircles.on_saleへ伝播→boostCircleWorks()で
+      // サークル全体を巻き込み、雪だるま式に拡大していたのが根本原因と特定した。
+      // 「空応答扱い(=ストリーク加算・再ウォーム判定)」はそのまま行うが、
+      // 中身は一切信頼せず破棄する。該当作品はrecordFetchError扱い(intervalのみ延長、
+      // priority/is_on_saleは変更しない)となり、次回の正常な巡回で改めて取得される。
+      log.warn('[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak)', site,
         `got ${returnedKeys} / requested ${works.length}`);
       await _recordApiEmptyAndMaybeRecover(site);
-      return body;
+      return null;
     }
 
     // 成功(通常の部分成功含む)したのでストリーク・サーキットともにクリアする
