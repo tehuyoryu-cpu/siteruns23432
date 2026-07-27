@@ -20,6 +20,7 @@ const { runDetailFetch } = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
 const compScan = require('./compScan');
 const { resetAbortFlag } = require('./abortSignals');
+const priceIssueMonitor = require('./priceIssueMonitor');
 
 // ─── discovery job ───────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function _startDetailJob() {
         },
       });
       log.digest('fetch', { trigger: 'cron', ...r, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
+      priceIssueMonitor.checkSpike('fetch(cron)');
     }
     catch (err) {
       log.error('[scheduler] detail error', err.message);
@@ -383,7 +385,10 @@ async function start() {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
       },
     })
-      .then(r => log.digest('fetch', { trigger: 'startup', ...r, duration: ((Date.now() - _t0initD) / 1000).toFixed(1) + 's' }))
+      .then(r => {
+        log.digest('fetch', { trigger: 'startup', ...r, duration: ((Date.now() - _t0initD) / 1000).toFixed(1) + 's' });
+        priceIssueMonitor.checkSpike('fetch(startup)');
+      })
       .catch(err => {
         log.error('[scheduler] initial detail error', err.message);
         log.digest('fetch', { trigger: 'startup', ok: false, error: err.message, duration: ((Date.now() - _t0initD) / 1000).toFixed(1) + 's' });

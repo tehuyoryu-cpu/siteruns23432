@@ -98,3 +98,13 @@ npm run dev        # UIのみ（ブラウザで http://127.0.0.1:7777）
 ```
 
 GitHub に push すると Actions が自動で exe をビルドして Releases に上げる。
+
+### 単体RJの動作確認（DBに触れないドライラン）
+
+```bash
+node main.js --rj=RJ01234567 --dry-run [--site=maniax|girls|bl|home|pro]
+```
+
+product/info/ajax の生取得 → parseProductInfo() の結果（work / price / priceIssue）を
+そのまま表示する。DBの初期化・読み書きは一切行わないため、価格パースロジックの
+確認や調査目的の実行で本番DBを汚す心配がない。

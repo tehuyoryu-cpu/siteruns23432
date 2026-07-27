@@ -40,6 +40,7 @@ const importData = require('./importData');
 const compScan = require('./compScan');
 const { runExportShards } = require('./exportShards');
 const { abortNow, resetAbortFlag } = require('./abortSignals');
+const priceIssueMonitor = require('./priceIssueMonitor');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
 // 即requireしていた。electron-builderのfilesリストにscripts/**が含まれていなかった
 // ため、パッケージ化されたexe(app.asar)内にこのファイルが同梱されず、apiServer.js
@@ -684,6 +685,12 @@ async function handleRun(job, res) {
       }
     }
     log.digest(job, digestFields);
+
+    // 機能追加④: 価格取得エラー急増検知。detail(価格更新)を伴うジョブの
+    // 完了ごとに前回計測値と比較する。
+    if (job === 'fetch' || job === 'all' || job === 'turbo') {
+      priceIssueMonitor.checkSpike(job);
+    }
   }
 }
 
