@@ -1295,7 +1295,8 @@ async function _runDiagnostics() {
   if (bySite.size) {
     for (const [site, codes] of bySite) {
       const params = codes.map(c => 'product_id%5B%5D=' + encodeURIComponent(c)).join('&');
-      const apiUrl = `https://www.dlsite.com/${site}/product/info/ajax?${params}&cdn_cache_min=1`;
+      // detailFetcher.js側と同様、CDNキャッシュ許可パラメータは付けない
+      const apiUrl = `https://www.dlsite.com/${site}/product/info/ajax?${params}`;
       try {
         const t0   = Date.now();
         // バグ修正: detailFetcher.js の実際に動いている _apiFetch() は

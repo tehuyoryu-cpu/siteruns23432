@@ -492,6 +492,38 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     await Promise.all(Array.from({ length: Math.min(VERIFY_CONCURRENCY, toVerify.length) }, verifyWorker));
   }
 
+  // ── データ汚染対策③: site_id_unverified(CSV/JSONインポート由来で'maniax'固定
+  // 復元された)作品がこのサイトのAPIで見つからなかった場合、recordApiMissing
+  // (誤delistedの引き金)に倒す前に他サイトファミリーを試行し、本来のsite_idを
+  // 確定させる。全サイトで不在だった場合のみ通常のapiMissing経路へ進む。
+  const unresolvedImported = [];
+  for (const w of works) {
+    const rj      = w.rj_code.toUpperCase();
+    const rjNopad = rj.replace(/^RJ0+/, 'RJ');
+    if (rj in normalizedBody || rjNopad in normalizedBody) continue;
+    if (w.site_id_unverified) unresolvedImported.push(w);
+  }
+
+  const resolvedSite = new Map(); // rj_code -> { site, body }
+  const confirmedNotFound = new Set(); // 全サイト試行しても見つからなかった rj_code
+  if (unresolvedImported.length) {
+    const altSites = (config.dlsite.sites ?? ['maniax', 'bl', 'girls']).filter(s => s !== site);
+    for (const w of unresolvedImported) {
+      let found = false;
+      for (const altSite of altSites) {
+        const body = await _apiFetch([{ rj_code: w.rj_code }], altSite);
+        if (body && Object.keys(body).length > 0) {
+          resolvedSite.set(w.rj_code, { site: altSite, body });
+          log.warn('[detail] site_id_unverified: resolved via alternate site', w.rj_code, altSite);
+          found = true;
+          break;
+        }
+        await sleep(200);
+      }
+      if (!found) confirmedNotFound.add(w.rj_code);
+    }
+  }
+
   db.transactionNoSave(() => {
     for (const w of works) {
       try {
@@ -501,6 +533,19 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         const found   = rj in normalizedBody || rjNopad in normalizedBody;
 
         if (!found) {
+          const resolved = resolvedSite.get(dbKey);
+          if (resolved) {
+            // 他サイトで発見 → site_idを訂正し正常経路として保存する
+            const rBody     = resolved.body;
+            const rDataKey  = (rj in rBody) ? rj : (rjNopad in rBody ? rjNopad : Object.keys(rBody)[0]);
+            const singleBody = { [dbKey]: rBody[rDataKey] };
+            db.updateSiteId(dbKey, resolved.site);
+            db.clearSiteIdUnverified(dbKey);
+            const changed = _store(dbKey, singleBody);
+            if (changed === null) { result.errors++; result.storeError++; }
+            else { result.priceChanges += changed ? 1 : 0; result.processed++; }
+            continue;
+          }
           if (verifiedAlive.has(dbKey)) {
             // 詳細ページで実在確認済み → delisted化させず、一時的な取得失敗として扱う
             // (priorityは維持、intervalのみ延長。真に削除済みなら次回以降も
@@ -512,6 +557,10 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
           } else {
             log.warn('[detail] key not in API response', rj,
               'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
+            // 全サイト試行済みでも見つからなかったインポート由来作品は、
+            // これ以上「未検証」のまま毎回全サイト再試行を繰り返さないよう
+            // ここでフラグを解除してから通常のapiMissing経路に進める。
+            if (confirmedNotFound.has(dbKey)) db.clearSiteIdUnverified(dbKey);
             db.recordApiMissing(dbKey);   // API不在→急速退避
             result.errors++;
             result.apiMissing++;
@@ -523,6 +572,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         const dataKey     = (rj in normalizedBody) ? rj : rjNopad;
         const singleBody  = { [dbKey]: normalizedBody[dataKey] };  // DB キーで包み直す
         const changed     = _store(dbKey, singleBody);
+        // 現在のsite_idでの取得に成功した = このsite_idは正しかったと確定
+        if (w.site_id_unverified) db.clearSiteIdUnverified(dbKey);
 
         if (changed === null) {
           result.errors++;
@@ -566,7 +617,12 @@ async function _verifyRjExists(rjCode, site) {
 async function _apiFetch(works, site) {
   // DLsite API は product_id[] 形式（配列）を要求する
   const params = works.map(w => `product_id%5B%5D=${encodeURIComponent(w.rj_code)}`).join('&');
-  const url    = `${BASE}/${site}/product/info/ajax?${params}&cdn_cache_min=1`;
+  // バグ修正(データ汚染対策①): cdn_cache_min=1 はCDN側に「最低1分キャッシュしてよい」と
+  // 明示的に許可するパラメータだった。一方でqueue.js側はCache-Control: no-cache等の
+  // ヘッダーでキャッシュ利用禁止を伝えており、自己矛盾した指示を送っていた
+  // (foreignRatio判定によるCDN汚染検出は事後対応でしかなく、入口を塞がなければ
+  // 汚染発生率自体は下がらない)。パラメータ自体を削除する。
+  const url    = `${BASE}/${site}/product/info/ajax?${params}`;
   try {
     const res = await fetchWithRetry(url, {
       headers: { Accept: 'application/json, */*' },

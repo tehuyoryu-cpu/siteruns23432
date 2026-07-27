@@ -346,16 +346,24 @@ function parseWorkListWithPrice(html) {
     });
 
     // ── 方法3: メインコンテンツ領域のみ RJ コードをスキャン（サイドバー除外）──
-    // サイドバー・レコメンド等ノイズを減らすため、コンテンツ本体に絞る
-    const mainContent =
-      $('ul.work_1col_item, .search_result_img_box_inner, #search_result_list, .work_list_main, .work_1col, main, #main').html()
-      || $.html();  // 特定できない場合は全体にフォールバック
+    // サイドバー・レコメンド等ノイズを減らすため、コンテンツ本体に絞る。
+    //
+    // バグ修正(データ汚染対策②): 以前はコンテンツ領域を特定できない場合に
+    // $.html()（ページ全体のHTML）へフォールバックしていた。これだとサイドバー・
+    // 関連作品・広告枠に紛れ込んだ、このページの一覧とは無関係なRJコードまで
+    // 拾ってしまい、price/circle/makerId等の情報が一切無いまま_upsertWork()で
+    // DBに登録され続けていた（discoveryが本来対象にしていないRJの誤登録・
+    // 汚染の主因）。コンテンツ領域を特定できない場合は方法3自体をスキップする
+    // (方法1/2で拾えなかった分は諦める方が、無関係なRJを大量に汚染登録するより安全)。
+    const mainContent = $('ul.work_1col_item, .search_result_img_box_inner, #search_result_list, .work_list_main, .work_1col, main, #main').html();
 
-    const hits = mainContent.match(/\bRJ\d{6,8}\b/gi) ?? [];
-    for (const h of hits) {
-      const rj = h.toUpperCase();
-      if (!found.has(rj)) {
-        found.set(rj, { ..._priceObj(rj, null, null), title: null, circle: null, makerId: null, workType: null, releaseDate: null });
+    if (mainContent) {
+      const hits = mainContent.match(/\bRJ\d{6,8}\b/gi) ?? [];
+      for (const h of hits) {
+        const rj = h.toUpperCase();
+        if (!found.has(rj)) {
+          found.set(rj, { ..._priceObj(rj, null, null), title: null, circle: null, makerId: null, workType: null, releaseDate: null });
+        }
       }
     }
 

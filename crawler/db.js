@@ -373,6 +373,12 @@ function _applySchema() {
     // （parser.js側もこのタイミングで合わせて修正）。
     'ALTER TABLE price_history ADD COLUMN point_rate INTEGER',
     'ALTER TABLE works ADD COLUMN cur_point_rate INTEGER',
+    // データ汚染対策③: CSV/JSONインポートはsite_idを含まないため'maniax'固定で
+    // 復元していた(importData.jsのコメント参照)。実際はgirls/bl作品も混在するため、
+    // 誤ったsite_idのまま巡回を続けるとAPI空応答→recordApiMissing→誤delistedの
+    // 連鎖を起こす。インポートで新規作成した作品はこのフラグを立て、
+    // detailFetcher.jsの初回チェックで全サイトを試行してから確定させる。
+    'ALTER TABLE works ADD COLUMN site_id_unverified INTEGER DEFAULT 0',
   ];
 
   for (const sql of migrations) {
@@ -1049,8 +1055,8 @@ function* importHistoryRows(records, { chunkSize = 200 } = {}) {
 
   const workStmt = _db.prepare(`
     INSERT INTO works
-      (rj_code, title, circle, maker_id, work_type, site_id, release_date, dl_count, first_seen)
-    VALUES (?,?,?,?,?,?,?,?,?)
+      (rj_code, title, circle, maker_id, work_type, site_id, release_date, dl_count, first_seen, site_id_unverified)
+    VALUES (?,?,?,?,?,?,?,?,?,1)
     ON CONFLICT(rj_code) DO UPDATE SET
       title        = COALESCE(excluded.title,        works.title),
       circle       = COALESCE(excluded.circle,       works.circle),
@@ -1802,6 +1808,24 @@ function getAllRjCodes() {
 }
 
 /**
+ * データ汚染対策③: インポートで暫定'maniax'固定登録された作品のsite_idが
+ * detailFetcher.js側の検証で確定した際に呼ぶ。site_id自体の更新は
+ * 呼び出し側(upsertWork等)が別途行い、ここではフラグ解除のみを担う。
+ */
+function clearSiteIdUnverified(rjCode) {
+  _run(`UPDATE works SET site_id_unverified = 0 WHERE rj_code = ?`, [rjCode]);
+}
+
+/**
+ * site_idのみを更新する。upsertWork()はCOALESCE経由で他カラム(dl_count等)も
+ * 一緒に扱うため、site_idだけを訂正したい場合(データ汚染対策③)に
+ * 既存値を0/nullで誤上書きしないよう単独のUPDATEにする。
+ */
+function updateSiteId(rjCode, siteId) {
+  _run(`UPDATE works SET site_id = ? WHERE rj_code = ?`, [siteId, rjCode]);
+}
+
+/**
  * ウォームアップ用: 指定サイトファミリー内で実在する作品RJコードを1件返す。
  * DLsiteの年齢確認ゲートはサイトルートではなく商品詳細ページでのみ表示される
  * ため、warmUpSession()が実際にクリック可能な年齢確認ページへ到達するには
@@ -1864,6 +1888,8 @@ module.exports = {
   getQuarantinedWorks,
   getDelistedRjCodes,
   getSampleRjForSite,
+  clearSiteIdUnverified,
+  updateSiteId,
   addCompCandidates,
   getDueCompCandidates,
   markCompCandidateProcessed,
