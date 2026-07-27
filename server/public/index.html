@@ -948,6 +948,20 @@ body { animation: fadeInDown .35s ease both; }
       <button class="modal-copy-btn" onclick="copyModalText('diagBody')" title="コピー">📄 コピー</button>
       <span class="modal-close" onclick="closeDiag()">✕</span>
     </div>
+    <div style="display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid #ccc;background:#f5f5f5">
+      <input id="rawRjInput" type="text" placeholder="RJ01234567" maxlength="12"
+        style="width:130px;height:24px;border:1px solid #aaa;border-radius:2px;padding:0 6px;font-family:monospace;font-size:11px;text-transform:uppercase">
+      <select id="rawRjSite" style="height:24px;font-size:11px">
+        <option value="maniax">maniax</option>
+        <option value="girls">girls</option>
+        <option value="bl">bl</option>
+        <option value="home">home</option>
+        <option value="pro">pro</option>
+      </select>
+      <button class="tb-btn" style="height:22px;padding:2px 10px" onclick="fetchRawRj()">📡 生API確認（DB書き込みなし）</button>
+      <span id="rawRjMsg" style="font-size:10px;color:#888"></span>
+    </div>
+    <div id="rawRjBody" style="display:none;font-family:monospace;font-size:11px;white-space:pre-wrap;padding:8px 12px;background:#f4f8ff;border-bottom:1px solid #ccc;max-height:220px;overflow-y:auto;user-select:text;cursor:text"></div>
     <div class="modal-body" id="diagBody" style="font-family:monospace;font-size:12px;white-space:pre-wrap;user-select:text;cursor:text">実行中...</div>
   </div>
 </div>
@@ -1088,6 +1102,7 @@ body { animation: fadeInDown .35s ease both; }
   <div class="sb-panel sb-sale">セール中: <b id="sbSale">–</b> 作品</div>
   <div class="sb-panel">価格記録: <b id="sbChanges">–</b> 件</div>
   <div class="sb-panel">確認待ち: <b id="sbDue">–</b> 件</div>
+  <div class="sb-panel" id="sbLocks" title="discovery/detail等の排他ロック保有状況" style="font-family:monospace;font-size:10px">🔒 –</div>
   <div class="sb-panel" id="sbLastUpdate" style="color:#888;font-size:10px"></div>
   <div class="sb-panel" id="sbStatus">準備完了</div>
 </div>
@@ -1102,6 +1117,8 @@ let _charts = {}, _searchTimer = null;
   await loadWorks(1);
   setInterval(loadStats, 20000);
   setInterval(() => loadWorks(_page), 60000);
+  await refreshLockStatus();
+  setInterval(refreshLockStatus, 5000);
 
   // Electron 起動時: IPC でジョブ完了/開始通知を受け取りUIに反映
   if (window.electronAPI) {
@@ -1935,6 +1952,32 @@ async function showDiag() {
 
 function closeDiag() { document.getElementById('diagModal').classList.remove('open'); }
 
+// ── RJコード生APIレスポンス確認（ドライラン、DB書き込みなし） ──────────────────
+async function fetchRawRj() {
+  const rj    = document.getElementById('rawRjInput').value.trim().toUpperCase();
+  const site  = document.getElementById('rawRjSite').value;
+  const msg   = document.getElementById('rawRjMsg');
+  const body  = document.getElementById('rawRjBody');
+  if (!/^RJ\d{4,}$/.test(rj)) { msg.textContent = '⚠ RJコード形式が不正です'; return; }
+
+  msg.textContent = '取得中...';
+  body.style.display = 'block';
+  body.textContent = '';
+  try {
+    const r = await fetch('/api/diag/raw?rj=' + encodeURIComponent(rj) + '&site=' + encodeURIComponent(site));
+    const d = await r.json();
+    if (d.ok === false && d.message) {
+      msg.textContent = '⚠ ' + d.message;
+      body.textContent = JSON.stringify(d, null, 2);
+      return;
+    }
+    msg.textContent = `HTTP ${d.status} / ${d.ms}ms / キー数:${d.returnedKeys?.length ?? 0}`;
+    body.textContent = JSON.stringify(d.body, null, 2);
+  } catch (e) {
+    msg.textContent = '取得失敗: ' + e.message;
+  }
+}
+
 // ── 設定モーダル（GitHubトークン）─────────────────────────────────────────────
 async function showSettings() {
   document.getElementById('settingsModal').classList.add('open');
@@ -2263,7 +2306,37 @@ function copyModalText(id) {
 
 
 
-// ── リップルエフェクト（ツールバーボタン） ──────────────────────────────────
+// ── ロック状態の可視化 ────────────────────────────────────────────────────────
+// discovery/detail等のロック横取りバグは過去に何度も発生しているため、
+// /api/run/status のlocks/abortFlagsを常時ポーリングして即座に気づけるようにする。
+async function refreshLockStatus() {
+  const s = await api('/api/run/status');
+  const el = document.getElementById('sbLocks');
+  if (!el) return;
+  if (!s?.locks) { el.textContent = '🔒 –'; return; }
+  const L = s.locks, A = s.abortFlags ?? {};
+  const active = [];
+  if (L.discovery) active.push('discovery' + (L.discoveryOwner ? '(' + L.discoveryOwner + ')' : ''));
+  if (L.detail)    active.push('detail'    + (L.detailOwner    ? '(' + L.detailOwner    + ')' : ''));
+  if (L.compListing) active.push('comp_listing');
+  if (L.compDetail)  active.push('comp_detail');
+  if (L.saleBoost)   active.push('saleBoost');
+  const abortActive = ['discovery','detail','comp'].filter(k => A[k]);
+
+  if (!active.length && !abortActive.length) {
+    el.textContent = '🔒 ロックなし';
+    el.style.color = '';
+    el.title = '排他ロック・中断フラグともに無し（正常）';
+    return;
+  }
+  el.style.color = '#cc6600';
+  const parts = [];
+  if (active.length) parts.push('保有: ' + active.join(', '));
+  if (abortActive.length) parts.push('abort中: ' + abortActive.join(', '));
+  el.textContent = '🔒 ' + parts.join(' / ');
+  el.title = JSON.stringify({ locks: L, abortFlags: A }, null, 2);
+}
+
 document.addEventListener('mousedown', e => {
   const btn = e.target.closest('.tb-btn');
   if (!btn) return;

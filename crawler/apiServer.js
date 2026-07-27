@@ -741,13 +741,78 @@ function handleImport({ path: filePath, format = 'auto' }, res) {
 function handleRunStatus() {
   const elapsed = _progress.startedAt
     ? Math.floor(Date.now() / 1000) - _progress.startedAt : 0;
+  // 機能追加(可視化): global._crawlerRunning / global._crawlerAbort は複数箇所
+  // (apiServer.handleRun、scheduler.js の各cronジョブ、electron-main.js)から
+  // Symbolトークンで所有権管理されており、過去に「ロック横取り」系のバグが
+  // 繰り返し発生していた(all/turboが他ジョブのロックを誤って解放する等)。
+  // 発生時に生ログを漁らなくても気づけるよう、現在のロック保有状況・
+  // 所有者(Symbol.toString()で識別名のみ、実体は漏らさない)・中断フラグを
+  // そのままAPIに出す。DB書き込み等の副作用は一切ない読み取り専用の可視化。
+  const shared = global._crawlerRunning ?? {};
+  const abort  = global._crawlerAbort ?? {};
   return {
     ..._jobRunning,
     progress:     { ..._progress, elapsed },
     lastResult:   _lastResult,
     recentErrors: log.getRecentErrors?.().slice(-10) ?? [],
     sseClients:   _sseClients.size,
+    locks: {
+      discovery:              !!shared.discovery,
+      detail:                 !!shared.detail,
+      saleBoost:              !!shared.saleBoost,
+      compListing:            !!shared.compListing,
+      compDetail:             !!shared.compDetail,
+      schedulerDetailRunning: !!shared.schedulerDetailRunning,
+      discoveryOwner:         shared._discoveryOwner ? String(shared._discoveryOwner) : null,
+      detailOwner:            shared._detailOwner    ? String(shared._detailOwner)    : null,
+    },
+    abortFlags: {
+      discovery: !!abort.discovery,
+      detail:    !!abort.detail,
+      comp:      !!abort.comp,
+    },
   };
+}
+
+// ── 診断: RJコード生APIレスポンス確認（ドライラン、DB書き込みなし） ────────────
+// point/point_rate調査のように「実際のDLsite APIフィールド名が推測でしか分からない」
+// 状況を減らすため、指定RJコードの product/info/ajax 生JSONをそのまま返す。
+// parser.jsのparseProductInfo等は一切通さず、DLsiteが返した生の値をそのまま見せる。
+async function handleDiagRawRj(query) {
+  const rjRaw = String(query.rj ?? '').trim().toUpperCase();
+  if (!/^RJ\d{4,}$/.test(rjRaw)) {
+    return { ok: false, message: 'RJコードの形式が不正です（例: RJ01234567）' };
+  }
+  const site = String(query.site ?? 'maniax').trim();
+  const validSites = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
+  if (!validSites.has(site)) {
+    return { ok: false, message: `不明なsite: ${site}（有効: ${[...validSites].join(', ')}）` };
+  }
+
+  const { fetchWithRetry } = require('./queue');
+  const url = `https://www.dlsite.com/${site}/product/info/ajax?product_id%5B%5D=${encodeURIComponent(rjRaw)}`;
+  const t0 = Date.now();
+  try {
+    const res  = await fetchWithRetry(url, { headers: { Accept: 'application/json, */*' } });
+    const ms   = Date.now() - t0;
+    const text = await res.text();
+    let body = null, parseError = null;
+    try { body = JSON.parse(text); } catch (e) { parseError = e.message; }
+    return {
+      ok: res.ok,
+      url,
+      status: res.status,
+      ms,
+      contentType: res.headers.get('content-type') ?? null,
+      parseError,
+      rawLength: text.length,
+      body: body ?? text.slice(0, 2000),
+      // レスポンスキー一覧（要求RJがそのまま返っているか、別バッチが混入していないか一目で分かる）
+      returnedKeys: body ? Object.keys(body) : [],
+    };
+  } catch (e) {
+    return { ok: false, message: e.message, url };
+  }
 }
 
 const _dbPath = require('path').resolve(
@@ -905,6 +970,8 @@ function createServer() {
       if (histMatch) return _json(res, handleHistory(histMatch[1].toUpperCase()));
 
       if (pathname === '/api/run/status') return _json(res, handleRunStatus());
+
+      if (pathname === '/api/diag/raw') return _json(res, await handleDiagRawRj(query));
 
       if (pathname === '/api/settings' && req.method === 'GET') {
         return _json(res, handleSettingsGet());
