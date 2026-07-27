@@ -1754,6 +1754,32 @@ function recoverSuspectedDelisted(minErrors = 2, maxErrors = 3) {
   return affected;
 }
 
+/**
+ * 一括メンテナンス: severely-partial API応答の汚染データを信頼してしまっていた
+ * バグ(detailFetcher.js _apiFetch、修正済み)により、is_on_sale / circles.on_sale が
+ * 実態と無関係に広範囲(観測時点で全works中99%超)で誤ってON化していた事象からの復旧用。
+ * 全てのis_on_sale/circles.on_saleを強制的にfalseへ戻し、通常優先度・通常間隔に戻す。
+ * 本当にセール中の作品は次回の価格更新で正しく再検出される(副作用は一時的な
+ * 優先度低下のみで、データが失われるわけではないため安全)。
+ */
+function countSuspectedFalseSale() {
+  return (_get('SELECT COUNT(*) AS n FROM works WHERE is_on_sale = 1') ?? { n: 0 }).n;
+}
+
+function resetAllSaleFlags() {
+  const now = unixNow();
+  let works = 0, circles = 0;
+  runInTransaction(() => {
+    works   = _run(`
+      UPDATE works SET is_on_sale = 0, priority = ?, check_interval = ?, next_check_at = ?
+      WHERE is_on_sale = 1
+    `, [config.priority.normal, config.checkInterval.normal, now]).changes;
+    circles = _run('UPDATE circles SET on_sale = 0').changes;
+  });
+  log.info('[db] resetAllSaleFlags: works', works, 'circles', circles);
+  return { works, circles };
+}
+
 /** 全RJコードをSetで返す（discovery高速化用） */
 // rj_code の全件取得は discovery が6時間毎に呼ぶため、インメモリキャッシュで高速化する。
 // upsertWork が呼ばれたときにキャッシュを無効化する（次回 getAllRjCodes() 時に再構築）。
@@ -1893,6 +1919,8 @@ module.exports = {
   getQuarantinedWorks,
   getDelistedRjCodes,
   getSampleRjForSite,
+  countSuspectedFalseSale,
+  resetAllSaleFlags,
   clearSiteIdUnverified,
   updateSiteId,
   addCompCandidates,
