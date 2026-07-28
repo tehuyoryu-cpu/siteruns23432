@@ -504,11 +504,25 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // 同期SQLクエリをバッチ件数分繰り返す無駄な往復だった。works配列を直接
   // 参照するだけで済む。
   const toVerify = [];
+  // バグ修正(2026-07-27 実運用で確認): このサイトが空応答streak由来の
+  // レート制限バックオフ中(_isInRateLimitBackoff)の場合、not-found判定された
+  // 作品ごとに詳細ページへ直接アクセスする救済確認(_verifyRjExists、最大3並列)を
+  // 一切行わないようにする。劣化応答は一度に大量の「見つからない」を生むため、
+  // まさにDLsite側の警戒を鎮めたい期間中に大量の追加リクエストを送ってしまい、
+  // レート制限からの回復を妨げる自己増幅ループになっていた(実機ログで
+  // 「空応答5回連続→再ウォーム→健全判定→5分間抑制」を数分おきに繰り返し続けて
+  // いたことで発覚)。バックオフ中はこの追加確認をスキップし、単純な
+  // recordFetchError(priorityは変えずintervalのみ延長)に倒す。バックオフが
+  // 解除された後の正常な巡回で通常どおり再評価される。
+  const skipVerify = _isInRateLimitBackoff(site);
   for (const w of works) {
     const rj      = w.rj_code.toUpperCase();
     const rjNopad = rj.replace(/^RJ0+/, 'RJ');
     if (rj in normalizedBody || rjNopad in normalizedBody) continue;   // API上で見つかった
-    if ((w.consecutive_errors ?? 0) >= 1) toVerify.push(w.rj_code);
+    if (!skipVerify && (w.consecutive_errors ?? 0) >= 1) toVerify.push(w.rj_code);
+  }
+  if (skipVerify && works.some(w => (w.consecutive_errors ?? 0) >= 1)) {
+    log.debug('[detail] rate-limit backoff中のためverifyRjExists救済確認をスキップ', site);
   }
 
   const verifiedAlive = new Set();
@@ -598,9 +612,17 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
             // これ以上「未検証」のまま毎回全サイト再試行を繰り返さないよう
             // ここでフラグを解除してから通常のapiMissing経路に進める。
             if (confirmedNotFound.has(dbKey)) db.clearSiteIdUnverified(dbKey);
-            db.recordApiMissing(dbKey);   // API不在→急速退避
-            result.errors++;
-            result.apiMissing++;
+            if (skipVerify) {
+              // レート制限バックオフ中は「not found」という応答自体が信頼できないため、
+              // delisted化(recordApiMissing)には倒さず、通常のfetch失敗として扱う。
+              db.recordFetchError(dbKey);
+              result.errors++;
+              result.fetchFail++;
+            } else {
+              db.recordApiMissing(dbKey);   // API不在→急速退避
+              result.errors++;
+              result.apiMissing++;
+            }
           }
           continue;
         }
