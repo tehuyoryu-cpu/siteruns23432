@@ -1754,6 +1754,22 @@ async function _autoRetryWithCountdown(job, btn, message, retryCount) {
 async function _waitJobDone(job, btn) {
   const checkKey = job;
   let tries = 0;
+  // バグ修正: 以前は tries > 600（1.5秒間隔 × 600 = 15分）で強制的に
+  // 「完了」扱いにしてポーリングを止め、走査パネルも閉じていた。
+  // しかし digest-recent.log の実測では 'all' が約17分(1017.6s)、
+  // 'turbo' は約73分(4414.6s)かかる回が普通に発生しており、
+  // fullscan/circlegap 等はさらに長時間かかりうる。この15分キャップに
+  // 到達すると、バックエンドのジョブはまだ実際に動いているのに
+  // フロント側だけが「完了した」と誤判断し、進捗バー/走査パネルを
+  // 消してしまっていた（= 途中で消える不具合の直接原因）。
+  // 本来の完了判定はサーバーが返す s[checkKey] フラグだけで十分なので、
+  // 時間による強制打ち切りは「万一フラグが壊れて戻り続けない」場合のみの
+  // 保険として、現実的にありえないレベルまで緩める。
+  // 代わりに、API自体が応答しない（サーバークラッシュ/回線切断）状態が
+  // 続く場合だけ早期に諦める、連続失敗カウンタを別途設ける。
+  const MAX_TRIES        = 24 * 60 * 60 / 1.5; // 24時間ぶん（実質の安全弁）
+  const MAX_CONSEC_FAILS = 20;                 // 約30秒間APIが応答しない場合のみ諦める
+  let consecFails = 0;
   showProgress(true);
 
   // 走査パネルを表示して SSE 接続
@@ -1781,12 +1797,27 @@ async function _waitJobDone(job, btn) {
   const id = setInterval(async () => {
     tries++;
     const s = await api('/api/run/status');
-    if (!s) return;
+    if (!s) {
+      // API不応答（サーバー再起動中・回線切断等）。連続失敗が閾値を超えた
+      // ときだけ諦める。単発の失敗ではポーリングを止めない。
+      consecFails++;
+      if (consecFails > MAX_CONSEC_FAILS) {
+        clearInterval(id);
+        btn.classList.remove('running');
+        btn.title = _JOB_LABELS[job];
+        setStatus('⚠ サーバーへの接続が失われました（' + (_JOB_LABELS[job] ?? job) + 'は継続中の可能性があります。ページを再読み込みしてください）');
+        if (document.getElementById('scanPanel')?.classList.contains('active')) {
+          _spStopSSE();
+        }
+      }
+      return;
+    }
+    consecFails = 0;
 
     const p = s.progress ?? {};
     updateProgressBar(p, job);
 
-    if (!s[checkKey] || tries > 600) {
+    if (!s[checkKey] || tries > MAX_TRIES) {
       clearInterval(id);
       btn.classList.remove('running');
       btn.title = _JOB_LABELS[job];
