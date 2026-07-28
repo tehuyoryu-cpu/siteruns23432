@@ -756,7 +756,17 @@ async function _apiFetch(works, site) {
     }
     return body;
   } catch (e) {
-    log.error('[detail] API fetch error', e.message, site, `${works.length}件`);
+    // バグ修正: 停止ボタン/turboの横取り等による意図的な中断(fetchWithRetryが
+    // 投げる "aborted: <url>")も、それ以外の本物のネットワーク/APIエラーと
+    // 同じ log.error() で記録していたため、debugブランチのエラーログや
+    // digest調査時に「大量のエラーが発生した」ように見えるノイズになっていた
+    // (実際は中断の正常な副産物で対応不要)。中断由来のものは info レベルに
+    // 格下げし、recentErrors/latest-error.log には残さない。
+    if (/^aborted:/.test(e.message)) {
+      log.info('[detail] API fetch aborted (intentional stop)', site, `${works.length}件`);
+    } else {
+      log.error('[detail] API fetch error', e.message, site, `${works.length}件`);
+    }
     return null;
   }
 }
