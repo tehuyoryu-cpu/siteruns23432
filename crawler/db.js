@@ -731,6 +731,31 @@ function recordFetchError(rjCode) {
 }
 
 /**
+ * バグ修正: detailFetcher.js のサーキットブレーカー(空応答連続検知による
+ * 一定時間のリクエスト抑制)が開いている間、_processBatch は該当作品を
+ * 対象バッチに含めるたびに recordFetchError() を呼んでいた。これは
+ * 「個々の作品側の問題」ではなく「セッション全体の一時的な問題」による
+ * 抑制であるにもかかわらず consecutive_errors を積み増してしまい、
+ * 抑制が複数サイクル(cron 10分毎)にわたって続くとセール中作品等の
+ * priority が15回到達で強制的に normal まで下げられてしまう
+ * (実害の無い誤検知によるランク降格)。
+ * サーキット抑制によるスキップは consecutive_errors・priority に一切
+ * 触れず、next_check_at だけを短時間(10分)先送りして同一ジョブ実行内での
+ * 無限ループ(due→スキップ→即再取得→due…)を防ぐだけにとどめる。
+ * セッション復旧後は通常の recordFetchError/savePriceIfChanged 経路に
+ * 自然に戻るため、真の障害追跡(consecutive_errors)には一切影響しない。
+ */
+function recordCircuitSkip(rjCode) {
+  const now = unixNow();
+  const RETRY_AFTER = 10 * 60; // 10分後に再試行（サーキットは通常5分程度で閉じる想定）
+  _run(`
+    UPDATE works SET
+      next_check_at = ?
+    WHERE rj_code = ?
+  `, [now + RETRY_AFTER, rjCode]);
+}
+
+/**
  * API に存在しない作品（"key not in API response"）を記録。
  * ネットワークエラーより急速に interval を延ばして due キューから退避させる。
  *  1回目: 7日, 2回目: 30日, 3回目以降: 180日
@@ -1879,6 +1904,7 @@ module.exports = {
   upsertWork,
   markChecked,
   recordFetchError,
+  recordCircuitSkip,
   recordApiMissing,
   getDueWorks,
   getWorkByRj,
