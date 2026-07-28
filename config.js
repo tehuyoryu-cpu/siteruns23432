@@ -23,8 +23,18 @@ module.exports = {
     // newrelease/endingsoon(discovery系)も同時並列実行するため、実際の同時アクセス数は
     // これよりさらに多い。DLsite側が明示的な429を返さず黙って部分応答/劣化するケースが
     // あるとみられるため、負荷をbase設定寄りに緩和して部分応答の発生頻度を下げる。
-    turboConcurrency: 4,
-    turboRateLimit:   350,
+    //
+    // 再調整(2026-07-28, digest.log実データに基づく): concurrency:4/rateLimit:350ms
+    // でも通常のfetch(cron, concurrency:3/rateLimit:700ms)がほぼエラー0件なのに対し、
+    // turbo/allは同じ実行内でerrors数千〜3万件台まで積み上がる回が頻発していた
+    // (例: 'all' errors:30011件、'turbo' errors:7555件)。これはDLsite側がランダムに
+    // 劣化しているのではなく、turbo自体の並列負荷(detail + newrelease/endingsoon の
+    // 同時実行によるサイト単位の実効同時接続数増加)がセッション劣化/レート制限を
+    // 誘発している可能性が高いと判断し、base設定にさらに近づける。
+    // サーキットブレーカー・再ウォームは劣化後の誤delisted化を防ぐ後始末でしかなく、
+    // 劣化の発生自体は防げないため、根本原因側(負荷設定)を下げる。
+    turboConcurrency: 3,
+    turboRateLimit:   550,
   },
 
   cron: {
