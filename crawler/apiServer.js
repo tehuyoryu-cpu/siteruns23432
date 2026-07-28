@@ -232,8 +232,13 @@ async function handleRun(job, res) {
     if (job === 'discover') {
       Object.assign(_progress, { job, page: 0, found: 0, site: 'maniax', startedAt: Math.floor(Date.now() / 1000), done: false });
       const r = await runDiscovery();
-      _lastResult[job] = { ok: true, discovered: r?.discovered ?? 0, finishedAt: Date.now() };
-      _sseSend('log', `discovery完了 — 新規: ${r?.discovered ?? 0}件`);
+      // バグ修正: 停止ボタンで中断された実行も ok:true のまま digest.log に
+      // 記録されており、あとからログを見ても「意図的に停止したのか、
+      // 単に完了したのか」が区別できなかった。完了時点の中止フラグを見て
+      // stopped を明示する（他のジョブと同じパターン、詳細は下のturbo/fetch参照）。
+      const stoppedDiscover = !!global._crawlerAbort?.discovery;
+      _lastResult[job] = { ok: true, discovered: r?.discovered ?? 0, stopped: stoppedDiscover, finishedAt: Date.now() };
+      _sseSend('log', (stoppedDiscover ? 'RJ収集を停止しました — ' : 'discovery完了 — ') + `新規: ${r?.discovered ?? 0}件`);
 
     } else if (job === 'fetch') {
       const startedAt = Math.floor(Date.now() / 1000);
@@ -245,9 +250,12 @@ async function handleRun(job, res) {
           if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
         },
       });
-      _lastResult[job] = { ok: true, ...r, finishedAt: Date.now() };
+      // バグ修正: 停止ボタンによる中断か、単なる正常完了かを digest.log から
+      // 判別できるようにする（同上）。
+      const stoppedFetch = !!global._crawlerAbort?.detail;
+      _lastResult[job] = { ok: true, ...r, stopped: stoppedFetch, finishedAt: Date.now() };
       _sseSend(r?.priceChanges > 0 ? 'change' : 'log',
-        `価格更新完了 — 処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`);
+        (stoppedFetch ? '価格更新を停止しました — ' : '価格更新完了 — ') + `処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`);
       if (r?.priceChanges > 0 && global._notifyPriceChange) {
         global._notifyPriceChange(r.priceChanges);
       }
@@ -365,8 +373,10 @@ async function handleRun(job, res) {
       });
 
       const summary = `新規:${discR.discovered}件 / 価格更新:${fetchR?.processed ?? 0}件 / 変動:${fetchR?.priceChanges ?? 0}件 / エラー:${fetchR?.errors ?? 0}件`;
-      _lastResult[job] = { ok: true, discovered: discR.discovered, ...fetchR, finishedAt: Date.now() };
-      _sseSend(fetchR?.priceChanges > 0 ? 'change' : 'log', `全て巡回完了 — ${summary}`);
+      // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
+      const stoppedAll = !!global._crawlerAbort?.detail || !!global._crawlerAbort?.discovery;
+      _lastResult[job] = { ok: true, discovered: discR.discovered, ...fetchR, stopped: stoppedAll, finishedAt: Date.now() };
+      _sseSend(fetchR?.priceChanges > 0 ? 'change' : 'log', (stoppedAll ? '全て巡回を停止しました — ' : '全て巡回完了 — ') + summary);
       // バックグラウンド通知（価格変動時）
       if (fetchR?.priceChanges > 0 && global._notifyPriceChange) {
         global._notifyPriceChange(fetchR.priceChanges);
@@ -458,13 +468,16 @@ async function handleRun(job, res) {
         }),
       ]);
 
+      // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
+      const stoppedTurbo = !!global._crawlerAbort?.detail || !!global._crawlerAbort?.discovery;
       _lastResult[job] = {
         ok: true, ...detailR,
         newRelease: newReleaseR, endingSoon: endingSoonR,
-        finishedAt: Date.now(),
+        stopped: stoppedTurbo, finishedAt: Date.now(),
       };
       const msg =
-        `ぶっ飛ばし完了 — 価格更新:${detailR?.processed ?? 0}件 変動:${detailR?.priceChanges ?? 0}件` +
+        (stoppedTurbo ? '🚀 ぶっ飛ばしを停止しました — ' : 'ぶっ飛ばし完了 — ') +
+        `価格更新:${detailR?.processed ?? 0}件 変動:${detailR?.priceChanges ?? 0}件` +
         ` / 新作収集:新規${newReleaseR?.grandTotal ?? 0}件` +
         ` / 終了間近:新規${endingSoonR?.newCount ?? 0}件・優先度UP${endingSoonR?.boostedCount ?? 0}件`;
       _sseSend(detailR?.priceChanges > 0 ? 'change' : 'log', msg);
