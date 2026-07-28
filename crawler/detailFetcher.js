@@ -534,6 +534,15 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   }
 
   const verifiedAlive = new Set();
+  // バグ修正: 以前は _verifyRjExists() の戻り値のうち 'exists' だけを見ており、
+  // 'unknown'（fetch失敗・タイムアウト・404でも200でもない応答）は 'gone' と
+  // 事実上同じ扱いで recordApiMissing（delisted化）へ進んでいた。
+  // 'unknown' は「確認できなかった」であって「消滅を確認した」ではないため、
+  // ネットワーク瞬断等で verify 自体がたまたま失敗しただけの作品まで
+  // 誤ってdelisted化されるリスクがあった。verify結果をrjCodeごとに保持し、
+  // 呼び出し元で 'unknown' は recordFetchError（priority維持）に、
+  // 確認できた 'gone' のみ recordApiMissing に倒せるようにする。
+  const verifyStatus = new Map(); // rjCode -> 'exists' | 'gone' | 'unknown'
   if (toVerify.length) {
     const VERIFY_CONCURRENCY = 3;
     let vi = 0;
@@ -541,9 +550,12 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
       while (vi < toVerify.length) {
         const rjCode = toVerify[vi++];
         const status = await _verifyRjExists(rjCode, site);
+        verifyStatus.set(rjCode, status);
         if (status === 'exists') {
           verifiedAlive.add(rjCode);
           log.warn('[detail] API missing but detail page confirms existence — rescuing from delisting', rjCode);
+        } else if (status === 'unknown') {
+          log.warn('[detail] verify inconclusive (not confirmed gone) — deferring to fetch-error instead of delisting', rjCode);
         }
         if (vi < toVerify.length) await sleep(300);   // 次がある場合のみ待機(最後の1件で無駄な待機をしない)
       }
@@ -626,8 +638,17 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
               db.recordFetchError(dbKey);
               result.errors++;
               result.fetchFail++;
+            } else if (verifyStatus.get(dbKey) === 'unknown') {
+              // バグ修正: verify自体が失敗/確定できなかった(ネットワーク瞬断・
+              // タイムアウト・404でも200でもない応答)場合は「消滅を確認した」
+              // わけではないため、gone確定の場合と同じdelisted経路(recordApiMissing)
+              // に倒さない。次回巡回でconsecutive_errorsが増えれば自然にdelisted
+              // へ至るため、誤って早期にdelisted化するリスクを避ける。
+              db.recordFetchError(dbKey);
+              result.errors++;
+              result.fetchFail++;
             } else {
-              db.recordApiMissing(dbKey);   // API不在→急速退避
+              db.recordApiMissing(dbKey);   // API不在→急速退避（verify未実施 or 'gone'確認済み）
               result.errors++;
               result.apiMissing++;
             }
@@ -670,9 +691,35 @@ async function _verifyRjExists(rjCode, site) {
   try {
     const res = await fetchWithRetry(url, { headers: { Accept: 'text/html' } }, 'detail');
     if (res.status === 404) return 'gone';
-    if (res.ok) return 'exists';
-    log.warn('[detail] verifyRjExists non-ok/non-404 response', rjCode, res.status);
-    return 'unknown';
+    if (!res.ok) {
+      log.warn('[detail] verifyRjExists non-ok/non-404 response', rjCode, res.status);
+      return 'unknown';
+    }
+    // バグ修正: 以前は HTTP 200 であれば無条件に 'exists' としていたが、
+    // DLsiteが200 OKのまま年齢確認ページ・代替/エラーページを返すケースを
+    // 区別できていなかった。年齢確認ゲート特有の文言(electron-main.jsの
+    // AGE_GATE_SIGNAL_REと同じパターン)が含まれる場合、商品情報そのものは
+    // 確認できていないため 'exists' と断定しない。また、商品ページ特有の
+    // マーカー(自RJコード自体・work_name/product_id等)が本文に見当たらない
+    // 場合も、200 OKだが別ページ(検索結果へのフォールバック等)の可能性が
+    // あるため 'exists' としない。どちらも「実在しないと確認できたわけではない」
+    // ため 'gone' ではなく 'unknown'（recordFetchErrorに倒れる、delisted化しない）
+    // として扱い、安全側に倒す。
+    const html = await res.text();
+    const head = html.slice(0, 6000);
+    const AGE_GATE_SIGNAL_RE = /(18歳|年齢確認|age.?check|age.?verif|adult.?check)/i;
+    if (AGE_GATE_SIGNAL_RE.test(head)) {
+      log.warn('[detail] verifyRjExists: age-gate encountered, cannot confirm product existence', rjCode, site);
+      return 'unknown';
+    }
+    const hasProductMarker =
+      html.toUpperCase().includes(rjCode.toUpperCase()) &&
+      /work_name|product_id|itemprop=["']name["']/i.test(html);
+    if (!hasProductMarker) {
+      log.warn('[detail] verifyRjExists: 200 OK but no product markers found, treating as unknown', rjCode, site);
+      return 'unknown';
+    }
+    return 'exists';
   } catch (e) {
     log.warn('[detail] verifyRjExists fetch error', rjCode, e.message);
     return 'unknown';
