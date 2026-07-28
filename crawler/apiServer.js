@@ -265,6 +265,7 @@ async function handleRun(job, res) {
       const startedAt = Math.floor(Date.now() / 1000);
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt, done: false });
       const r = await detailFetcher.runDetailFetch(300, {
+        jobName: 'fetch',
         onProgress: ({ processed, priceChanges, total }) => {
           Object.assign(_progress, { found: processed, total });
           _sseSend('progress', { processed, priceChanges, total });
@@ -376,6 +377,7 @@ async function handleRun(job, res) {
       // が同じ config を参照するとレース状態になりうる。runDetailFetch に
       // 直接オーバーライド値を渡し、グローバルは一切変更しない。
       const fetchR = await detailFetcher.runDetailFetch(Infinity, {
+        jobName:     'all',
         rateLimit:   config.fetch.turboRateLimit,
         concurrency: Math.max(config.fetch.concurrency ?? 1, config.fetch.turboConcurrency),
         onProgress: ({ processed, priceChanges, total }) => {
@@ -460,6 +462,7 @@ async function handleRun(job, res) {
       // （収集系がエラーで落ちただけで「ぶっ飛ばし全体が失敗」にはしたくない）。
       const [detailR, newReleaseR, endingSoonR] = await Promise.all([
         detailFetcher.runDetailFetch(Infinity, {
+          jobName:     'turbo',
           rateLimit:   config.fetch.turboRateLimit,
           concurrency: Math.max(config.fetch.concurrency ?? 1, config.fetch.turboConcurrency),
           onProgress: ({ processed, priceChanges, total }) => {

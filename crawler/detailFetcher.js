@@ -144,7 +144,7 @@ async function _recordApiEmptyAndMaybeRecover(site) {
 
 // ─── public ──────────────────────────────────────────────────────────────────
 
-async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency } = {}) {
+async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency, jobName } = {}) {
   // 実行ごとにサーキット/ストリークをリセット（前回の巡回で打ち切ったサイトも
   // 今回はまず1回試す。再ウォームアップのクールダウンは実行をまたいで維持する）
   _resetSessionHealthState();
@@ -979,17 +979,24 @@ function _ageDays(d) {
 }
 
 // ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────
-async function _runDetailFetchWithPush(...args) {
+// バグ修正: 以前は呼び出し元(fetch/all/turbo/main.jsのどれか)に関わらず
+// 常に job:'detail' 固定でpushしていたため、debugブランチのmeta.json/
+// digest-recent.logを見ても実際にどのジョブ(特にturbo/allのブースト設定で
+// 実行されたものか)が原因でエラー率が高騰したのか判別できなかった。
+// 呼び出し元がoptionsに渡した jobName（'fetch'/'all'/'turbo'）をそのまま
+// ラベルとして使い、未指定時のみ従来通り 'detail' にフォールバックする。
+async function _runDetailFetchWithPush(limit, opts = {}) {
+  const jobLabel = opts.jobName ?? 'detail';
   let result, err;
   try {
-    result = await runDetailFetch(...args);
+    result = await runDetailFetch(limit, opts);
     return result;
   } catch (e) {
     err = e;
     throw e;
   } finally {
     try {
-      await pushDebugBundle({ job: 'detail', result: err ? { error: err.message } : result });
+      await pushDebugBundle({ job: jobLabel, result: err ? { error: err.message } : result });
     } catch (pushErr) {
       log.error('[detail] pushDebugBundle failed', pushErr.message);
     }
