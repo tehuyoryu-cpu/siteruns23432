@@ -335,10 +335,18 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   if (getAbortSignal('detail').aborted) return result;
 
   // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
-  // fetchError扱いにする（priorityは下げない・intervalのみ延長）。
+  // スキップする。
+  // バグ修正: 以前は recordFetchError() を呼んでいたが、これは
+  // consecutive_errors を積み増す関数であり、抑制が長引く/繰り返されると
+  // (cron 10分毎に再発するようなセッション不調時)個々の作品には何の問題も
+  // 無いにもかかわらず15回到達でセール中作品等の priority が強制的に
+  // normal まで下げられてしまっていた（サーキット抑制はセッション全体の
+  // 一時的な問題であり、個々の作品のfetch失敗ではないため区別すべき）。
+  // db.recordCircuitSkip() は next_check_at のみを先送りし、
+  // consecutive_errors/priority には触れない。
   if (_shouldSkipRequest(site)) {
     db.transactionNoSave(() => {
-      for (const w of works) db.recordFetchError(w.rj_code);
+      for (const w of works) db.recordCircuitSkip(w.rj_code);
     });
     result.errors    += works.length;
     result.fetchFail  += works.length;
