@@ -404,17 +404,31 @@ async function _tryClickAgeGate(w, url) {
     // 見えなくなっていた。ページ本文に年齢確認ゲート特有の文言が一切無ければ
     // 「ゲート不在(正常)」として log.info に格下げする。
     const AGE_GATE_SIGNAL_RE = /(18歳|年齢確認|age.?check|age.?verif|adult.?check)/i;
-    const gateAbsent = !clicked && diag
+    // バグ修正: 地域ブロック等でDLsiteが通常の商品ページとは全く異なる
+    // エラーページ(「ご利用の地域では〜」「not available in your region」等)を
+    // 返した場合、これまではAGE_GATE_SIGNAL_REに一致しないというだけの理由で
+    // 無条件に「年齢確認ゲートなし(正常)」と判定していた。実際にはページが
+    // 全く読めておらずセッションも商品情報も得られていない異常事態だが、
+    // ログ上は成功扱いになり、後続のcookie判定・診断がこの誤判定を
+    // そのまま信用してしまう(実害の発覚が遅れる)盲点があった。
+    // 既知の地域ブロック/アクセス不能系の文言にも一致するかを別途チェックし、
+    // 一致した場合は「正常」ではなく明示的な異常として区別する。
+    const REGION_BLOCK_SIGNAL_RE = /(ご利用の地域|この地域では|not available in your region|is not available in|region.?block|geo.?block|アクセスできません|該当ページが見つかりません|お住まいの国|current region)/i;
+    const bodyOrTitle = `${diag?.bodyTextSample || ''} ${diag?.title || ''}`;
+    const regionBlocked = !clicked && REGION_BLOCK_SIGNAL_RE.test(bodyOrTitle);
+    const gateAbsent = !clicked && diag && !regionBlocked
       && !AGE_GATE_SIGNAL_RE.test(diag.bodyTextSample || '')
       && !AGE_GATE_SIGNAL_RE.test(diag.title || '');
     if (!clicked && diag) {
-      if (gateAbsent) {
+      if (regionBlocked) {
+        log.error('[warmUp] 地域制限/アクセス不能ページの疑いを検出 — 「ゲート不在(正常)」とは扱わず異常として記録します', { url, title: diag.title, bodyTextSample: diag.bodyTextSample });
+      } else if (gateAbsent) {
         log.info('[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常', { url, title: diag.title });
       } else {
         log.warn('[warmUp] 年齢確認ボタン未検出、診断情報', { url, ...diag });
       }
     }
-    return { clicked, diag, gateAbsent };
+    return { clicked, diag, gateAbsent, regionBlocked };
   } catch (e) {
     log.warn('[warmUp] executeJavaScript error', { url, error: e.message });
     return { clicked: false, diag: { error: e.message } };
@@ -504,8 +518,13 @@ async function _warmUpOneSite(w, url, site) {
   }
 
   if (!productUrl) {
-    log.warn('[warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念', { url, site });
-    return { clicked: false, reason: 'no-age-gate-no-product-link', diag: r.diag };
+    // バグ修正: 地域ブロックされている場合、そもそもトップページに実商品リンクが
+    // 一切現れないことがある(通常カタログの代わりにブロックページが返るため)。
+    // 従来はこれを一律 'no-age-gate-no-product-link' として扱っていたが、
+    // r.regionBlocked が立っている場合はその旨を理由に残し、診断パネルで
+    // 「ゲート不在(正常)」と混同されないようにする。
+    log.warn('[warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念', { url, site, regionBlocked: !!r.regionBlocked });
+    return { clicked: false, reason: r.regionBlocked ? 'region-blocked(root)' : 'no-age-gate-no-product-link', diag: r.diag, regionBlocked: r.regionBlocked };
   }
 
   log.info('[warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行', { url, productUrl });
@@ -517,9 +536,11 @@ async function _warmUpOneSite(w, url, site) {
 
   r = await _tryClickAgeGate(w, productUrl);
   const navigated = await _waitAfterClick(w);
-  const reason = r.clicked ? 'finish-load(product)' : (r.gateAbsent ? 'gate-absent(product)' : 'no-button-on-product-page');
+  const reason = r.clicked ? 'finish-load(product)'
+    : r.regionBlocked ? 'region-blocked(product)'
+    : r.gateAbsent ? 'gate-absent(product)' : 'no-button-on-product-page';
   log.info('[warmUp] site done', { url, clicked: r.clicked, reason, navigatedAfterClick: navigated });
-  return { clicked: r.clicked, reason, diag: r.diag, gateAbsent: r.gateAbsent };
+  return { clicked: r.clicked, reason, diag: r.diag, gateAbsent: r.gateAbsent, regionBlocked: r.regionBlocked };
 }
 async function startBackend() {
   log.info('[startup] requiring modules...');
