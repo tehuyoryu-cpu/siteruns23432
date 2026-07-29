@@ -60,6 +60,20 @@ const _rewarmInProgressBySite = {}; // site -> 再ウォームアップ実行中
 const _siteBackoffUntil      = {};  // site -> レート制限疑いによる抑制の終了時刻(epoch ms)
 let   _lastRewarmAt          = 0;   // runDetailFetch()をまたいでもクールダウンを維持する
 
+// バグ修正(根本原因): 従来はサーキットが一度開くと、_shouldSkipRequest() が
+// _apiFetch() の呼び出し自体を完全に止めてしまい、その結果 _apiFetch 内にしか
+// ない回復判定(_recordApiEmptyAndMaybeRecover)も二度と実行されなくなっていた。
+// つまり「サーキットが開いたら、その回のrunDetailFetch()が終わるまで
+// 絶対に閉じない」状態で、途中でDLsite側の混雑が解消してもそれを検知する
+// 手段が無かった。turboが94%エラーで終わった直後、何も変えずに次の
+// (サーキットが実行単位でリセットされる)新規実行では0%エラーで
+// 40万件処理できた実績があり、"実行を跨げば直る" = "実行中でも直せたはず"
+// ということが分かっている。
+// 古典的なサーキットブレーカーの Open → Half-Open 遷移を追加し、開放中でも
+// 一定間隔ごとに1バッチだけ実際にfetchさせて回復を確認できるようにする。
+const CIRCUIT_PROBE_INTERVAL_MS = 90_000; // 開放中でも90秒に1回だけ様子見リクエストを通す
+const _circuitLastProbeAt       = {};     // site -> 直近にプローブを許可した時刻(epoch ms)
+
 /** レート制限疑いによる抑制期間中かどうか */
 function _isInRateLimitBackoff(site) {
   return (_siteBackoffUntil[site] ?? 0) > Date.now();
@@ -68,17 +82,35 @@ function _isInRateLimitBackoff(site) {
 function _resetSessionHealthState() {
   // circuit/streak は実行ごとにリセットする(前回打ち切ったサイトも今回はまず
   // 試す)。_lastRewarmAt はクールダウンの実効性を保つため実行をまたいで維持する。
-  for (const site of Object.keys(_siteEmptyStreak))   delete _siteEmptyStreak[site];
-  for (const site of Object.keys(_circuitOpenBySite)) delete _circuitOpenBySite[site];
+  for (const site of Object.keys(_siteEmptyStreak))     delete _siteEmptyStreak[site];
+  for (const site of Object.keys(_circuitOpenBySite))   delete _circuitOpenBySite[site];
+  for (const site of Object.keys(_circuitLastProbeAt))  delete _circuitLastProbeAt[site];
 }
 
-/** _processBatch がこのサイトへのリクエストを送るべきでないか(circuit開放中 or 再ウォーム中) */
+/**
+ * _processBatch がこのサイトへのリクエストを送るべきでないか(circuit開放中 or 再ウォーム中)。
+ * サーキットが開いていても、前回プローブから CIRCUIT_PROBE_INTERVAL_MS 以上
+ * 経過していれば、このバッチ1回分だけは実際にfetchさせる(Half-Open)。
+ * 複数ワーカーが同時にこの条件を満たしても、直近プローブ時刻を即座に更新する
+ * ことで多重プローブの発生をおおむね1回に抑える(取りこぼしは実害が小さいため許容)。
+ */
 function _shouldSkipRequest(site) {
-  return !!_circuitOpenBySite[site] || !!_rewarmInProgressBySite[site];
+  if (_rewarmInProgressBySite[site]) return true;
+  if (!_circuitOpenBySite[site]) return false;
+  const now = Date.now();
+  if (now - (_circuitLastProbeAt[site] ?? 0) >= CIRCUIT_PROBE_INTERVAL_MS) {
+    _circuitLastProbeAt[site] = now;
+    log.info(`[detail] ${site}: サーキット開放中だが回復確認のためプローブを1件通します`);
+    return false;
+  }
+  return true;
 }
 
 /** 成功(部分成功含む)を記録し、ストリーク・サーキットともにクリアする */
 function _recordApiSuccess(site) {
+  if (_circuitOpenBySite[site]) {
+    log.info(`[detail] ${site}: プローブ成功 — サーキットを閉じて通常運転に戻します`);
+  }
   _siteEmptyStreak[site]   = 0;
   _circuitOpenBySite[site] = false;
 }
@@ -96,7 +128,8 @@ async function _recordApiEmptyAndMaybeRecover(site) {
 
   if (typeof global._reWarmUpSession !== 'function') {
     log.warn('[detail] no re-warmup hook available (non-Electron context?)', site);
-    _circuitOpenBySite[site] = true;
+    _circuitOpenBySite[site]    = true;
+    _circuitLastProbeAt[site]   = Date.now();
     return;
   }
 
@@ -104,9 +137,10 @@ async function _recordApiEmptyAndMaybeRecover(site) {
   if (now - _lastRewarmAt < REWARM_COOLDOWN_MS) {
     log.warn('[detail] session re-warmup skipped (cooldown)', site,
       `${Math.ceil((REWARM_COOLDOWN_MS - (now - _lastRewarmAt)) / 1000)}s残り`);
-    _circuitOpenBySite[site] = true;
+    _circuitOpenBySite[site]  = true;
+    _circuitLastProbeAt[site] = now;
     log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続、再ウォームアップはクールダウン中 — ` +
-      `このサイトへのリクエストを今回の巡回では打ち切ります(次回の巡回で自動的に再試行されます)`);
+      `このサイトへのリクエストを今回の巡回では一時停止します(${Math.round(CIRCUIT_PROBE_INTERVAL_MS / 1000)}秒毎に回復確認)`);
     return;
   }
 
@@ -134,9 +168,10 @@ async function _recordApiEmptyAndMaybeRecover(site) {
     }
   } catch (e) {
     log.error('[detail] session re-warmup failed', site, e.message);
-    _circuitOpenBySite[site] = true;
+    _circuitOpenBySite[site]  = true;
+    _circuitLastProbeAt[site] = Date.now();
     log.error(`[detail] ${site}: セッション再確立に失敗 — ` +
-      `このサイトへのリクエストを今回の巡回では打ち切ります(次回の巡回で自動的に再試行されます)`);
+      `このサイトへのリクエストを今回の巡回では一時停止します(${Math.round(CIRCUIT_PROBE_INTERVAL_MS / 1000)}秒毎に回復確認)`);
   } finally {
     _rewarmInProgressBySite[site] = false;
   }
