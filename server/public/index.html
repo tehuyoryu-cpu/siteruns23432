@@ -1892,13 +1892,31 @@ function updateProgressBar(p, job) {
     const found = p.found ? p.found + '件' : '';
     label.textContent = [site, page, found, elapsed].filter(Boolean).join(' ');
   } else if (job === 'fetch' || job === 'all' || job === 'turbo') {
-    fill.classList.remove('indeterminate');
-    const pct = (p.found && p.total) ? Math.min(99, Math.round(p.found / p.total * 100)) : (p.found ? 10 : 0);
-    fill.style.width = pct + '%';
-    const phaseLabel = job === 'all' && !p.total ? 'RJ収集中...'
-      : job === 'turbo' ? '🚀 ' + (p.found || 0) + '件処理'
-      : (p.found || 0) + '件更新';
-    label.textContent = phaseLabel + (elapsed ? ' ' + elapsed : '');
+    // バグ修正: turboは価格更新(detail)に加えnewrelease/endingsoonも並列実行するが、
+    // 従来はp.found(=detailの処理件数)だけを見ていたため、価格更新の対象(due)が
+    // 0件のとき(既に全作品が最新の場合など)は新作収集・終了間近収集が実際には
+    // 活発に走っていてもゲージが0%のまま固まって見え、「進捗が出ない/壊れている」
+    // ように見えるバグがあった。detail側にfound/totalが無い場合はsubJobsの
+    // 進捗(新作収集/終了間近収集のページ・件数)を使って不定形アニメーション+
+    // ラベル表示に切り替える。
+    const sub = p.subJobs || {};
+    const subActive = job === 'turbo' && !p.found &&
+      ((sub.newrelease && (sub.newrelease.found || sub.newrelease.page)) ||
+       (sub.endingsoon && (sub.endingsoon.found || sub.endingsoon.page)));
+    if (subActive) {
+      fill.classList.add('indeterminate');
+      const nr = sub.newrelease?.found ? `新作収集:${sub.newrelease.found}件` : '';
+      const es = sub.endingsoon?.found ? `終了間近:${sub.endingsoon.found}件` : '';
+      label.textContent = ['🚀 価格更新は待機中', nr, es, elapsed].filter(Boolean).join(' ');
+    } else {
+      fill.classList.remove('indeterminate');
+      const pct = (p.found && p.total) ? Math.min(99, Math.round(p.found / p.total * 100)) : (p.found ? 10 : 0);
+      fill.style.width = pct + '%';
+      const phaseLabel = job === 'all' && !p.total ? 'RJ収集中...'
+        : job === 'turbo' ? '🚀 ' + (p.found || 0) + '件処理'
+        : (p.found || 0) + '件更新';
+      label.textContent = phaseLabel + (elapsed ? ' ' + elapsed : '');
+    }
   } else if (job === 'circlegap') {
     fill.classList.remove('indeterminate');
     // totalPagesはループ開始直後に即時通知されるようになったため、
