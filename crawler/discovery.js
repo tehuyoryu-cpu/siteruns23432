@@ -336,6 +336,18 @@ async function _fetchWithPrice(url) {
       return arr;
     }
     const html = await res.text();
+    // バグ修正: 地域ブロック等でHTTP 200のまま通常商品一覧と全く異なる
+    // エラーページが返ることがある。従来はそのままパースして「0件のページ」
+    // として扱っていたため、途中の巡回が「本当に最終ページに到達した」と
+    // 誤判定され、エラーログにも残らないまま取りこぼしが発生していた。
+    // 一時的な取得失敗(items.failed)と同じ経路に流し、リトライ/打ち切りの
+    // 対象にする。
+    if (parser.isRegionBlockedHtml(html)) {
+      log.error('[discovery] 地域制限/アクセス不能ページの疑いを検出、取得失敗として扱います', url);
+      const arr = [];
+      arr.failed = true;
+      return arr;
+    }
     return parser.parseWorkListWithPrice(html);   // 成功時は .failed は undefined(falsy)
   } catch (e) {
     log.error('[discovery] fetch error', url, e.message);
@@ -368,8 +380,14 @@ async function _confirm404(url) {
 
     // 404以外が返ってきた = 単発の瞬断だった可能性が高い
     if (res.ok) {
-      log.warn('[discovery] 404 was transient, recovered on confirm retry', url);
       const html = await res.text();
+      if (parser.isRegionBlockedHtml(html)) {
+        log.error('[discovery] 404confirm: 地域制限/アクセス不能ページの疑いを検出、取得失敗として扱います', url);
+        const arr = [];
+        arr.failed = true;
+        return arr;
+      }
+      log.warn('[discovery] 404 was transient, recovered on confirm retry', url);
       return parser.parseWorkListWithPrice(html);
     }
     log.warn('[discovery] 404confirm: non-404 non-ok response', res.status, url);
