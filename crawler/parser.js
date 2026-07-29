@@ -434,6 +434,33 @@ function _str(v) {
   return String(v).trim() || null;
 }
 
+// ─── 地域制限/アクセス不能ページの検出 ─────────────────────────────────────────
+// バグ修正: DLsiteが地域ブロック等で通常のHTMLとは全く異なるエラーページを
+// 返した場合、これまでは HTTP 200 で返ってくることが多いため「取得成功→
+// パースしたら0件だった」としてしか扱えず、以下のような誤判定を引き起こしていた:
+//   - discovery.js: 「本当に最終ページ(0件)」と区別できず、途中で巡回を
+//     打ち切ってしまう(取りこぼしがエラーログにも残らない)
+//   - compScan.js: 一覧走査中にこれが起きると listing_done=1 が確定してしまい、
+//     手動リセットしない限り二度と再走査されなくなる
+//   - detailFetcher.js: _verifyRjExists が「存在する」と誤判定し、本来
+//     delisted化すべき作品を毎回救済し続ける
+// electron-main.js の warmUpSession() で導入した地域ブロック検出パターンと
+// 揃えた正規表現で、HTML本文からこれを検出できるようにする(単一の判定基準を
+// 各モジュールで使い回すことで、パターンの二重管理・食い違いを防ぐ)。
+const REGION_BLOCK_SIGNAL_RE = /(ご利用の地域|この地域では|not available in your region|is not available in|region.?block|geo.?block|アクセスできません|該当ページが見つかりません|お住まいの国|current region)/i;
+
+/**
+ * HTML本文に地域制限/アクセス不能を示す文言が含まれているかを判定する。
+ * 巨大なHTMLで正規表現を全文に掛けるのは無駄なため、先頭/末尾の一部だけを見る
+ * (これらのエラーページは通常DLsiteの通常商品一覧より遥かに小さいため、
+ *  先頭数千文字で判定すれば十分)。
+ */
+function isRegionBlockedHtml(html) {
+  if (!html) return false;
+  const sample = html.length > 5000 ? html.slice(0, 3000) + html.slice(-2000) : html;
+  return REGION_BLOCK_SIGNAL_RE.test(sample);
+}
+
 module.exports = {
   parseProductInfo,
   parseWorkListWithPrice,
@@ -441,4 +468,5 @@ module.exports = {
   parseRankingList,
   parseCircleWorks,
   parseSalePage,
+  isRegionBlockedHtml,
 };
