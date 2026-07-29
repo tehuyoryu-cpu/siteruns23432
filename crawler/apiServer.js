@@ -1390,6 +1390,9 @@ async function _runDiagnostics() {
         ok,
         note: `対象URL: ${r.targetUrl ?? '(不明)'}${r.rjUsed ? ' (RJ: ' + r.rjUsed + ')' : ''} / clicked=${r.clicked} / cookieObtained=${r.cookieObtained} / reason=${r.reason}`
           + (r.cookieObtained === true && r.clicked === false ? '\n  ※クリック不要でした（既に年齢確認Cookieを保有しているため、ゲート自体が表示されなかったと考えられます）' : '')
+          // バグ修正: 地域ブロックページを「ゲート不在(正常)」と誤解しないよう、
+          // electron-main.js側で検出したregionBlockedフラグをここでも明示する。
+          + (r.regionBlocked ? '\n  ⚠ 地域制限/アクセス不能ページの疑いを検出しています（年齢確認ゲートが無いのではなく、そもそも通常ページが返っていない可能性）' : '')
           + (ci ? `\n  ★実際にクリックした要素: <${ci.tag}> "${ci.text}" (${ci.via}) href=${ci.href ?? '(なし)'}` : '')
           + (d?.title != null ? `\n  ページタイトル: ${d.title}`  : '')
           + (d?.url   != null ? `\n  実際のURL: ${d.url}` : '')
