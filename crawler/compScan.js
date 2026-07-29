@@ -37,7 +37,19 @@ const _WORK_URL = rj => `https://www.dlsite.com/maniax/work/=/product_id/${rj}.h
 async function _getText(url) {
   const res = await fetchWithRetry(url, {}, 'comp');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.text();
+  const text = await res.text();
+  // バグ修正: 地域ブロック等でHTTP 200のまま通常ページと全く異なる
+  // エラーページが返ることがある。以前はそのまま _LISTING_URL のパース対象や
+  // 詳細ページ抽出対象に流していたため、
+  //   - Phase A(一覧走査): 0件パースされて listing_done=1 が永続的に確定し、
+  //     手動リセットしない限り二度と再走査されなくなる
+  //   - Phase B(詳細解析): 収録作品0件のまま processed 確定してしまう
+  // という実害があった。呼び出し元の catch(e) 経路(failCount管理・リトライ)に
+  // 乗せるため、通常の取得失敗と同じ例外として扱う。
+  if (parser.isRegionBlockedHtml(text)) {
+    throw new Error('region-blocked');
+  }
+  return text;
 }
 async function _getJson(url) {
   const res = await fetchWithRetry(url, {}, 'comp');
