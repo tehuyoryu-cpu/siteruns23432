@@ -747,6 +747,14 @@ async function _verifyRjExists(rjCode, site) {
       log.warn('[detail] verifyRjExists: age-gate encountered, cannot confirm product existence', rjCode, site);
       return 'unknown';
     }
+    // バグ修正: hasProductMarker チェックは地域ブロックページも間接的に
+    // 'unknown' へ落とせていたが(マーカーが無いため)、原因がage-gateなのか
+    // 地域ブロックなのか区別がつかずログだけでは追いにくかった。
+    // electron-main.js/parser.jsと同じ判定基準で明示的にログを分ける。
+    if (parser.isRegionBlockedHtml(head)) {
+      log.warn('[detail] verifyRjExists: 地域制限/アクセス不能ページの疑い、existsと誤判定しないようunknown扱いにします', rjCode, site);
+      return 'unknown';
+    }
     const hasProductMarker =
       html.toUpperCase().includes(rjCode.toUpperCase()) &&
       /work_name|product_id|itemprop=["']name["']/i.test(html);
