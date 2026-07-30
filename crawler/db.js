@@ -608,10 +608,62 @@ function _run(sql, params = []) {
  * SAVEPOINT によるネストにも標準対応しているため、他のトランザクション内から
  * 呼ばれても安全（旧sql.js実装ではBEGIN二重発行でエラーになっていた制約が解消）。
  */
+
+// ─── トランザクション所要時間の計測（[db] save slow の実測）─────────────────────
+// バグ修正の経緯: 「[db] save slow」はsql.js時代(DB全体を毎回シリアライズし
+// 直す方式)に観測されていた既知の課題としてバックログに残っていたが、
+// better-sqlite3への移行後にこれが実際に解消されたのか一度も計測されていなかった
+// (コメント上は「WALのページ単位追記で構造的コストは無いはず」としつつも、
+// 巨大な単一トランザクション(importHistoryRowsのチャンク処理・巡回の
+// バッチ保存等)がDBサイズ増加とともにどの程度時間を要すかは未検証のまま
+// 「直したはず」で止まっていた)。transaction()系ラッパーの実行時間を計測し、
+// 閾値超過時のみ log.warn する(通常のトランザクションは高頻度なので、毎回
+// ログを出すとノイズになる)。統計は getSlowTransactionStats() 経由で
+// /api/stats に載せ、ダッシュボードから常時観測できるようにする。
+const SLOW_TRANSACTION_MS = 300; // これ以上かかったら「遅い」として記録
+
+const _slowTransactionStats = {
+  count:  0,     // 起動からの閾値超過回数（累計）
+  maxMs:  0,     // 観測した最大所要時間
+  lastMs: null,  // 直近の所要時間
+  lastAt: null,  // 直近発生時刻(ISO文字列)
+  lastLabel: null,
+};
+
+function _dbFileSizeMB() {
+  try { return Math.round((fs.statSync(DB_PATH).size / 1024 / 1024) * 10) / 10; }
+  catch { return null; }
+}
+
+/**
+ * `_db.transaction(fn)()` を実行時間計測付きで呼ぶ。
+ * @param {Function} fn    トランザクション本体
+ * @param {string}   label ログ・統計に出す呼び出し元ラベル（'transaction' 等）
+ */
+function _timedNativeTransaction(fn, label) {
+  const t0 = Date.now();
+  _db.transaction(fn)();
+  const ms = Date.now() - t0;
+  if (ms >= SLOW_TRANSACTION_MS) {
+    _slowTransactionStats.count++;
+    _slowTransactionStats.lastMs    = ms;
+    _slowTransactionStats.lastAt    = new Date().toISOString();
+    _slowTransactionStats.lastLabel = label;
+    if (ms > _slowTransactionStats.maxMs) _slowTransactionStats.maxMs = ms;
+    log.warn(`[db] slow transaction (${label}): ${ms}ms`, { dbSizeMB: _dbFileSizeMB() });
+  }
+  return ms;
+}
+
+/** 診断用: 起動からの「遅いトランザクション」統計を返す（/api/stats経由でダッシュボードに表示）。 */
+function getSlowTransactionStats() {
+  return { ..._slowTransactionStats, thresholdMs: SLOW_TRANSACTION_MS };
+}
+
 function transaction(fn) {
   if (!_db) throw new Error('[db] transaction() called but _db is null (DB not initialized or already closed)');
   try {
-    _db.transaction(fn)();
+    _timedNativeTransaction(fn, 'transaction');
   } catch (err) {
     log.error('[db] transaction rolled back:', err.message);
     throw err;
@@ -627,7 +679,7 @@ function transaction(fn) {
 function transactionNoSave(fn) {
   if (!_db) throw new Error('[db] transactionNoSave() called but _db is null (DB not initialized or already closed)');
   try {
-    _db.transaction(fn)();
+    _timedNativeTransaction(fn, 'transactionNoSave');
   } catch (err) {
     log.error('[db] transactionNoSave rolled back:', err.message);
     throw err;
@@ -637,7 +689,7 @@ function transactionNoSave(fn) {
 /** transaction() と同一実装（呼び出し側互換のため関数名を維持）。 */
 function runInTransaction(fn) {
   if (!_db) throw new Error('[db] runInTransaction() called but _db is null (DB not initialized or already closed)');
-  _db.transaction(fn)();
+  _timedNativeTransaction(fn, 'runInTransaction');
 }
 
 /**
@@ -1431,7 +1483,13 @@ function getStats() {
       (SELECT COUNT(*)           FROM circles WHERE on_sale = 1)               AS circlesOnSale,
       (SELECT COUNT(*)           FROM works   WHERE next_check_at <= ${now})   AS dueNow
   `);
-  return row ?? { totalWorks: 0, onSale: 0, priceChanges: 0, totalCircles: 0, circlesOnSale: 0, dueNow: 0 };
+  const base = row ?? { totalWorks: 0, onSale: 0, priceChanges: 0, totalCircles: 0, circlesOnSale: 0, dueNow: 0 };
+  // [db] save slow の実測用（詳細は getSlowTransactionStats() のコメント参照）。
+  // ダッシュボードが既に20秒おきにポーリングしている /api/stats に相乗りさせる
+  // ことで、専用エンドポイントを増やさずに「実際に遅いトランザクションが
+  // 起きているか」を常時観測できるようにする。
+  base.slowTransactions = getSlowTransactionStats();
+  return base;
 }
 
 // ─── backup ──────────────────────────────────────────────────────────────────
@@ -1925,6 +1983,7 @@ module.exports = {
   markCircleOnSale,
   getCircle,
   getStats,
+  getSlowTransactionStats,
   backup,
   verifyBackup,
   transaction,
