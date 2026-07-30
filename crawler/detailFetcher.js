@@ -146,16 +146,31 @@ function _maybeAutoThrottle(jobName, effRateLimit, effConcurrency) {
 /**
  * runDetailFetch() 完了時に呼ぶ。今回の結果からエラー率を計算し、
  * ストリークを更新する。サンプル数が少ない回は判定対象外(据え置き)。
+ *
+ * バグ修正: 以前は apiServer.js 側にも全く同じ「denom<50なら判定しない」
+ * 「閾値0.15」という計算がハードコードで重複しており(_checkHighErrorRate)、
+ * 片方だけ閾値を変えると自動抑制のトリガーと digest.log 上の表示が食い違う
+ * リスクがあった。ここで計算したerrorRate/highErrorRateを result に
+ * そのまま付与し、apiServer.js 側は再計算せずこの値を読むだけにする
+ * (閾値・denom基準の一次情報源をここに一本化)。
  */
 function _updateAutoThrottleStreak(jobName, result) {
-  if (!jobName) return;
+  const denom = (result.processed ?? 0) + (result.errors ?? 0);
+  if (denom < AUTO_THROTTLE_MIN_DENOM) {
+    result.errorRate     = null;
+    result.highErrorRate = false;
+  } else {
+    const errorRate = result.errors / denom;
+    result.errorRate     = Math.round(errorRate * 1000) / 1000;
+    result.highErrorRate = errorRate >= AUTO_THROTTLE_ERROR_RATE_THRESHOLD;
+  }
+
+  if (!jobName) return; // ストリーク追跡はブースト対象ジョブ('fetch'/'all'/'turbo')のみ
   _lastRunFinishedAt[jobName] = Date.now();
 
-  const denom = (result.processed ?? 0) + (result.errors ?? 0);
   if (denom < AUTO_THROTTLE_MIN_DENOM) return; // 判定不能、ストリークは維持
 
-  const errorRate = result.errors / denom;
-  if (errorRate >= AUTO_THROTTLE_ERROR_RATE_THRESHOLD) {
+  if (result.highErrorRate) {
     _consecutiveHighErrorRuns[jobName] = (_consecutiveHighErrorRuns[jobName] ?? 0) + 1;
   } else {
     _consecutiveHighErrorRuns[jobName] = 0;
