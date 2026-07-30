@@ -987,9 +987,19 @@ function handleSettingsDeleteToken() {
   }
 }
 
+// バグ回避策(メモリの既知の落とし穴): 「直したのに直ってない」の実態が
+// 古いビルドのexeを使い続けていたケースだった、という混乱を繰り返し招いていた。
+// ダッシュボード側で表示できるよう、package.jsonのversionとこのプロセスの
+// 起動時刻を毎回計算せず一度だけ読む。
+let _appVersion = null;
+try { _appVersion = require('../package.json').version; } catch { /* ignore */ }
+const _processStartedAt = new Date().toISOString();
+
 function handleStats() {
   const stats = db.getStats();
   stats.dbPath = _dbPath;
+  stats.appVersion = _appVersion;
+  stats.processStartedAt = _processStartedAt;
   return stats;
 }
 function handleSales()         { return db.getSaleWorks(200); }

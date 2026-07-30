@@ -1107,6 +1107,7 @@ body { animation: fadeInDown .35s ease both; }
   <div class="sb-panel">価格記録: <b id="sbChanges">–</b> 件</div>
   <div class="sb-panel">確認待ち: <b id="sbDue">–</b> 件</div>
   <div class="sb-panel" id="sbLocks" title="discovery/detail等の排他ロック保有状況" style="font-family:monospace;font-size:10px">🔒 –</div>
+  <div class="sb-panel" id="sbVersion" style="color:#888;font-size:10px;font-family:monospace" title="表示されているバージョンと実際に起動しているexeが一致しているか確認する目安"></div>
   <div class="sb-panel" id="sbLastUpdate" style="color:#888;font-size:10px"></div>
   <div class="sb-panel" id="sbStatus">準備完了</div>
 </div>
@@ -1160,6 +1161,15 @@ async function loadStats() {
   setText('sbDue',     s.dueNow);
   const dot = document.getElementById('sbDot');
   if (dot) dot.className = 'sb-dot ' + (s.onSale > 0 ? 'red' : 'green');
+  const sv = document.getElementById('sbVersion');
+  if (sv && s.appVersion) {
+    const started = s.processStartedAt ? new Date(s.processStartedAt).toLocaleString('ja-JP') : '–';
+    sv.textContent = 'v' + s.appVersion;
+    sv.title = 'このダッシュボードを提供しているexeのバージョンと起動時刻。\n' +
+      '「直したはずなのに直っていない」と感じたら、まずここが期待したバージョン・\n' +
+      '起動時刻になっているか確認してください（古いexeを実行し続けている可能性があります）。\n' +
+      'バージョン: ' + s.appVersion + '\n起動時刻: ' + started;
+  }
   const lu = document.getElementById('sbLastUpdate');
   if (lu) {
     const now = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });

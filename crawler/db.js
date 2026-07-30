@@ -1469,6 +1469,40 @@ function getPriceIssue(rjCode) {
   return _get('SELECT * FROM price_issues WHERE rj_code = ?', [rjCode]);
 }
 
+/**
+ * price_issues に記録されている作品を、最後に問題を検知した時刻が古い順に
+ * limit件だけ返す（定期再サンプリング用）。
+ *
+ * 背景: priceUnreliable(no_price_field等)な作品は detailFetcher._store() で
+ * savePriceIfChanged がスキップされ changed=false 扱いになるため、
+ * consecutive_no_change が毎回加算され続け、5回連続で "cold" 優先度
+ * (72時間間隔)に降格していく一方だった。つまり定価が取れずissueが
+ * 記録されるほど、その作品は通常の巡回サイクルから遠ざかり、issueが
+ * 解消されるチャンス自体が減っていくという逆効果な構造になっていた
+ * (data ブランチ実測で price_issues が1000件超のまま高止まりしていた
+ * 一因と考えられる)。quarantineResample(隔離作品の再サンプリング)と
+ * 同じ発想で、少数を定期的に強制dueへ戻すことで解消チャンスを与える。
+ */
+function getPriceIssueRjsForResample(limit = 150) {
+  return _all(`
+    SELECT rj_code FROM price_issues
+    ORDER BY last_seen ASC
+    LIMIT ?
+  `, [limit]);
+}
+
+/**
+ * price_issues 再サンプリング専用: 優先度・チェック間隔には一切触れず
+ * next_check_at だけを now にして、通常の価格更新パイプラインへ即座に
+ * 乗せる。（salvageWork/boostWorkUrgent と違い priority/check_interval を
+ * 変更しないのは、price_issues作品は隔離(delisted)されているとは限らず、
+ * 既存のスケジュール状態を壊さずに「次の巡回で1回優先的に確認する」
+ * だけにとどめたいため）
+ */
+function resampleWorkNow(rjCode) {
+  _run(`UPDATE works SET next_check_at = ? WHERE rj_code = ?`, [unixNow(), rjCode]);
+}
+
 // ─── stats ───────────────────────────────────────────────────────────────────
 
 function getStats() {
@@ -2025,5 +2059,7 @@ module.exports = {
   getPriceIssues,
   getPriceIssuesCount,
   getPriceIssue,
+  getPriceIssueRjsForResample,
+  resampleWorkNow,
   importHistoryRows,
 };

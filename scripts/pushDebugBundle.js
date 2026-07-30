@@ -43,10 +43,30 @@ const RECENT_ERRORS_MAX = 60;
 let _appVersion = null;
 try { _appVersion = require('../package.json').version; } catch { /* ignore */ }
 
+// ─── push間引き ───────────────────────────────────────────────────────────────
+// 各ジョブ完了ごとに毎回 orphan commit で330KB超のバンドルをフルpushしていたため、
+// 短時間に複数ジョブが連続すると(discover→fetch→turboの連鎖等) GitHub API負荷と
+// push失敗率(rate limit/タイムアウト)が上がっていた。直近pushからTHROTTLE_MS未満
+// なら自動トリガー分はスキップする。ただし以下は間引かない:
+//   - job === 'manual'（ダッシュボードの「デバッグ情報Push」ボタンを押した = 明示的要求）
+//   - result にエラーが含まれる場合（失敗を握りつぶして見えなくしないため）
+// プロセス再起動でリセットされるだけの単純なメモリ内タイマーで十分
+// （起動直後のバーストは元々問題にしていた「長時間運用中の連続push」ではない）。
+const THROTTLE_MS = 3 * 60 * 1000; // 3分
+let _lastPushedAt = 0;
+
 async function pushDebugBundle({ job = null, result = null } = {}) {
   const token = _resolveToken();
   if (!token) return { ok: false, skipped: true, reason: 'no-token' };
   if (!OWNER || !REPO) return { ok: false, skipped: true, reason: 'no-repo-config' };
+
+  const hasError  = !!(result && result.error);
+  const isManual  = job === 'manual';
+  const elapsed   = Date.now() - _lastPushedAt;
+  if (!isManual && !hasError && elapsed < THROTTLE_MS) {
+    log.debug('[pushDebugBundle] throttled', { job, elapsedMs: elapsed, throttleMs: THROTTLE_MS });
+    return { ok: true, skipped: true, reason: 'throttled', nextAllowedInMs: THROTTLE_MS - elapsed };
+  }
 
   try {
     const files = [];
@@ -104,6 +124,7 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
     if (!files.length) return { ok: false, skipped: true, reason: 'no-files' };
 
     await _orphanPush(token, files, `debug: ${job ?? 'manual'} @ ${new Date().toISOString()}`);
+    _lastPushedAt = Date.now();
     log.info('[pushDebugBundle] pushed', { job, files: files.length, branch: BRANCH });
     return { ok: true, files: files.length };
   } catch (e) {

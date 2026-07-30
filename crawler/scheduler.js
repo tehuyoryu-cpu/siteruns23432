@@ -328,6 +328,30 @@ function _startQuarantineResampleJob() {
   log.info('[scheduler] quarantineResample job scheduled (daily 03:40, 100件)');
 }
 
+// ─── price_issues 再サンプリングジョブ ─────────────────────────────────────────
+// 定価が信頼できる形で取得できなかった作品(price_issues)は、通常の巡回では
+// 「価格変化なし」扱いが続いて cold 優先度に降格し続け、issue が解消される
+// チャンスがどんどん減っていく（詳細は db.js の getPriceIssueRjsForResample
+// コメント参照）。quarantineResample と同じパターンで、最後の検知が古い順に
+// 少数を next_check_at=now にして通常パイプラインに乗せ直す。
+// 本当に定価不明のままなら detailFetcher._store() が再び recordPriceIssue()
+// するだけなので安全。quarantineResample(03:40)とは5分ずらして負荷分散する。
+function _startPriceIssueResampleJob() {
+  cron.schedule('45 3 * * *', () => {
+    try {
+      const targets = db.getPriceIssueRjsForResample(150);
+      if (!targets.length) return;
+      db.transaction(() => {
+        for (const { rj_code } of targets) db.resampleWorkNow(rj_code);
+      });
+      log.info('[scheduler] priceIssueResample: revived', targets.length, '件を再チェック対象に戻しました');
+    } catch (err) {
+      log.error('[scheduler] priceIssueResample error', err.message);
+    }
+  });
+  log.info('[scheduler] priceIssueResample job scheduled (daily 03:45, 150件)');
+}
+
 // ─── public API ──────────────────────────────────────────────────────────────
 
 async function start() {
@@ -342,6 +366,7 @@ async function start() {
   _startSessionRewarmJob();
   _startCompScanJob();
   _startQuarantineResampleJob();
+  _startPriceIssueResampleJob();
 
   log.info('[scheduler] running initial passes on startup');
 
