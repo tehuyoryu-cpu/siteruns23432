@@ -144,17 +144,22 @@ const _SCHEDULER_RUNNING_KEY_BY_JOB = {
 // 並列負荷がセッション劣化/レート制限を誘発している可能性)を可視化できていなかった。
 // 完了時にエラー率を計算し、閾値超過時は digest.log に highErrorRate フラグを残して
 // 一目で「今回は負荷起因の劣化が疑われる回だった」と分かるようにする。
-const _HIGH_ERROR_RATE_THRESHOLD = 0.15; // 15%以上をエラー率高と判定
-function _checkHighErrorRate(job, processed, errors) {
-  const denom = (processed ?? 0) + (errors ?? 0);
-  if (denom < 50) return { highErrorRate: false, errorRate: null }; // サンプル数が少ない場合は判定しない
-  const errorRate = errors / denom;
-  const highErrorRate = errorRate >= _HIGH_ERROR_RATE_THRESHOLD;
+//
+// バグ修正: 以前はここで denom<50・閾値0.15 を独自に再計算しており、
+// detailFetcher.js の自動スロットル(_updateAutoThrottleStreak)側にも
+// 全く同じ計算が別途あった。片方だけ閾値を変えると「自動抑制が発動する
+// 基準」と「digest.logに出るhighErrorRate表示」が食い違うバグになりうる。
+// detailFetcher.js が runDetailFetch() の戻り値に errorRate/highErrorRate を
+// 既に付与している(一次情報源はそちら)ため、ここでは再計算せずそれを読むだけにする。
+function _checkHighErrorRate(job, result) {
+  const highErrorRate = result?.highErrorRate ?? false;
+  const errorRate     = result?.errorRate ?? null;
   if (highErrorRate) {
-    log.warn(`[api] ${job}: エラー率が高水準です(${(errorRate * 100).toFixed(1)}% — ${errors}/${denom}件)。` +
+    const denom = (result.processed ?? 0) + (result.errors ?? 0);
+    log.warn(`[api] ${job}: エラー率が高水準です(${(errorRate * 100).toFixed(1)}% — ${result.errors}/${denom}件)。` +
       'turboConcurrency/turboRateLimit(config.fetch)の負荷設定見直しを検討してください。');
   }
-  return { highErrorRate, errorRate: Math.round(errorRate * 1000) / 1000 };
+  return { highErrorRate, errorRate };
 }
 
 function handleStop(job, res) {
@@ -398,7 +403,7 @@ async function handleRun(job, res) {
       const summary = `新規:${discR.discovered}件 / 価格更新:${fetchR?.processed ?? 0}件 / 変動:${fetchR?.priceChanges ?? 0}件 / エラー:${fetchR?.errors ?? 0}件`;
       // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
       const stoppedAll = !!global._crawlerAbort?.detail || !!global._crawlerAbort?.discovery;
-      const errRateAll = _checkHighErrorRate(job, fetchR?.processed, fetchR?.errors);
+      const errRateAll = _checkHighErrorRate(job, fetchR);
       _lastResult[job] = { ok: true, discovered: discR.discovered, ...fetchR, stopped: stoppedAll, ...errRateAll, finishedAt: Date.now() };
       _sseSend(fetchR?.priceChanges > 0 ? 'change' : 'log', (stoppedAll ? '全て巡回を停止しました — ' : '全て巡回完了 — ') + summary);
       // バックグラウンド通知（価格変動時）
@@ -495,7 +500,7 @@ async function handleRun(job, res) {
 
       // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
       const stoppedTurbo = !!global._crawlerAbort?.detail || !!global._crawlerAbort?.discovery;
-      const errRateTurbo = _checkHighErrorRate(job, detailR?.processed, detailR?.errors);
+      const errRateTurbo = _checkHighErrorRate(job, detailR);
       _lastResult[job] = {
         ok: true, ...detailR,
         newRelease: newReleaseR, endingSoon: endingSoonR,
