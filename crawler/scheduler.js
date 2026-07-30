@@ -86,6 +86,11 @@ function _startDetailJob() {
     resetAbortFlag('detail');
     const _t0 = Date.now();
     try   {
+      // jobNameを渡さないのは意図的: このcron定期実行はconfig.fetchの素の設定
+      // (concurrency:3/rateLimit:700ms)で動く非ブースト巡回であり、
+      // detailFetcher.js の自動スロットル(turbo/all向け)の対象外にしてよい。
+      // jobNameを渡すとエラー率次第でここも巻き込まれて速度が変動してしまい、
+      // 「一番軽い定期巡回だけは常に一定ペースで回る」という前提が崩れる。
       const r = await runDetailFetch(500, {
         onProgress: ({ processed, priceChanges, total }) => {
           if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
@@ -384,6 +389,8 @@ async function start() {
     global._crawlerAbort && (global._crawlerAbort.detail = false);
     resetAbortFlag('detail');
     const _t0initD = Date.now();
+    // jobName未指定は上のcron定期実行(_startDetailJob)と同じ理由
+    // （非ブースト巡回のため自動スロットルの対象外でよい）。
     runDetailFetch(500, {
       onProgress: ({ processed, priceChanges, total }) => {
         if (global._sseSend) global._sseSend('progress', { processed, priceChanges, total });
