@@ -74,9 +74,120 @@ let   _lastRewarmAt          = 0;   // runDetailFetch()をまたいでもクー�
 const CIRCUIT_PROBE_INTERVAL_MS = 90_000; // 開放中でも90秒に1回だけ様子見リクエストを通す
 const _circuitLastProbeAt       = {};     // site -> 直近にプローブを許可した時刻(epoch ms)
 
-/** レート制限疑いによる抑制期間中かどうか */
+// ─── グローバルサーキット（複数サイト同時オープン検知）─────────────────────
+// バグ修正の経緯: サーキットはこれまでサイト単位(maniax/girls/bl)で完全に独立して
+// 開閉していた。しかし実機ログでは「複数サイトがほぼ同時に空応答streakへ突入する」
+// パターンが繰り返し観測されており(例: 2026-07-28T11:44台のturboでmaniax/girls/bl
+// 全サイトのエラー率が揃って急騰)、これは個々のサイトAPIの偶発的な不調ではなく、
+// 使用中のIP/セッション全体がDLsite側から警戒された(全サイト共通のレート制限)結果
+// と考えるのが自然。この場合、各サイトの独立したストリークがそれぞれ閾値5に
+// 到達するまで待っていると、その間に他サイトへも無駄な失敗リクエストを送り
+// 続けてしまい、劣化からの回復をかえって遅らせる。
+// 一定数以上のサイトが同時にサーキット開放状態になったら「グローバル抑制」を
+// 発動し、まだ閾値未到達の他サイトも含めて全サイトへのリクエストを
+// _isInRateLimitBackoff() と同じ仕組み(並列度1・待機延長)で一時的に抑制する。
+const GLOBAL_CIRCUIT_MIN_SITES  = 2;            // 同時オープンでグローバル発動する最小サイト数
+const GLOBAL_CIRCUIT_BACKOFF_MS = 3 * 60_000;   // グローバル抑制の継続時間
+let   _globalBackoffUntil       = 0;            // runDetailFetch()をまたいでも維持する(epoch ms)
+let   _globalCircuitTriggeredAt = 0;            // 直近発動時刻（結果への付与・重複ログ抑制用）
+
+// ─── 実行間の高エラー率履歴に基づく自動スロットル ───────────────────────────
+// バグ修正の経緯: apiServer.js の _checkHighErrorRate() は 'all'/'turbo' 実行
+// 完了後にエラー率を計算し、閾値(15%)超過なら highErrorRate フラグを立てて
+// digest.log に警告するだけの事後診断だった。実機ログでは turbo/all が
+// errorRate 0.94・0.48・0.25 等で終わる回が繰り返し発生しているにもかかわらず、
+// 次回の turbo/all もまったく同じブースト設定(concurrency高め・rateLimit短め)
+// で起動され、同じ劣化が再発していた — 「劣化を検知して警告する」ことと
+// 「その情報を使って次回の負荷を実際に下げる」ことの間にフィードバックの
+// 断絶があった(可視化止まりで自己防御になっていなかった)。
+// 直近の(ブーストされた)実行が連続して高エラー率だった場合、次回の
+// runDetailFetch() 開始時に自動で並列度を下げ・rateLimitを伸ばし、人手で
+// config を見直すまでの間の被害を抑える。ストリークは正常な実行が1回
+// 挟まればリセットされ、また長時間(AUTO_THROTTLE_RESET_AFTER_MS)実行が
+// 無ければ「別の状況」とみなして忘れる。
+const AUTO_THROTTLE_ERROR_RATE_THRESHOLD = 0.15;   // apiServer.js の閾値と揃える
+const AUTO_THROTTLE_MIN_DENOM            = 50;     // サンプル数が少ない回は判定対象外
+const AUTO_THROTTLE_STREAK_THRESHOLD     = 2;       // 連続でこの回数、高エラー率だったら自動抑制発動
+const AUTO_THROTTLE_CONCURRENCY_CAP      = 2;       // 自動抑制中の並列度上限
+const AUTO_THROTTLE_RATE_LIMIT_MIN_MS    = 1500;    // 自動抑制中のrateLimit下限(ms、これより短くしない)
+const AUTO_THROTTLE_RESET_AFTER_MS       = 30 * 60_000; // この時間ノーラン(未実行)ならストリークを忘れる
+
+const _consecutiveHighErrorRuns = {}; // jobName -> 連続高エラー率回数
+const _lastRunFinishedAt        = {}; // jobName -> 直前実行の終了時刻(epoch ms)
+
+/**
+ * 呼び出し元(apiServer.js)から渡された rateLimit/concurrency を、直近の
+ * 高エラー率ストリークに応じて上書きする。ストリークが閾値未満、または
+ * ジョブ側が明示的にブースト値を渡していない(=通常巡回)場合はそのまま返す。
+ */
+function _maybeAutoThrottle(jobName, effRateLimit, effConcurrency) {
+  if (!jobName) return { effRateLimit, effConcurrency, autoThrottled: false };
+
+  const lastAt = _lastRunFinishedAt[jobName] ?? 0;
+  if (Date.now() - lastAt > AUTO_THROTTLE_RESET_AFTER_MS) {
+    _consecutiveHighErrorRuns[jobName] = 0; // 長時間空いた場合は状況が変わったとみなしリセット
+  }
+
+  const streak = _consecutiveHighErrorRuns[jobName] ?? 0;
+  if (streak < AUTO_THROTTLE_STREAK_THRESHOLD) {
+    return { effRateLimit, effConcurrency, autoThrottled: false };
+  }
+
+  const throttledConcurrency = Math.min(effConcurrency, AUTO_THROTTLE_CONCURRENCY_CAP);
+  const throttledRateLimit   = Math.max(effRateLimit, AUTO_THROTTLE_RATE_LIMIT_MIN_MS);
+  log.warn(
+    `[detail] ${jobName}: 直近${streak}回連続で高エラー率だったため自動スロットルを発動します — ` +
+    `concurrency ${effConcurrency}→${throttledConcurrency} / rateLimit ${effRateLimit}→${throttledRateLimit}ms ` +
+    `(連続${AUTO_THROTTLE_STREAK_THRESHOLD}回、エラー率が正常水準に戻ると自動解除されます)`
+  );
+  return { effRateLimit: throttledRateLimit, effConcurrency: throttledConcurrency, autoThrottled: true };
+}
+
+/**
+ * runDetailFetch() 完了時に呼ぶ。今回の結果からエラー率を計算し、
+ * ストリークを更新する。サンプル数が少ない回は判定対象外(据え置き)。
+ */
+function _updateAutoThrottleStreak(jobName, result) {
+  if (!jobName) return;
+  _lastRunFinishedAt[jobName] = Date.now();
+
+  const denom = (result.processed ?? 0) + (result.errors ?? 0);
+  if (denom < AUTO_THROTTLE_MIN_DENOM) return; // 判定不能、ストリークは維持
+
+  const errorRate = result.errors / denom;
+  if (errorRate >= AUTO_THROTTLE_ERROR_RATE_THRESHOLD) {
+    _consecutiveHighErrorRuns[jobName] = (_consecutiveHighErrorRuns[jobName] ?? 0) + 1;
+  } else {
+    _consecutiveHighErrorRuns[jobName] = 0;
+  }
+}
+
+/** レート制限疑いによる抑制期間中かどうか（サイト単位のバックオフ、またはグローバル抑制中） */
 function _isInRateLimitBackoff(site) {
-  return (_siteBackoffUntil[site] ?? 0) > Date.now();
+  return (_siteBackoffUntil[site] ?? 0) > Date.now() || _isInGlobalBackoff();
+}
+
+function _isInGlobalBackoff() {
+  return _globalBackoffUntil > Date.now();
+}
+
+/**
+ * サイトのサーキットが新たに開いた直後に呼ぶ。同時に開いているサイト数を
+ * 数え、閾値以上ならグローバル抑制を発動する。既に発動中なら何もしない
+ * (連続発動によるクールダウン延長の暴走を防ぐ)。
+ */
+function _maybeEscalateToGlobalCircuit(triggeringSite) {
+  const openSites = Object.keys(_circuitOpenBySite).filter(s => _circuitOpenBySite[s]);
+  if (openSites.length < GLOBAL_CIRCUIT_MIN_SITES) return;
+  if (_isInGlobalBackoff()) return;
+  _globalBackoffUntil       = Date.now() + GLOBAL_CIRCUIT_BACKOFF_MS;
+  _globalCircuitTriggeredAt = Date.now();
+  log.error(
+    `[detail] グローバルサーキット発動 — ${openSites.length}サイト(${openSites.join(',')})が同時にサーキット開放中。` +
+    `個別サイトの不調ではなくセッション/IP単位のレート制限の可能性が高いため、` +
+    `全サイトへのリクエストを${Math.round(GLOBAL_CIRCUIT_BACKOFF_MS / 60000)}分間、並列度1まで抑制します`,
+    { triggeringSite, openSites }
+  );
 }
 
 function _resetSessionHealthState() {
@@ -130,6 +241,7 @@ async function _recordApiEmptyAndMaybeRecover(site) {
     log.warn('[detail] no re-warmup hook available (non-Electron context?)', site);
     _circuitOpenBySite[site]    = true;
     _circuitLastProbeAt[site]   = Date.now();
+    _maybeEscalateToGlobalCircuit(site);
     return;
   }
 
@@ -141,6 +253,7 @@ async function _recordApiEmptyAndMaybeRecover(site) {
     _circuitLastProbeAt[site] = now;
     log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続、再ウォームアップはクールダウン中 — ` +
       `このサイトへのリクエストを今回の巡回では一時停止します(${Math.round(CIRCUIT_PROBE_INTERVAL_MS / 1000)}秒毎に回復確認)`);
+    _maybeEscalateToGlobalCircuit(site);
     return;
   }
 
@@ -172,6 +285,7 @@ async function _recordApiEmptyAndMaybeRecover(site) {
     _circuitLastProbeAt[site] = Date.now();
     log.error(`[detail] ${site}: セッション再確立に失敗 — ` +
       `このサイトへのリクエストを今回の巡回では一時停止します(${Math.round(CIRCUIT_PROBE_INTERVAL_MS / 1000)}秒毎に回復確認)`);
+    _maybeEscalateToGlobalCircuit(site);
   } finally {
     _rewarmInProgressBySite[site] = false;
   }
@@ -191,12 +305,18 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
   // （scheduler の定期detailジョブ等）が config.fetch.* を参照すると、
   // 意図せず速度が変わる/元に戻すタイミングが競合するレース状態になりうる。
   // 呼び出し元から明示的に上書き値を渡せるようにし、グローバルは一切変更しない。
-  const effRateLimit   = rateLimit   ?? config.fetch.rateLimit;
-  const effConcurrency = concurrency ?? config.fetch.concurrency;
+  const requestedRateLimit   = rateLimit   ?? config.fetch.rateLimit;
+  const requestedConcurrency = concurrency ?? config.fetch.concurrency;
+
+  // 直近の(ブーストされた)実行が連続で高エラー率だった場合、要求された値を
+  // さらに下げる（詳細は「実行間の高エラー率履歴に基づく自動スロットル」参照）。
+  const throttle = _maybeAutoThrottle(jobName, requestedRateLimit, requestedConcurrency);
+  const effRateLimit   = throttle.effRateLimit;
+  const effConcurrency = throttle.effConcurrency;
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
-  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0 };
+  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0, autoThrottled: throttle.autoThrottled };
 
   // サイト別グループ
   // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
@@ -327,6 +447,8 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
 
   // ループ終了時点でまだ保存していない分が残っていれば最後にフラッシュする
   if (batchesSinceSave > 0) db.save();
+
+  _updateAutoThrottleStreak(jobName, result);
 
   log.info('[detail] done', result);
   return result;
