@@ -277,7 +277,7 @@ async function _recordApiEmptyAndMaybeRecover(site) {
   _lastRewarmAt = now;
   log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続 — セッション再確立を試みます`);
   try {
-    await global._reWarmUpSession();
+    await global._reWarmUpSession('reactive');
     log.info('[detail] session re-warmup completed, resuming', site);
     // 再ウォームアップ成功: ストリーク・サーキットともにクリアして
     // もう一度チャンスを与える(ここが従来の構造的不具合の修正点)。

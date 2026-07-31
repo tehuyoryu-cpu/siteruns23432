@@ -27,6 +27,7 @@
  *   GET  /api/log                  → last 200 lines of log file
  *   GET  /api/debug/api-trace      → recent abnormal DLsite API responses (raw samples)
  *   GET  /api/debug/locks          → current job-lock/abort-signal snapshot
+ *   GET  /api/debug/warmup-history → recent warmUpSession() results (periodicity check)
  */
 
 const http   = require('http');
@@ -1014,6 +1015,16 @@ function handlePriceIssues()   { return { issues: db.getPriceIssues({ limit: 500
 // 直接見られるようにする(crawler/apiTrace.js参照)。
 function handleApiTrace() { return apiTrace.getAll(); }
 
+// warmUpSession()の直近30回分の要約履歴。周期的なセッション切れなのか単発の
+// 不調なのかを時系列で判別できるようにする(crawler/warmUpHistory.js参照)。
+function handleWarmUpHistory() {
+  try {
+    return require('./warmUpHistory').getAll();
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
 // ロック/中断フラグの現在値を即座にダンプする。ロック横取り・解放漏れ系の
 // 不具合(本プロジェクトで過去に複数回発生)を調査する際、ログの前後関係から
 // 推測するのではなく現在の実際の状態を直接確認できるようにする。
@@ -1264,6 +1275,7 @@ function createServer() {
       // ── デバッグスナップショット ──────────────────────────────────────────
       if (pathname === '/api/debug/api-trace') return _json(res, handleApiTrace());
       if (pathname === '/api/debug/locks')     return _json(res, handleDebugLocks());
+      if (pathname === '/api/debug/warmup-history') return _json(res, handleWarmUpHistory());
 
       // ── 診断 ──────────────────────────────────────────────────────────────
       if (pathname === '/api/diagnostics') {
@@ -1375,6 +1387,7 @@ async function _runDiagnostics() {
     logPath:    log.getLogPath(),
     errorLogPath: log.getErrorLogPath?.() ?? null,
     isElectron: process.type === 'browser',
+    warmUpHistory: handleWarmUpHistory(),
     tests: [],
   };
 
@@ -1397,7 +1410,7 @@ async function _runDiagnostics() {
     if (!hasAgeCookieBefore && typeof global._reWarmUpSession === 'function') {
       cookieTest.note = 'Cookie未検出のためセッション再確立を試みます...';
       try {
-        await global._reWarmUpSession();
+        await global._reWarmUpSession('diagnostic');
         const after = await session.defaultSession.cookies.get({ domain: 'dlsite.com' });
         const hasAgeCookieAfter = after.some(c => /adult|age/i.test(c.name));
         cookieTest.rewarmAttempted = true;

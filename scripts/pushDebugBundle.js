@@ -123,6 +123,15 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       log.warn('[pushDebugBundle] apiTrace read failed', e.message);
     }
 
+    // warmUpSession()の直近実行履歴(トリガー種別+サイトごとのcookie取得可否)。
+    // セッション切れが周期的に起きているのか単発なのかを時系列で判別するために使う。
+    try {
+      const warmUpHistory = require('../crawler/warmUpHistory');
+      files.push({ path: 'warmup-history-recent.json', content: JSON.stringify(warmUpHistory.getAll(), null, 2) });
+    } catch (e) {
+      log.warn('[pushDebugBundle] warmUpHistory read failed', e.message);
+    }
+
     // ロック/中断フラグのスナップショット。ロック横取り・解放漏れ系の不具合を
     // 事後調査する際、ジョブ完了直後の状態が残っていると原因特定の手がかりになる。
     try {
@@ -292,6 +301,7 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
   L.push('- `events-recent.jsonl` — 構造化ログ(JSON Lines)。level/job/msgで機械的にgrep・フィルタ可能');
   L.push('- `price-issues.json` — 定価が信頼できる形で取得できなかった作品一覧');
   L.push('- `api-trace-recent.json` — 異常APIレスポンス(空応答/severely-partial/CDN汚染/非200)の生サンプル直近50件');
+  L.push('- `warmup-history-recent.json` — 年齢確認セッション再確立(warmUp)の直近30回分の履歴（周期性の確認用）');
   L.push('- `locks-snapshot.json` — push時点でのジョブロック/中断シグナルの状態');
 
   return L.join('\n') + '\n';
@@ -321,6 +331,7 @@ Claude（または他のAIアシスタント／開発者）がリポジトリを
 | \`events-recent.jsonl\` | 構造化ログ(JSON Lines)、末尾${EVENTS_TAIL_LINES}行。level/job/msgで機械的にフィルタ可能 |
 | \`price-issues.json\` / \`price-issues-count.txt\` | 定価が信頼できる形で取得できなかった作品一覧・件数 |
 | \`api-trace-recent.json\` | 異常APIレスポンス(空応答/severely-partial/CDN汚染/非200)の生サンプル直近50件 |
+| \`warmup-history-recent.json\` | 年齢確認セッション再確立(warmUp)の直近30回分の履歴（周期性の確認用） |
 | \`locks-snapshot.json\` | push時点のジョブロック/中断シグナルの状態 |
 | \`meta.json\` | pushトリガー・DB統計・実行環境情報 |
 

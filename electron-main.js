@@ -91,7 +91,7 @@ let db, apiServer, scheduler, discovery, detailFetcher;
 // ことになっている」空振り状態が続いていた)。DB内に実在するRJコードを1件
 // 拝借して商品詳細ページへ遷移するように変更する(DBが空の初回起動時は
 // フォールバックでルートページを開く)。
-async function warmUpSession() {
+async function warmUpSession(trigger = 'unknown') {
   const { BrowserWindow, session } = require('electron');
   const config = require('./config');
   const log    = require('./crawler/logger');
@@ -139,6 +139,11 @@ async function warmUpSession() {
   // 参照できるよう、最新の実行結果(title/本文抜粋/リンク文言を含む)を
   // グローバルに保持しておく。
   global._lastWarmUpDiag = { at: new Date().toISOString(), results };
+  try {
+    require('./crawler/warmUpHistory').record({ trigger, results });
+  } catch (e) {
+    log.warn('[warmUp] history record failed', e.message);
+  }
   const failedSites = Object.entries(results).filter(([, r]) => !r.cookieObtained).map(([s]) => s);
   if (failedSites.length) {
     log.warn('[warmUp] 年齢確認Cookieを取得できなかったサイト', failedSites,
@@ -179,11 +184,11 @@ async function _checkAgeCookie(session, label) {
 // 呼ばれても実際には1回だけ実行し、呼び出し元は全員その1回の完了を待つ
 // (多重実行によるBrowserWindow乱立・二重の再ウォームアップを防ぐ)。
 let _reWarmInFlight = null;
-global._reWarmUpSession = () => {
+global._reWarmUpSession = (trigger = 'reactive') => {
   if (!_reWarmInFlight) {
     const log = require('./crawler/logger');
     log.warn('[warmUp] re-warmup triggered externally (repeated empty responses detected)');
-    _reWarmInFlight = warmUpSession()
+    _reWarmInFlight = warmUpSession(trigger)
       .catch(e => { log.error('[warmUp] re-warmup error', e.message); })
       .finally(() => { _reWarmInFlight = null; });
   }
@@ -608,7 +613,7 @@ async function startCrawlerBackground() {
 
   // 2. DLsite セッションウォームアップ（バックグラウンド、ウィンドウ表示に影響しない）
   global._sseSend?.('log', 'DLsite セッション初期化中...');
-  await warmUpSession();
+  await warmUpSession('startup');
   console.log('[startBackend] session warmed up, starting scheduler');
   global._sseSend?.('log', 'セッション初期化完了 — クローラー起動');
 

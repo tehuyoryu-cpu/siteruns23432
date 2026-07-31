@@ -163,7 +163,7 @@ function _startSessionRewarmJob() {
     }
     log.info('[scheduler] sessionRewarm start (periodic, preventive)');
     try {
-      await global._reWarmUpSession();
+      await global._reWarmUpSession('periodic');
       log.info('[scheduler] sessionRewarm done');
     } catch (err) {
       log.error('[scheduler] sessionRewarm error', err.message);
