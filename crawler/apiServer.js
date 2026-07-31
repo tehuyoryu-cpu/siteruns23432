@@ -293,9 +293,11 @@ async function handleRun(job, res) {
 
     } else if (job === 'saleboost') {
       const circles = db.getCirclesOnSale();
-      db.transaction(() => {
-        for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
-      });
+      // バグ修正: 以前はサークル毎に1文ずつUPDATEを発行し、それら数万件を
+      // 1本の巨大なdb.transaction()で包んでいたため、WAL単一ライターロックを
+      // 数秒〜数十秒も占有し続け、並行する価格更新の書き込みを止めていた
+      // ([db] slow transaction の主因)。json_each()による一括UPDATEに変更。
+      db.boostCirclesBulk(circles.map(c => c.maker_id), 100, 7200);
       db.syncCircleWorksCounts();
       log.info('[api] saleboost done, circles:', circles.length);
 
@@ -399,10 +401,10 @@ async function handleRun(job, res) {
       // ここで直接 shared['detail'] = false をしていた旧コードはトークン保護を素通りするバグがあった。
 
       // ── Phase 3: セールブースト ──
+      // バグ修正: saleboostジョブと同じ理由で一括UPDATEに変更
+      // ([db] slow transaction の主因、詳細はdb.boostCirclesBulk()コメント参照)。
       const circles = db.getCirclesOnSale();
-      db.transaction(() => {
-        for (const { maker_id } of circles) db.boostCircleWorks(maker_id, 100, 7200);
-      });
+      db.boostCirclesBulk(circles.map(c => c.maker_id), 100, 7200);
 
       const summary = `新規:${discR.discovered}件 / 価格更新:${fetchR?.processed ?? 0}件 / 変動:${fetchR?.priceChanges ?? 0}件 / エラー:${fetchR?.errors ?? 0}件`;
       // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
