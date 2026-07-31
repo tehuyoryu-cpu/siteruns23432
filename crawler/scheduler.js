@@ -124,15 +124,16 @@ function _startSaleBoostJob() {
     global._crawlerRunning.saleBoost = true;
     try {
       const onSaleCircles = db.getCirclesOnSale();
-      db.transaction(() => {
-        for (const { maker_id } of onSaleCircles) {
-          db.boostCircleWorks(
-            maker_id,
-            config.priority.circleOnSale,
-            config.checkInterval.onSale
-          );
-        }
-      });
+      // バグ修正([db] slow transaction の主因): サークル毎に1文ずつUPDATEを
+      // 発行し数万件をまとめて1本の巨大なdb.transaction()で包んでいたため、
+      // WAL単一ライターロックを長時間(実測5〜25秒)占有し、10分毎のこの
+      // cronのたびに並行する価格更新の書き込みをブロックしていた。
+      // json_each()による一括UPDATEに変更(詳細はdb.boostCirclesBulk()参照)。
+      db.boostCirclesBulk(
+        onSaleCircles.map(c => c.maker_id),
+        config.priority.circleOnSale,
+        config.checkInterval.onSale
+      );
       if (onSaleCircles.length > 0) {
         log.debug('[scheduler] re-boosted', onSaleCircles.length, 'circles');
       }
