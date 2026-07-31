@@ -25,6 +25,8 @@
  *   POST /api/run/pushdata         → generate export shards + push to GitHub data branch
  *   GET  /api/log-stream           → SSE real-time log stream
  *   GET  /api/log                  → last 200 lines of log file
+ *   GET  /api/debug/api-trace      → recent abnormal DLsite API responses (raw samples)
+ *   GET  /api/debug/locks          → current job-lock/abort-signal snapshot
  */
 
 const http   = require('http');
@@ -39,8 +41,9 @@ const detailFetcher = require('./detailFetcher');
 const importData = require('./importData');
 const compScan = require('./compScan');
 const { runExportShards } = require('./exportShards');
-const { abortNow, resetAbortFlag } = require('./abortSignals');
+const { abortNow, resetAbortFlag, getAllAbortStates } = require('./abortSignals');
 const priceIssueMonitor = require('./priceIssueMonitor');
+const apiTrace = require('./apiTrace');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
 // 即requireしていた。electron-builderのfilesリストにscripts/**が含まれていなかった
 // ため、パッケージ化されたexe(app.asar)内にこのファイルが同梱されず、apiServer.js
@@ -1004,6 +1007,35 @@ function handleStats() {
 }
 function handleSales()         { return db.getSaleWorks(200); }
 function handlePriceIssues()   { return { issues: db.getPriceIssues({ limit: 500 }), total: db.getPriceIssuesCount() }; }
+
+// ── デバッグ用スナップショット ──────────────────────────────────────────────
+// 異常APIレスポンス(空応答/severely-partial/CDN汚染/非200)の直近サンプルを
+// そのまま返す。原因調査時にログの要約情報だけでなく生ヘッダー/本文サンプルを
+// 直接見られるようにする(crawler/apiTrace.js参照)。
+function handleApiTrace() { return apiTrace.getAll(); }
+
+// ロック/中断フラグの現在値を即座にダンプする。ロック横取り・解放漏れ系の
+// 不具合(本プロジェクトで過去に複数回発生)を調査する際、ログの前後関係から
+// 推測するのではなく現在の実際の状態を直接確認できるようにする。
+function handleDebugLocks() {
+  const running = global._crawlerRunning || {};
+  return {
+    timestamp: new Date().toISOString(),
+    jobRunning: { ..._jobRunning },
+    crawlerRunning: {
+      discovery: !!running.discovery,
+      detail: !!running.detail,
+      saleBoost: !!running.saleBoost,
+      compListing: !!running.compListing,
+      compDetail: !!running.compDetail,
+      schedulerDetailRunning: !!running.schedulerDetailRunning,
+      _detailOwner: running._detailOwner ? String(running._detailOwner) : null,
+      _discoveryOwner: running._discoveryOwner ? String(running._discoveryOwner) : null,
+    },
+    crawlerAbort: { ...(global._crawlerAbort || {}) },
+    abortSignals: getAllAbortStates(),
+  };
+}
 function handleCompStats()     { return db.getCompStats(); }
 function handleCompPending(query) {
   const status = query.status ?? 'pending';
@@ -1228,6 +1260,10 @@ function createServer() {
         res.end('\uFEFF' + handleExportCsv());
         return;
       }
+
+      // ── デバッグスナップショット ──────────────────────────────────────────
+      if (pathname === '/api/debug/api-trace') return _json(res, handleApiTrace());
+      if (pathname === '/api/debug/locks')     return _json(res, handleDebugLocks());
 
       // ── 診断 ──────────────────────────────────────────────────────────────
       if (pathname === '/api/diagnostics') {

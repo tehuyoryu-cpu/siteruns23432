@@ -12,6 +12,7 @@ const log    = require('./logger');
 const { fetchWithRetry, sleep } = require('./queue');
 const { pushDebugBundle } = require('../scripts/pushDebugBundle');
 const { getAbortSignal } = require('./abortSignals');
+const apiTrace = require('./apiTrace');
 
 const BASE  = config.dlsite.baseUrl;
 const BATCH = Math.min(config.fetch.batchSize ?? 50, 50);  // DLsite Product Info API 上限
@@ -382,7 +383,12 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
-  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0, autoThrottled: throttle.autoThrottled };
+  // rateLimit/concurrencyをresultに含める: apiServer.js/scheduler.jsはこの
+  // オブジェクトをそのままdigest.logへ展開する(Object.entries(_lastResult[job]))
+  // ため、これだけで「そのジョブが実際にどのパラメータで走ったか」が
+  // digest.log/events.jsonlに残るようになる(以前は事後にログから推測するしかなく、
+  // 特にturbo/allのブースト値・自動スロットル後の実効値は一切記録されていなかった)。
+  const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0, autoThrottled: throttle.autoThrottled, rateLimit: effRateLimit, concurrency: effConcurrency };
 
   // サイト別グループ
   // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
@@ -704,6 +710,13 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
       const nopad = rj.replace(/^RJ0+/, 'RJ');
       return !(rj in normalizedBody || nopad in normalizedBody);
     }).length;
+    apiTrace.record({
+      kind: 'contamination', site,
+      requestedCount: works.length, matchedCount,
+      foreignRatio: Number(foreignRatio.toFixed(2)),
+      requested: works.map(w => w.rj_code),
+      foreignSample: foreignKeys.slice(0, 5),
+    });
     log.error('[detail] response contaminated (returned keys mostly unrelated to requested batch, likely stale CDN/proxy cache) — treating as fetch error, not delisted', {
       site,
       requestedCount: works.length,
@@ -973,6 +986,14 @@ async function _apiFetch(works, site) {
       headers: { Accept: 'application/json, */*' },
     }, 'detail');
     if (!res.ok) {
+      const bodyText = await res.text().catch(() => '');
+      apiTrace.record({
+        kind: 'http-error', site, url, status: res.status,
+        contentType: res.headers.get('content-type'),
+        cfRay: res.headers.get('cf-ray'),
+        requested: works.map(w => w.rj_code),
+        bodySample: bodyText.slice(0, 500),
+      });
       log.error('[detail] API HTTP error', res.status, site, `${works.length}件`,
         works.slice(0,3).map(w=>w.rj_code).join(','));
       return null;
@@ -980,6 +1001,11 @@ async function _apiFetch(works, site) {
     const body = await res.json();
     const returnedKeys = Object.keys(body).length;
     if (returnedKeys === 0) {
+      apiTrace.record({
+        kind: 'empty', site, url, status: res.status,
+        contentType: res.headers.get('content-type'),
+        requested: works.map(w => w.rj_code),
+      });
       log.warn('[detail] API returned empty object', site, `requested ${works.length}件`,
         'sample:', works.slice(0,2).map(w=>w.rj_code).join(','));
       // ストリーク記録・サーキット開閉・再ウォームアップの起動判定は
@@ -1020,6 +1046,11 @@ async function _apiFetch(works, site) {
       // 「空応答扱い(=ストリーク加算・再ウォーム判定)」はそのまま行うが、
       // 中身は一切信頼せず破棄する。該当作品はrecordFetchError扱い(intervalのみ延長、
       // priority/is_on_saleは変更しない)となり、次回の正常な巡回で改めて取得される。
+      apiTrace.record({
+        kind: 'severe-partial', site, url,
+        returnedKeys, requestedCount: works.length,
+        bodySample: JSON.stringify(body).slice(0, 500),
+      });
       log.warn('[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak)', site,
         `got ${returnedKeys} / requested ${works.length}`);
       await _recordApiEmptyAndMaybeRecover(site);

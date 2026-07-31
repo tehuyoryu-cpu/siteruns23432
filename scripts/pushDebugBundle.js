@@ -112,6 +112,40 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       log.warn('[pushDebugBundle] db read failed', e.message);
     }
 
+    // 異常APIレスポンス(空応答/severely-partial/CDN汚染/非200)の直近サンプル。
+    // apiTrace.jsはメモリのみ保持のため、プロセスが生きている間の最新状態を
+    // そのままdebugブランチにも同梱しておく(ダッシュボード未起動時でも
+    // git fetch側から参照できるようにするため)。
+    try {
+      const apiTrace = require('../crawler/apiTrace');
+      files.push({ path: 'api-trace-recent.json', content: JSON.stringify(apiTrace.getAll(), null, 2) });
+    } catch (e) {
+      log.warn('[pushDebugBundle] apiTrace read failed', e.message);
+    }
+
+    // ロック/中断フラグのスナップショット。ロック横取り・解放漏れ系の不具合を
+    // 事後調査する際、ジョブ完了直後の状態が残っていると原因特定の手がかりになる。
+    try {
+      const { getAllAbortStates } = require('../crawler/abortSignals');
+      const running = global._crawlerRunning || {};
+      const locksSnapshot = {
+        timestamp: new Date().toISOString(),
+        crawlerRunning: {
+          discovery: !!running.discovery,
+          detail: !!running.detail,
+          saleBoost: !!running.saleBoost,
+          compListing: !!running.compListing,
+          compDetail: !!running.compDetail,
+          schedulerDetailRunning: !!running.schedulerDetailRunning,
+        },
+        crawlerAbort: { ...(global._crawlerAbort || {}) },
+        abortSignals: getAllAbortStates(),
+      };
+      files.push({ path: 'locks-snapshot.json', content: JSON.stringify(locksSnapshot, null, 2) });
+    } catch (e) {
+      log.warn('[pushDebugBundle] locks snapshot failed', e.message);
+    }
+
     // サーキットブレーカー/自動スロットルの現在状態。detailFetcher.js が
     // pushDebugBundle.js を require しているため(../scripts/pushDebugBundle)、
     // ここでトップレベル require すると循環参照になる。呼び出し時に遅延require
@@ -257,6 +291,8 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
   L.push('- `digest-recent.log` — ジョブ実行ごとの1行要約');
   L.push('- `events-recent.jsonl` — 構造化ログ(JSON Lines)。level/job/msgで機械的にgrep・フィルタ可能');
   L.push('- `price-issues.json` — 定価が信頼できる形で取得できなかった作品一覧');
+  L.push('- `api-trace-recent.json` — 異常APIレスポンス(空応答/severely-partial/CDN汚染/非200)の生サンプル直近50件');
+  L.push('- `locks-snapshot.json` — push時点でのジョブロック/中断シグナルの状態');
 
   return L.join('\n') + '\n';
 }
@@ -284,6 +320,8 @@ Claude（または他のAIアシスタント／開発者）がリポジトリを
 | \`digest-recent.log\` | ジョブ実行ごとの1行要約、末尾${DIGEST_TAIL_LINES}行 |
 | \`events-recent.jsonl\` | 構造化ログ(JSON Lines)、末尾${EVENTS_TAIL_LINES}行。level/job/msgで機械的にフィルタ可能 |
 | \`price-issues.json\` / \`price-issues-count.txt\` | 定価が信頼できる形で取得できなかった作品一覧・件数 |
+| \`api-trace-recent.json\` | 異常APIレスポンス(空応答/severely-partial/CDN汚染/非200)の生サンプル直近50件 |
+| \`locks-snapshot.json\` | push時点のジョブロック/中断シグナルの状態 |
 | \`meta.json\` | pushトリガー・DB統計・実行環境情報 |
 
 ## 更新タイミング

@@ -45,4 +45,17 @@ function resetAbortFlag(name) {
   _controllers.set(name, new AbortController());
 }
 
-module.exports = { getAbortSignal, abortNow, resetAbortFlag };
+/**
+ * デバッグ用: 現在管理中の全ジョブ系統(detail/discovery/comp等)の
+ * abort状態を一覧で返す。ロック関連の不具合(横取り・解放漏れ等)を
+ * 調査する際、ログの前後関係から推測せずに現在値を直接確認できるようにする。
+ */
+function getAllAbortStates() {
+  const result = {};
+  for (const [name, ctrl] of _controllers.entries()) {
+    result[name] = { aborted: ctrl.signal.aborted };
+  }
+  return result;
+}
+
+module.exports = { getAbortSignal, abortNow, resetAbortFlag, getAllAbortStates };
