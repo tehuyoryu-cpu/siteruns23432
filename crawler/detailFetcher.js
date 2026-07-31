@@ -306,6 +306,57 @@ async function _recordApiEmptyAndMaybeRecover(site) {
   }
 }
 
+// ─── デバッグ用スナップショット ─────────────────────────────────────────────
+// このモジュール内の各種状態(_siteEmptyStreak/_circuitOpenBySite/
+// _siteBackoffUntil/_globalBackoffUntil/_consecutiveHighErrorRuns等)は
+// これまでWARN/ERRORログの文面からしか間接的に読み取れず、Claude等が
+// リモートでdebugブランチのログだけを見て原因を特定する際、断片的な文字列
+// メッセージを時系列でつなぎ合わせて現在の状態を再構築する必要があった
+// （「このサイトは今サーキット開放中なのか」「グローバル抑制はいつまでか」
+// といった"今の状態"を一目で確認できる場所が無かった）。
+// pushDebugBundle.js から呼び出し、debug-summary.md に現在の状態を
+// そのままダンプできるようにする。
+function getHealthSnapshot() {
+  const now = Date.now();
+  const remainMs = until => Math.max(0, (until ?? 0) - now);
+
+  const sites = new Set([
+    ...Object.keys(_siteEmptyStreak),
+    ...Object.keys(_circuitOpenBySite),
+    ...Object.keys(_siteBackoffUntil),
+  ]);
+
+  const perSite = {};
+  for (const site of sites) {
+    perSite[site] = {
+      emptyStreak:       _siteEmptyStreak[site] ?? 0,
+      circuitOpen:       !!_circuitOpenBySite[site],
+      rewarmInProgress:  !!_rewarmInProgressBySite[site],
+      rateLimitBackoffRemainingSec: Math.round(remainMs(_siteBackoffUntil[site]) / 1000),
+    };
+  }
+
+  return {
+    perSite,
+    global: {
+      backoffActive:            _isInGlobalBackoff(),
+      backoffRemainingSec:      Math.round(remainMs(_globalBackoffUntil) / 1000),
+      lastTriggeredAt:          _globalCircuitTriggeredAt ? new Date(_globalCircuitTriggeredAt).toISOString() : null,
+    },
+    rewarm: {
+      lastRewarmAt:          _lastRewarmAt ? new Date(_lastRewarmAt).toISOString() : null,
+      cooldownRemainingSec:  Math.round(remainMs(_lastRewarmAt + REWARM_COOLDOWN_MS) / 1000),
+    },
+    autoThrottle: Object.fromEntries(
+      Object.keys(_consecutiveHighErrorRuns).map(jobName => [jobName, {
+        consecutiveHighErrorRuns: _consecutiveHighErrorRuns[jobName] ?? 0,
+        active: (_consecutiveHighErrorRuns[jobName] ?? 0) >= AUTO_THROTTLE_STREAK_THRESHOLD,
+        lastRunFinishedAt: _lastRunFinishedAt[jobName] ? new Date(_lastRunFinishedAt[jobName]).toISOString() : null,
+      }])
+    ),
+  };
+}
+
 // ─── public ──────────────────────────────────────────────────────────────────
 
 async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency, jobName } = {}) {
@@ -1183,4 +1234,4 @@ async function _runDetailFetchWithPush(limit, opts = {}) {
   }
 }
 
-module.exports = { runDetailFetch: _runDetailFetchWithPush, fetchAndStore, saveDiscoveredPrice };
+module.exports = { runDetailFetch: _runDetailFetchWithPush, fetchAndStore, saveDiscoveredPrice, getHealthSnapshot };

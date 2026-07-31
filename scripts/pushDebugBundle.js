@@ -43,6 +43,22 @@ const RECENT_ERRORS_MAX = 60;
 let _appVersion = null;
 try { _appVersion = require('../package.json').version; } catch { /* ignore */ }
 
+// exeビルド時にCIが焼き込むgit SHA/ビルド日時(apiServer.jsの_loadBuildInfo()と
+// 同じファイルを参照)。debug-summary.mdを読むAI側が「このログを吐いたコードは
+// 現在のmain HEADと同じか、それとも古いビルドか」を毎回確認できるようにする
+// （「直したのに直っていない」の実態が古いexeだったケースへの対策の続き）。
+let _buildInfoCache;
+function _loadBuildInfo() {
+  if (_buildInfoCache !== undefined) return _buildInfoCache;
+  try {
+    const p = require('path').join(__dirname, '..', 'crawler', 'buildInfo.json');
+    _buildInfoCache = JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    _buildInfoCache = null; // 開発環境(npm start等)ではbuildInfo.jsonが無いので正常
+  }
+  return _buildInfoCache;
+}
+
 // ─── push間引き ───────────────────────────────────────────────────────────────
 // 各ジョブ完了ごとに毎回 orphan commit で330KB超のバンドルをフルpushしていたため、
 // 短時間に複数ジョブが連続すると(discover→fetch→turboの連鎖等) GitHub API負荷と
@@ -96,7 +112,20 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       log.warn('[pushDebugBundle] db read failed', e.message);
     }
 
+    // サーキットブレーカー/自動スロットルの現在状態。detailFetcher.js が
+    // pushDebugBundle.js を require しているため(../scripts/pushDebugBundle)、
+    // ここでトップレベル require すると循環参照になる。呼び出し時に遅延require
+    // することで回避する(db.js と同じ理由・同じ対処)。
+    let health = null;
+    try {
+      const detailFetcher = require('../crawler/detailFetcher');
+      health = detailFetcher.getHealthSnapshot?.() ?? null;
+    } catch (e) {
+      log.warn('[pushDebugBundle] health snapshot failed', e.message);
+    }
+
     const recentErrors = log.getRecentErrors?.() ?? [];
+    const buildInfo = _loadBuildInfo();
 
     const meta = {
       pushedAt:      new Date().toISOString(),
@@ -104,6 +133,8 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       resultSummary: _safeSummarize(result),
       dbStats,
       priceIssuesCount,
+      health,
+      buildInfo,
       env: {
         appVersion: _appVersion,
         node:       process.version,
@@ -164,6 +195,16 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
     L.push(`- 直近の実行結果: \`${JSON.stringify(meta.resultSummary)}\``);
   }
   L.push(`- 実行環境: v${meta.env.appVersion ?? '?'} / Node ${meta.env.node} / Electron ${meta.env.electron ?? 'N/A'} / ${meta.env.platform}-${meta.env.arch}`);
+  if (meta.buildInfo?.sha) {
+    // このログを出しているexeがどのcommitからビルドされたか。
+    // 「main HEADを読んで原因を調べたのに、実機はそれより古いビルドで
+    // 動いていて症状が食い違う」というすれ違いを防ぐための最重要情報。
+    L.push(`- ビルド元コミット: \`${meta.buildInfo.sha}\`（ビルド日時: ${meta.buildInfo.builtAt ?? '?'} / run #${meta.buildInfo.runNumber ?? '?'}）`);
+    L.push('  ⚠ 原因調査時は、まず `git log` でこのSHAがmain HEADと一致しているか確認してください。' +
+      '古いビルドの場合、main上では既に修正済みの不具合を調べていることがあります。');
+  } else {
+    L.push('- ビルド元コミット: 不明（開発環境 = npm start / node main.js での実行、またはbuildInfo.json未生成の旧ビルド）');
+  }
   L.push('');
 
   if (meta.dbStats) {
@@ -175,6 +216,20 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
     L.push(`- 価格記録数: ${s.priceChanges}`);
     L.push(`- サークル数: ${s.totalCircles}（うちセール中: ${s.circlesOnSale}）`);
     if (meta.priceIssuesCount != null) L.push(`- 定価取得エラー件数: ${meta.priceIssuesCount}`);
+    L.push('');
+  }
+
+  if (meta.health) {
+    L.push('## セッション健全性スナップショット（サーキットブレーカー/自動スロットル）');
+    L.push('これまでのWARN/ERRORログの文面だけからでは分からない「今まさにどういう抑制状態か」を' +
+      'そのままダンプしたもの。エラー急増の原因調査はまずここを見ると早い。');
+    L.push('```json');
+    L.push(JSON.stringify(meta.health, null, 2));
+    L.push('```');
+    L.push('- `perSite[site].circuitOpen`: そのサイトへのリクエストを打ち切り中か（true の場合、' +
+      '90秒おきのプローブ以外は送っていない＝処理件数が伸びなくて当然の状態）');
+    L.push('- `global.backoffActive`: 複数サイト同時劣化によるグローバル抑制中か（trueなら全サイト並列度1）');
+    L.push('- `autoThrottle[job].active`: 直近の連続高エラー率により次回実行が自動で抑制されるか');
     L.push('');
   }
 
