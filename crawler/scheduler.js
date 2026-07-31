@@ -184,6 +184,26 @@ function _startBackupJob() {
   log.info('[scheduler] backup job scheduled (daily 03:00)');
 }
 
+// ─── DB整合性チェックの定期実行 ─────────────────────────────────────────────
+// checkIntegrity() はこれまで手動実行専用・起動時未実行だったため、「壊れかけ」
+// を検知した回数・タイミングの記録が一切無く、実際にクエリがSQLITE_CORRUPT系の
+// エラーで失敗し始めてから初めて破損に気づく設計だった。バックアップ(03:00)より
+// 少し後ろにずらして毎日実行し、db.recordIntegrityCheck() で時系列の履歴を残す。
+// 数秒〜十数秒程度のブロッキング処理だが、他ジョブが少ない深夜帯なので許容する。
+function _startIntegrityCheckJob() {
+  cron.schedule('50 3 * * *', () => {
+    try {
+      const r = db.recordIntegrityCheck();
+      if (!r.ok) {
+        log.error('[scheduler] integrity_check NG — DBが壊れかけている可能性があります', r);
+      }
+    } catch (err) {
+      log.error('[scheduler] integrityCheck job error', err.message);
+    }
+  });
+  log.info('[scheduler] integrityCheck job scheduled (daily 03:50)');
+}
+
 // ─── 拡張機能向けシャードエクスポートジョブ ───────────────────────────────────
 // ブラウザ拡張(DLsite Score)へGitHub raw/jsDelivr経由で配信するスコア/総集編バッジデータを
 // 生成・pushする。ローカルファイル生成のみ(pushはトークンが設定されている
@@ -361,6 +381,7 @@ async function start() {
   _startDetailJob();
   _startSaleBoostJob();
   _startBackupJob();
+  _startIntegrityCheckJob();
   _startPrevMonthScanJob();
   _startExportShardsJob();
   _startSessionRewarmJob();

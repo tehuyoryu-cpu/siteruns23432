@@ -12,7 +12,7 @@
     "fetch": "node main.js --mode=fetch",
     "export-shards": "node main.js --mode=export-shards",
     "export-shards:push": "node main.js --mode=export-shards --push=1",
-    "test": "node test/parser.test.js",
+    "test": "node test/parser.test.js && node test/db.test.js && node test/pushDataShards.test.js",
     "dist": "electron-builder --win --x64",
     "postinstall": "node scripts/postinstall-rebuild.js"
   },

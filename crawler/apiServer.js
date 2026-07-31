@@ -1469,6 +1469,38 @@ async function _runDiagnostics() {
     result.tests.push({ name: 'warmUp実行内容', ok: null, note: 'まだ記録がありません（上のCookieテストで再ウォームアップが走らなかった場合など）' });
   }
 
+  // テスト0.6: warmUp履歴の傾向分析（result.warmUpHistory = crawler/warmUpHistory.js
+  // が保持する生の履歴データに対して、サイトごとの成功率・直近失敗時刻を
+  // 集計したサマリを追加する。生データ(result.warmUpHistory)はプログラムから
+  // そのまま扱えるが、一覧性のある「今どういう傾向か」はここで一目で分かる
+  // ようにする。
+  if (result.warmUpHistory?.length) {
+    const hist = result.warmUpHistory; // { ts, trigger, allOk, results } の配列
+    const perSite = {};
+    for (const entry of hist) {
+      for (const [site, r] of Object.entries(entry.results ?? {})) {
+        const s = (perSite[site] ??= { total: 0, ok: 0, lastFailAt: null, lastRegionBlockAt: null });
+        s.total++;
+        if (r.cookieObtained) s.ok++;
+        else s.lastFailAt = entry.ts;
+        if (r.regionBlocked) s.lastRegionBlockAt = entry.ts;
+      }
+    }
+    const lines = Object.entries(perSite).map(([site, s]) =>
+      `${site}: ${s.ok}/${s.total}回成功` +
+      (s.lastFailAt ? ` / 直近の失敗: ${s.lastFailAt}` : '') +
+      (s.lastRegionBlockAt ? ` / ⚠地域ブロック検出: ${s.lastRegionBlockAt}` : '')
+    );
+    const anyRepeatFail = Object.values(perSite).some(s => s.total >= 3 && s.ok / s.total < 0.5);
+    result.tests.push({
+      name: `warmUp履歴の傾向（直近${hist.length}回、プロセス起動以降。生データは result.warmUpHistory）`,
+      ok: anyRepeatFail ? false : null,
+      note: lines.join('\n') +
+        (anyRepeatFail ? '\n⚠ 特定サイトで失敗率が高く周期的な傾向があります。DLsite側のページ構造変更を疑ってください。'
+                       : ''),
+    });
+  }
+
   // テスト1: DLsite新着ページ取得（page=1はURLに /page/1 を含まない）
   // バグ修正: 応答時間27ms・バイト数が実行のたびに完全一致という不自然な
   // 結果が続いていた(962,717 bytes固定)。これは962KBのページが物理的に

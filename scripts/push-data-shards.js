@@ -78,7 +78,17 @@ async function _fetchWithRetry(url, opts = {}) {
       const res = await fetch(url, { ...opts, signal: ctrl.signal });
       clearTimeout(timer);
       if (res.status === 429 || res.status >= 500) {
-        lastErr = new Error(`HTTP ${res.status}`);
+        // バグ修正: 以前は本文を読まずに `HTTP ${res.status}` とだけ記録しており、
+        // 全リトライを使い切って最終的に投げられる例外(lastErr)には
+        // GitHub APIが返した詳細（例: tree/commit作成時のバリデーションエラー
+        // メッセージ、レート制限のリセット時刻等）が一切残らなかった。
+        // 即時失敗(4xx、下の呼び出し側で await res.text() している経路)では
+        // 本文が残るのに、リトライ対象(429/5xx)を使い切った場合だけ本文が
+        // 失われるという非対称な状態だった。ここでも本文を読んでlastErrへ
+        // 含める（本文取得自体が失敗しても握りつぶしてリトライは継続する）。
+        let bodyText = '';
+        try { bodyText = (await res.text()).slice(0, 2000); } catch { /* ignore */ }
+        lastErr = new Error(`HTTP ${res.status}${bodyText ? ': ' + bodyText : ''}`);
         continue;   // リトライ対象。ok/4xx(429以外)はそのまま返して呼び出し側で判定させる
       }
       return res;
@@ -269,4 +279,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, _resolveToken };
+module.exports = { main, _resolveToken, _fetchWithRetry };

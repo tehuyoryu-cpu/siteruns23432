@@ -97,7 +97,7 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
     if (digestTail != null) files.push({ path: 'digest-recent.log',   content: digestTail });
     if (eventsTail != null) files.push({ path: 'events-recent.jsonl', content: eventsTail });
 
-    let dbStats = null, priceIssuesCount = null;
+    let dbStats = null, priceIssuesCount = null, integrityHistory = null;
     try {
       // circular require回避のため呼び出し時に require する
       // (db.js -> ... -> pushDebugBundle.js という循環経路は無いが、
@@ -108,6 +108,9 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       priceIssuesCount = db.getPriceIssuesCount();
       files.push({ path: 'price-issues.json',      content: JSON.stringify(issues, null, 2) });
       files.push({ path: 'price-issues-count.txt', content: String(priceIssuesCount) });
+      // DB整合性チェックの履歴。破損の予兆（時系列でのng発生）を、実際に
+      // クエリが壊れる前にdebug-summary.mdだけで確認できるようにするため。
+      integrityHistory = db.getIntegrityCheckHistory?.(20) ?? null;
     } catch (e) {
       log.warn('[pushDebugBundle] db read failed', e.message);
     }
@@ -125,9 +128,11 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
 
     // warmUpSession()の直近実行履歴(トリガー種別+サイトごとのcookie取得可否)。
     // セッション切れが周期的に起きているのか単発なのかを時系列で判別するために使う。
+    let warmUpHistoryData = null;
     try {
-      const warmUpHistory = require('../crawler/warmUpHistory');
-      files.push({ path: 'warmup-history-recent.json', content: JSON.stringify(warmUpHistory.getAll(), null, 2) });
+      const warmUpHistoryMod = require('../crawler/warmUpHistory');
+      warmUpHistoryData = warmUpHistoryMod.getAll();
+      files.push({ path: 'warmup-history-recent.json', content: JSON.stringify(warmUpHistoryData, null, 2) });
     } catch (e) {
       log.warn('[pushDebugBundle] warmUpHistory read failed', e.message);
     }
@@ -176,7 +181,9 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       resultSummary: _safeSummarize(result),
       dbStats,
       priceIssuesCount,
+      integrityHistory,
       health,
+      warmUpHistory: warmUpHistoryData,
       buildInfo,
       env: {
         appVersion: _appVersion,
@@ -259,6 +266,54 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
     L.push(`- 価格記録数: ${s.priceChanges}`);
     L.push(`- サークル数: ${s.totalCircles}（うちセール中: ${s.circlesOnSale}）`);
     if (meta.priceIssuesCount != null) L.push(`- 定価取得エラー件数: ${meta.priceIssuesCount}`);
+    L.push('');
+  }
+
+  if (meta.integrityHistory?.length) {
+    const hist   = meta.integrityHistory; // 新しい順
+    const ngRows = hist.filter(h => !h.ok);
+    L.push('## DB整合性チェック履歴（直近' + hist.length + '件、毎日03:50に自動実行）');
+    L.push('以前は手動実行専用で「壊れかけ」の予兆記録が無く、クエリが実際に壊れてから' +
+      '初めて破損に気づく設計だった。時系列の履歴を残すことで、破損が実際にクエリを' +
+      '壊す前に予兆を確認できるようにしている。');
+    if (ngRows.length) {
+      L.push(`⚠ 直近${hist.length}件中 ${ngRows.length}件でNGを検出:`);
+      for (const r of ngRows.slice(0, 5)) {
+        L.push(`  - ${new Date(r.checked_at * 1000).toISOString()}: ${r.detail ?? '(詳細なし)'}`);
+      }
+    } else {
+      L.push(`直近${hist.length}件はすべて ok（最終チェック: ${new Date(hist[0].checked_at * 1000).toISOString()}）`);
+    }
+    L.push('');
+  }
+
+  if (meta.warmUpHistory?.length) {
+    // サイトごとの成功率・直近失敗時刻を集計する（apiServer.js _runDiagnostics の
+    // 「warmUp履歴の傾向」テストと同じ集計ロジック）。生データそのものは
+    // warmup-history-recent.json に別途保存済み。直近1回分だけでは「今回だけ
+    // たまたま失敗した」のか「周期的に繰り返している」のか判別できなかった問題への対応。
+    const perSite = {};
+    for (const entry of meta.warmUpHistory) {
+      for (const [site, r] of Object.entries(entry.results ?? {})) {
+        const s = (perSite[site] ??= { total: 0, ok: 0, lastFailAt: null, lastRegionBlockAt: null });
+        s.total++;
+        if (r.cookieObtained) s.ok++;
+        else s.lastFailAt = entry.ts;
+        if (r.regionBlocked) s.lastRegionBlockAt = entry.ts;
+      }
+    }
+    L.push('## warmUpセッション診断ヒストリの傾向（直近' + meta.warmUpHistory.length + '回、プロセス起動以降）');
+    L.push('年齢確認Cookie取得の成否をサイトごとに積算したもの。周期的なセッション切れか、' +
+      '単発の一時的な失敗かをここで判別できる（生データは warmup-history-recent.json）。');
+    for (const [site, s] of Object.entries(perSite)) {
+      const rate = (s.ok / s.total * 100).toFixed(0);
+      L.push(`- ${site}: ${s.ok}/${s.total}回成功 (${rate}%)` +
+        (s.lastFailAt ? ` / 直近の失敗: ${s.lastFailAt}` : '') +
+        (s.lastRegionBlockAt ? ` / ⚠地域ブロック検出: ${s.lastRegionBlockAt}` : ''));
+      if (s.total >= 3 && s.ok / s.total < 0.5) {
+        L.push(`  ⚠ 失敗率が高く周期的な傾向があります。DLsite側のページ構造変更を疑ってください。`);
+      }
+    }
     L.push('');
   }
 

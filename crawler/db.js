@@ -140,6 +140,45 @@ function checkIntegrity() {
 }
 
 /**
+ * checkIntegrity() を実行し、結果を integrity_checks に記録する（定期実行用）。
+ * 手動一回きりの checkIntegrity() と違い、時系列で履歴が残るため、
+ * 「壊れかけ」の予兆（例: 特定の期間だけ繰り返しngが出ている等）を
+ * 破損が実際にクエリを壊す前に事後確認できるようにする。
+ * 直近 KEEP_LAST 件を超えた古い記録は間引く（無制限に肥大化させない）。
+ */
+const _INTEGRITY_HISTORY_KEEP = 200;
+function recordIntegrityCheck() {
+  const t0 = Date.now();
+  let ok = false, detail = null;
+  try {
+    ok = checkIntegrity();
+  } catch (e) {
+    detail = e.message;
+  }
+  const durationMs = Date.now() - t0;
+  const checkedAt  = unixNow();
+  _run(`INSERT INTO integrity_checks (checked_at, ok, duration_ms, detail) VALUES (?, ?, ?, ?)`,
+    [checkedAt, ok ? 1 : 0, durationMs, detail]);
+  _run(`
+    DELETE FROM integrity_checks WHERE id NOT IN (
+      SELECT id FROM integrity_checks ORDER BY checked_at DESC LIMIT ?
+    )
+  `, [_INTEGRITY_HISTORY_KEEP]);
+  _save();
+  if (!ok) {
+    log.error('[db] integrity_check NG（定期チェック）', { durationMs, detail });
+  } else {
+    log.info('[db] integrity_check ok（定期チェック）', { durationMs });
+  }
+  return { ok, durationMs, checkedAt };
+}
+
+/** 最近の整合性チェック履歴（新しい順）。デバッグバンドル/ダッシュボード表示用。 */
+function getIntegrityCheckHistory(limit = 20) {
+  return _all(`SELECT * FROM integrity_checks ORDER BY checked_at DESC LIMIT ?`, [limit]);
+}
+
+/**
  * Recovery order when the DB file fails to open or fails integrity_check:
  *   1. Quarantine the corrupt file (copy aside, never delete — for forensics).
  *   2. Try the newest verified backup (backups/*.db + matching .meta.json,
@@ -332,10 +371,24 @@ function _applySchema() {
       occurrences INTEGER DEFAULT 1
     );
 
+    -- integrity_checks: PRAGMA integrity_check の定期実行結果の履歴。
+    -- 以前は手動実行専用で「壊れかけ」を検知した回数・タイミングの記録が
+    -- 一切無く、破損が起きてから初めて（＝クエリが失敗し始めてから）気づく
+    -- 設計だった。定期実行の結果を時系列で残すことで、傾向（例:
+    -- 特定の時期から連続してokになっている等）を事後確認できるようにする。
+    CREATE TABLE IF NOT EXISTS integrity_checks (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      checked_at  INTEGER NOT NULL,
+      ok          INTEGER NOT NULL,
+      duration_ms INTEGER,
+      detail      TEXT
+    );
+
     CREATE INDEX IF NOT EXISTS idx_ph_rj       ON price_history(rj_code);
     CREATE INDEX IF NOT EXISTS idx_ph_at       ON price_history(checked_at);
     CREATE INDEX IF NOT EXISTS idx_works_maker ON works(maker_id);
     CREATE INDEX IF NOT EXISTS idx_comp_candidates_due ON comp_candidates(processed_at);
+    CREATE INDEX IF NOT EXISTS idx_integrity_checks_at  ON integrity_checks(checked_at);
     CREATE INDEX IF NOT EXISTS idx_comp_works_contained ON comp_works(contained_rj);
     CREATE INDEX IF NOT EXISTS idx_comp_pending_status  ON comp_pending(status);
     CREATE INDEX IF NOT EXISTS idx_price_issues_type    ON price_issues(issue_type);
@@ -379,6 +432,14 @@ function _applySchema() {
     // 連鎖を起こす。インポートで新規作成した作品はこのフラグを立て、
     // detailFetcher.jsの初回チェックで全サイトを試行してから確定させる。
     'ALTER TABLE works ADD COLUMN site_id_unverified INTEGER DEFAULT 0',
+    // 事後検証性向上: comp_pending にはスコア内訳(reasons)が保存されるが、
+    // 承認されて comp_works へ昇格した瞬間にreasonsが失われ、確定後の
+    // 「なぜこの組み合わせがスコアリングで採用されたのか」を追跡できなく
+    // なっていた（誤判定が疑われたときに comp_pending 側の記録が既に
+    // decided_at で確定済み・reasonsは残っているが確定側とは別テーブルの
+    // ままで突き合わせが面倒だった）。comp_works 側にも同じ列を持たせ、
+    // 確定時にそのままコピーする。
+    'ALTER TABLE comp_works ADD COLUMN reasons TEXT',
   ];
 
   for (const sql of migrations) {
@@ -1320,8 +1381,8 @@ function addCompWorksDirect(compilationRj, containedRjs) {
   runInTransaction(() => {
     for (const rj of containedRjs) {
       _run(`
-        INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
-        VALUES (?, ?, 'direct', NULL, ?)
+        INSERT INTO comp_works (compilation_rj, contained_rj, source, score, reasons, found_at)
+        VALUES (?, ?, 'direct', NULL, NULL, ?)
         ON CONFLICT(compilation_rj, contained_rj) DO NOTHING
       `, [compilationRj, rj, now]);
     }
@@ -1335,19 +1396,20 @@ function addCompCandidateScored(compilationRj, scoredList, threshold) {
   let confirmed = 0, pending = 0;
   runInTransaction(() => {
     for (const { rj, score, reasons } of scoredList) {
+      const reasonsJson = JSON.stringify(reasons ?? []);
       if (score >= threshold) {
         _run(`
-          INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
-          VALUES (?, ?, 'estimated', ?, ?)
-          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score
-        `, [compilationRj, rj, score, now]);
+          INSERT INTO comp_works (compilation_rj, contained_rj, source, score, reasons, found_at)
+          VALUES (?, ?, 'estimated', ?, ?, ?)
+          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score, reasons = excluded.reasons
+        `, [compilationRj, rj, score, reasonsJson, now]);
         confirmed++;
       } else {
         _run(`
           INSERT INTO comp_pending (compilation_rj, contained_rj, score, reasons, status, found_at)
           VALUES (?, ?, ?, ?, 'pending', ?)
           ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score, reasons = excluded.reasons
-        `, [compilationRj, rj, score, JSON.stringify(reasons ?? []), now]);
+        `, [compilationRj, rj, score, reasonsJson, now]);
         pending++;
       }
     }
@@ -1375,10 +1437,10 @@ function decideCompPending(compilationRj, containedRj, decision) {
       const row = _get('SELECT * FROM comp_pending WHERE compilation_rj = ? AND contained_rj = ?', [compilationRj, containedRj]);
       if (row) {
         _run(`
-          INSERT INTO comp_works (compilation_rj, contained_rj, source, score, found_at)
-          VALUES (?, ?, 'estimated', ?, ?)
-          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score
-        `, [compilationRj, containedRj, row.score, now]);
+          INSERT INTO comp_works (compilation_rj, contained_rj, source, score, reasons, found_at)
+          VALUES (?, ?, 'estimated', ?, ?, ?)
+          ON CONFLICT(compilation_rj, contained_rj) DO UPDATE SET score = excluded.score, reasons = excluded.reasons
+        `, [compilationRj, containedRj, row.score, row.reasons, now]);
       }
     }
     _run(`
@@ -1411,6 +1473,33 @@ function setCompScanProgress(patch) {
 /** 拡張機能互換のフラットなRJリスト（バッジ表示用途にそのまま使える） */
 function getAllCompiledRjs() {
   return _all('SELECT DISTINCT contained_rj AS rj FROM comp_works').map(r => r.rj);
+}
+
+/**
+ * 確定済み(comp_works)の1組について、収録元/収録先・スコア・スコア内訳(reasons)
+ * を丸ごと返す。誤判定（本当は別作品なのに収録関係として確定してしまった等）が
+ * 疑われたときに、なぜそのスコアで自動確定されたのかを事後検証するためのもの。
+ * source='direct'（詳細ページからの直接抽出）は score/reasons が無く null になる。
+ */
+function getCompWorkDetail(compilationRj, containedRj) {
+  return _get(`
+    SELECT cw.*, c.title AS compilation_title, w.title AS contained_title
+    FROM comp_works cw
+    LEFT JOIN works c ON c.rj_code = cw.compilation_rj
+    LEFT JOIN works w ON w.rj_code = cw.contained_rj
+    WHERE cw.compilation_rj = ? AND cw.contained_rj = ?
+  `, [compilationRj, containedRj]);
+}
+
+/** 総集編1件分の確定済み収録作品を全件（スコア内訳つき）返す */
+function getCompWorksForCompilation(compilationRj) {
+  return _all(`
+    SELECT cw.*, w.title AS contained_title
+    FROM comp_works cw
+    LEFT JOIN works w ON w.rj_code = cw.contained_rj
+    WHERE cw.compilation_rj = ?
+    ORDER BY cw.score DESC NULLS LAST
+  `, [compilationRj]);
 }
 
 function getCompStats() {
@@ -1992,6 +2081,8 @@ module.exports = {
   init,
   close,
   checkIntegrity,
+  recordIntegrityCheck,
+  getIntegrityCheckHistory,
   runInTransaction,
   upsertWork,
   markChecked,
@@ -2053,6 +2144,8 @@ module.exports = {
   getCompScanProgress,
   setCompScanProgress,
   getAllCompiledRjs,
+  getCompWorkDetail,
+  getCompWorksForCompilation,
   getCompStats,
   recordPriceIssue,
   clearPriceIssue,
