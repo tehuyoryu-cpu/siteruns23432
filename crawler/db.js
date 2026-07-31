@@ -1005,6 +1005,41 @@ function boostCircleWorks(makerId, priority, checkInterval) {
 }
 
 /**
+ * boostCircleWorks() の一括版。
+ *
+ * バグ修正(本丸・[db] slow transaction の主因): saleboost(10分毎cronおよび
+ * 'all'/'turbo'完了時)は on_sale 中の全サークル(実測 28,000件超)に対して
+ * boostCircleWorks() を1件ずつ呼び、それを db.transaction() で1本の巨大な
+ * トランザクションとして包んでいた。これは「28,000回超のUPDATE文をひとつの
+ * トランザクション内で逐次実行する」ことを意味し、WALモードの単一ライター
+ * ロックを長時間(実測5〜25秒、DB肥大化とともに悪化)保持し続け、同時に走る
+ * 価格更新(detail fetch)の書き込みを巻き込んでブロックしていた
+ * ([db] slow transaction (transaction) の直接原因、10分毎cronの周期と
+ *  発生タイミングが一致することを実ログで確認済み)。
+ * maker_id の配列を SQLite の json_each() で展開し、1本の UPDATE 文で
+ * まとめて更新することで、28,000回の文実行を1回に削減する。
+ * (better-sqlite3が同梱するSQLiteはjson1拡張を標準サポート)
+ */
+function boostCirclesBulk(makerIds, priority, checkInterval) {
+  const ids = [...new Set((makerIds ?? []).filter(Boolean))];
+  if (!ids.length) return 0;
+  // 1回のJSON配列が肥大化しすぎないよう防御的にチャンク分割する
+  // (実運用件数(数万)なら1チャンクで収まるが、将来的な増加に備える)
+  const CHUNK = 20000;
+  let changed = 0;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const chunk = ids.slice(i, i + CHUNK);
+    const result = _run(`
+      UPDATE works
+      SET priority = ?, check_interval = ?, next_check_at = last_checked + ?
+      WHERE maker_id IN (SELECT value FROM json_each(?))
+    `, [priority, checkInterval, checkInterval, JSON.stringify(chunk)]);
+    changed += result.changes;
+  }
+  return changed;
+}
+
+/**
  * 個別作品(RJコード単位)を「割引終了間近」として緊急優先度に上げる。
  * boostCircleWorks はサークル単位だが、こちらは runEndingSoonScan が見つけた
  * 個々の作品をすぐ再チェック対象にするためのもの。next_check_at = now なので
@@ -2097,6 +2132,7 @@ module.exports = {
   getCircleGapCheckedMap,
   markCircleGapChecked,
   boostCircleWorks,
+  boostCirclesBulk,
   boostWorkUrgent,
   resetCircleWorksPriority,
   getLatestPrice,
