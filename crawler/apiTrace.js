@@ -22,7 +22,7 @@ const _trace = [];
 
 /**
  * @param {object} entry
- *   kind: 'http-error' | 'empty' | 'severe-partial' | 'contamination'
+ *   kind: 'http-error' | 'empty' | 'severe-partial' | 'contamination' | 'price-issue'
  *   その他 site/url/status/contentType/requested/bodySample 等、呼び出し元が
  *   持っている情報を自由に詰めてよい。
  */

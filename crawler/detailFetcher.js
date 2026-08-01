@@ -531,7 +531,7 @@ async function fetchAndStore(rjCode, siteId = 'maniax') {
   const body = await _apiFetch([{ rj_code: rjCode }], siteId);
   if (!body) { db.transaction(() => db.recordFetchError(rjCode)); return false; }
   let changed = false;
-  db.transaction(() => { changed = _store(rjCode, body); });
+  db.transaction(() => { changed = _store(rjCode, body, siteId); });
   return changed;
 }
 
@@ -848,7 +848,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
             const singleBody = { [dbKey]: rBody[rDataKey] };
             db.updateSiteId(dbKey, resolved.site);
             db.clearSiteIdUnverified(dbKey);
-            const changed = _store(dbKey, singleBody);
+            const changed = _store(dbKey, singleBody, resolved.site);
             if (changed === null) { result.errors++; result.storeError++; }
             else { result.priceChanges += changed ? 1 : 0; result.processed++; }
             continue;
@@ -895,7 +895,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         // データ抽出用キーはnopadでも可、ただしDB操作は必ず dbKey を使う
         const dataKey     = (rj in normalizedBody) ? rj : rjNopad;
         const singleBody  = { [dbKey]: normalizedBody[dataKey] };  // DB キーで包み直す
-        const changed     = _store(dbKey, singleBody);
+        const changed     = _store(dbKey, singleBody, site);
         // 現在のsite_idでの取得に成功した = このsite_idは正しかったと確定
         if (w.site_id_unverified) db.clearSiteIdUnverified(dbKey);
 
@@ -1082,7 +1082,7 @@ async function _apiFetch(works, site) {
 
 // ─── 1件保存 ─────────────────────────────────────────────────────────────────
 
-function _store(rjCode, body) {
+function _store(rjCode, body, site = null) {
   const parsed = parser.parseProductInfo(rjCode, body);
   if (!parsed) {
     // 生データをエラーログに出力して原因を特定できるようにする
@@ -1137,6 +1137,19 @@ function _store(rjCode, body) {
 
   if (priceIssue) {
     db.recordPriceIssue(rjCode, priceIssue.type, priceIssue.raw);
+    // price_issues.raw_fields は priceIssue.type ごとに厳選した一部フィールドのみ
+    // (parser.js側で判定に使ったキーだけ)しか保持しておらず、そこに現れない
+    // 未知のAPIフィールド（例: official_price/discountオブジェクトが実運用で
+    // どんな形で来ているか）を後から調べる手立てがなかった。ここで該当RJの
+    // 生APIレスポンス全体(body[rjCode]相当)をapiTrace(直近50件・メモリのみ)に
+    // 積んでおくことで、/api/debug/api-trace とデバッグバンドル経由で
+    // 「parserが判定に使わなかったフィールドまで含めた生の姿」を確認できるようにする。
+    const rawBody = body[rjCode] ?? body[rjCode.toUpperCase()]
+      ?? body[Object.keys(body)[0]] ?? null;
+    apiTrace.record({
+      kind: 'price-issue', site, rjCode, issueType: priceIssue.type,
+      raw: rawBody,
+    });
   } else if (!staleSalePriceSuspected) {
     // 過去にissueが記録されていて今回は正常に取れた場合はクリアする
     db.clearPriceIssue(rjCode);
