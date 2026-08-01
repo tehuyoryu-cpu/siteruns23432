@@ -33,8 +33,19 @@ module.exports = {
     // 誘発している可能性が高いと判断し、base設定にさらに近づける。
     // サーキットブレーカー・再ウォームは劣化後の誤delisted化を防ぐ後始末でしかなく、
     // 劣化の発生自体は防げないため、根本原因側(負荷設定)を下げる。
+    //
+    // 再々調整(2026-07-31, digest.log実データに基づく): concurrency:3/rateLimit:550msに
+    // 下げた後も 'all' でエラー率48.1%(maniax)、直近では100%近くに達する回が
+    // 依然として発生していた。turboConcurrencyは既にbaseと同値(3)まで下げきっており
+    // 残る差はrateLimitの700ms→550msのみだったが、この150ms差だけでも
+    // DLsite側のレート制限を誘発するには十分だったとみられる(セッション再確立後も
+    // Cookie正常＝レート制限であることは診断ログで確認済み、詳細は
+    // detailFetcher.js の _recordApiEmptyAndMaybeRecover 参照)。
+    // rateLimitのブースト自体を撤廃してbaseと同値にする(turbo/allの速度優位は
+    // 主にconcurrencyではなくturboジョブの新作収集/終了間近収集との並列実行
+    // 構造から来ているため、rateLimitを揃えても実用上の速度低下は小さい)。
     turboConcurrency: 3,
-    turboRateLimit:   550,
+    turboRateLimit:   700,
   },
 
   cron: {
