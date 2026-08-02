@@ -633,7 +633,11 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // かかわらず _apiFetch 呼び出しごとに正しくカウントされる)。
   const MAX_SPLIT_DEPTH = 1;
   if (!body && works.length > 1 && depth < MAX_SPLIT_DEPTH) {
-    log.warn('[detail] batch fail, splitting', works.length);
+    // ログ削減: レート制限バックオフ中は「既知・対処中」の状態であり、
+    // バッチ分割自体がバックオフ期間中は毎バッチ発生する定常状態になる。
+    // 状態遷移(バックオフ開始/終了・再ウォーム試行)は別途warn/errorで
+    // 記録済みのため、この間の個別分割ログはdebugに格下げする。
+    log[_isInRateLimitBackoff(site) ? 'debug' : 'warn']('[detail] batch fail, splitting', works.length);
     const mid = Math.ceil(works.length / 2);
     const r1 = await _processBatch(works.slice(0, mid), site, depth + 1, rateLimit);
     if (getAbortSignal('detail').aborted) {
@@ -942,7 +946,10 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   });
 
   if (Object.keys(issueTally).length > 0) {
-    log.warn('[detail] batch issues summary', { site, batchSize: works.length, ...issueTally });
+    // ログ削減: レート制限バックオフ中はこの集計サマリが毎バッチ発生する
+    // 定常状態になる(既知・対処中のため)。バックオフ状態自体の開始/終了は
+    // 別途warn/errorで記録済み。
+    log[_isInRateLimitBackoff(site) ? 'debug' : 'warn']('[detail] batch issues summary', { site, batchSize: works.length, ...issueTally });
   }
 
   return result;
@@ -1036,7 +1043,9 @@ async function _apiFetch(works, site) {
         contentType: res.headers.get('content-type'),
         requested: works.map(w => w.rj_code),
       });
-      log.warn('[detail] API returned empty object', site, `requested ${works.length}件`,
+      // ログ削減: バックオフ中は空応答が定常的に発生する既知の状態。
+      // ストリーク到達時の再ウォーム試行/バックオフ延長は別途warnで記録される。
+      log[_isInRateLimitBackoff(site) ? 'debug' : 'warn']('[detail] API returned empty object', site, `requested ${works.length}件`,
         'sample:', works.slice(0,2).map(w=>w.rj_code).join(','));
       // ストリーク記録・サーキット開閉・再ウォームアップの起動判定は
       // すべて _recordApiEmptyAndMaybeRecover に一元化されている(冒頭の
@@ -1081,7 +1090,8 @@ async function _apiFetch(works, site) {
         returnedKeys, requestedCount: works.length,
         bodySample: JSON.stringify(body).slice(0, 500),
       });
-      log.warn('[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak)', site,
+      // ログ削減: バックオフ中はこの劣化応答が定常的に発生する既知の状態。
+      log[_isInRateLimitBackoff(site) ? 'debug' : 'warn']('[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak)', site,
         `got ${returnedKeys} / requested ${works.length}`);
       await _recordApiEmptyAndMaybeRecover(site);
       return null;
@@ -1090,7 +1100,8 @@ async function _apiFetch(works, site) {
     // 成功(通常の部分成功含む)したのでストリーク・サーキットともにクリアする
     _recordApiSuccess(site);
     if (returnedKeys < works.length * 0.5) {
-      log.warn('[detail] API returned partial data', site,
+      // ログ削減: バックオフ中は部分応答が定常的に発生する既知の状態。
+      log[_isInRateLimitBackoff(site) ? 'debug' : 'warn']('[detail] API returned partial data', site,
         `got ${returnedKeys} / requested ${works.length}`);
     }
     return body;
