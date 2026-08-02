@@ -59,6 +59,7 @@ function _startDiscoveryJob() {
         global._crawlerRunning.discovery = false;
         global._crawlerRunning._discoveryOwner = null;
       }
+      log.flush();   // ジョブ境界で集約ログをフラッシュ（詳細は apiServer.js の同様の変更を参照）
     }
   });
   log.info('[scheduler] discovery job scheduled', config.cron.discovery);
@@ -110,6 +111,7 @@ function _startDetailJob() {
         global._crawlerRunning.detail = false;
         global._crawlerRunning._detailOwner = null;
       }
+      log.flush();   // ジョブ境界で集約ログをフラッシュ（詳細は apiServer.js の同様の変更を参照）
     }
   });
   log.info('[scheduler] detail job scheduled', config.cron.detail);
@@ -457,6 +459,7 @@ async function start() {
           global._crawlerRunning.detail = false;
           global._crawlerRunning._detailOwner = null;
         }
+        log.flush();
       });
   }, 5000);
 }

@@ -207,6 +207,19 @@ function formatArgs(args) {
   ).join(' ');
 }
 
+// ─── trace（調査用の詳細ログ） ──────────────────────────────────────────────────
+// per-item（RJ単位）で大量発生しうるが、対処済み/正常系の一部であり人間が
+// 毎回目視する必要はない詳細情報向け。events.jsonl（構造化ログ、後から
+// rj_code等でgrepして調査する用途）にだけ残し、dlsite-tracker.log /
+// dlsite-error.log / stdout・stderr には一切書き込まない。
+// MIN_LEVEL(LOG_LEVEL環境変数)による抑制も受けない — debugへ格下げすると
+// 本番運用(既定LOG_LEVEL=info)ではevents.jsonlからも消えてしまい、後から
+// 「なぜこのRJだけ価格が更新されなかったか」を調査する手掛かりが失われるため。
+function _logTrace(...args) {
+  const msg = formatArgs(args);
+  _writeEvent({ level: 'trace', msg: msg.slice(0, 2000) });
+}
+
 function _log(level, ...args) {
   if ((LEVELS[level] ?? 0) < MIN_LEVEL) return;
 
@@ -251,6 +264,7 @@ module.exports = {
   info:  (...a) => _log('info',  ...a),
   warn:  (...a) => _log('warn',  ...a),
   error: (...a) => _log('error', ...a),
+  trace: (...a) => _logTrace(...a),
   digest,
   flush,
   getRecentErrors:  () => [..._recentErrors],

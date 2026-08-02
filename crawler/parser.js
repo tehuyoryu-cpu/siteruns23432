@@ -12,6 +12,14 @@ const config  = require('../config');
 
 const VALID_SITE_IDS = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
 
+// ログ削減: 以前はここのpriceIssue判定分岐すべてでlog.warnを個別発火しており、
+// due作品を大量処理する巡回(all/turbo)では1回の実行で数千〜数万行のWARNが
+// 積み上がっていた。これらは既にdetailFetcher.js._store()側で
+// db.recordPriceIssue() + apiTrace.record()により構造化データとして
+// 確実に記録されており(かつ直近のバッチ単位で件数集約もされる)、
+// per-RJの個別WARN行自体には追加の情報価値がない。log.trace()に格下げし、
+// events.jsonlだけに残す(調査時はrj_codeでgrepすればよい)。
+
 // ─── Product Info API ─────────────────────────────────────────────────────────
 
 function parseProductInfo(rjCode, body) {
@@ -32,7 +40,7 @@ function parseProductInfo(rjCode, body) {
       })();
 
     if (!d) {
-      log.warn('[parser] key not found', rjCode,
+      log.trace('[parser] key not found', rjCode,
         'available:', Object.keys(body).slice(0, 5).join(', '));
       return null;
     }
@@ -121,7 +129,7 @@ function parseProductInfo(rjCode, body) {
           // priceIssueに記録する。
           if (discRate != null && discRate >= 100) {
             priceIssue = { type: 'price_work_missing_high_discount', raw: { official_price: d.official_price, regular_price: d.regular_price, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
-            log.warn('[parser] official_price fallback with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
+            log.trace('[parser] official_price fallback with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
           }
         }
       } else if (priceWork != null) {
@@ -132,7 +140,7 @@ function parseProductInfo(rjCode, body) {
         salePrice = (priceCur != null && priceCur !== priceWork) ? priceCur : null;
         if (salePrice == null) {
           priceIssue = { type: 'ambiguous', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
-          log.warn('[parser] price ambiguous: on-sale flag set but no usable discount fields', rjCode, priceIssue.raw);
+          log.trace('[parser] price ambiguous: on-sale flag set but no usable discount fields', rjCode, priceIssue.raw);
         }
       } else if (priceCur != null) {
         // バグ修正(③): 旧実装はここに来た時点で無条件に「price_work欠損＝定価不明」
@@ -152,7 +160,7 @@ function parseProductInfo(rjCode, body) {
         salePrice = null;
         if (discRate != null && discRate >= 100) {
           priceIssue = { type: 'price_work_missing_high_discount', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
-          log.warn('[parser] price_work missing with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
+          log.trace('[parser] price_work missing with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
         }
       } else if (officialPrice > 0 || campaignPrice != null || restorePrice != null) {
         // price_work/priceともに欠損だが、official_price/regular_priceや
@@ -164,12 +172,12 @@ function parseProductInfo(rjCode, body) {
         price     = (officialPrice > 0 ? officialPrice : null) ?? restorePrice ?? campaignPrice;
         salePrice = null;
         priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, discount: discObj, price_work: d.price_work, price: d.price } };
-        log.warn('[parser] price_work/price欠損だがofficial_price等から代替', rjCode, priceIssue.raw);
+        log.trace('[parser] price_work/price欠損だがofficial_price等から代替', rjCode, priceIssue.raw);
       } else {
         price     = 0;
         salePrice = null;
         priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price, official_price: d.official_price, regular_price: d.regular_price } };
-        log.warn('[parser] no usable price field at all', rjCode, priceIssue.raw);
+        log.trace('[parser] no usable price field at all', rjCode, priceIssue.raw);
       }
     } else {
       // セール中でない場合も、price_workより公式性の高いofficial_price/
@@ -200,7 +208,7 @@ function parseProductInfo(rjCode, body) {
         priceIssue = { type: 'invalid_price_combo', raw: { price, sale_price: salePrice, reason: 'sale_price_not_lower' } };
       }
       if (priceIssue) {
-        log.warn('[parser] invalid price combination detected — treating as unreliable', rjCode, priceIssue.raw);
+        log.trace('[parser] invalid price combination detected — treating as unreliable', rjCode, priceIssue.raw);
       }
     }
 

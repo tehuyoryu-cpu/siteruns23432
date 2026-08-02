@@ -267,7 +267,10 @@ async function _recordApiEmptyAndMaybeRecover(site) {
       `${Math.ceil((REWARM_COOLDOWN_MS - (now - _lastRewarmAt)) / 1000)}s残り`);
     _circuitOpenBySite[site]  = true;
     _circuitLastProbeAt[site] = now;
-    log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続、再ウォームアップはクールダウン中 — ` +
+    // ログ削減: サーキットブレーカーが自律的に対処する正常系(想定内の一時抑制)
+    // であり、人間の即時対応を要するerrorではない。従来はerrorで記録して
+    // いたため、正常に自己回復している状態でもエラーログが積み上がっていた。
+    log.warn(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続、再ウォームアップはクールダウン中 — ` +
       `このサイトへのリクエストを今回の巡回では一時停止します(${Math.round(CIRCUIT_PROBE_INTERVAL_MS / 1000)}秒毎に回復確認)`);
     _maybeEscalateToGlobalCircuit(site);
     return;
@@ -275,7 +278,11 @@ async function _recordApiEmptyAndMaybeRecover(site) {
 
   _rewarmInProgressBySite[site] = true;
   _lastRewarmAt = now;
-  log.error(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続 — セッション再確立を試みます`);
+  // ログ削減: 再ウォームアップは試行段階であり、結果はこの後success(info)/
+  // failure(error、catch節)のどちらかで確定する。試行を開始しただけの時点で
+  // errorとして記録すると、成功して自己回復するケースまでエラーとして
+  // 積み上がってしまうため、ここはwarnに留める。
+  log.warn(`[detail] ${site}: 空応答が${EMPTY_STREAK_THRESHOLD}回連続 — セッション再確立を試みます`);
   try {
     await global._reWarmUpSession('reactive');
     log.info('[detail] session re-warmup completed, resuming', site);
@@ -493,11 +500,21 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     log.info('[detail] due batch:', due.length, '(total so far:', result.total, ') concurrency=' + (effConcurrency ?? 1));
 
     const bySite = {};
+    // ログ削減: due 500件の全走査で不正 site_id が多数あると1件ずつ
+    // WARNが積み上がっていた。個別詳細はtrace(events.jsonl)に落とし、
+    // この取得バッチ単位で件数集約1行だけwarnで出す。
+    const unknownSiteIdCounts = {};
     for (const w of due) {
       const raw = w.site_id ?? 'maniax';
       const s   = VALID_SITES.has(raw) ? raw : 'maniax';
-      if (s !== raw) log.warn('[detail] unknown site_id fallback:', raw, '->', s, w.rj_code);
+      if (s !== raw) {
+        log.trace('[detail] unknown site_id fallback:', raw, '->', s, w.rj_code);
+        unknownSiteIdCounts[raw] = (unknownSiteIdCounts[raw] ?? 0) + 1;
+      }
       (bySite[s] ??= []).push(w);
+    }
+    if (Object.keys(unknownSiteIdCounts).length > 0) {
+      log.warn('[detail] unknown site_id fallback (aggregated)', unknownSiteIdCounts, '-> maniax');
     }
 
     // サイト単位のバッチも並列実行する（以前は maniax → bl → girls と逐次で、
@@ -550,6 +567,11 @@ function saveDiscoveredPrice(rjCode, priceData) {
 
 async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.rateLimit) {
   const result = { processed: 0, priceChanges: 0, errors: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0 };
+  // ログ削減: このバッチ内で発生したper-item相当の「対処済み異常」を集計し、
+  // バッチ処理の最後に1行のwarnサマリとして出す（個別ログはtraceへ降格）。
+  // 集計キー例: no_price_field / ambiguous / key_not_in_response / verify_rescued 等。
+  const issueTally = {};
+  const _tally = (key) => { issueTally[key] = (issueTally[key] ?? 0) + 1; };
 
   // バグ修正: 停止ボタン/turboの横取り等でこのジョブ系統(detail)が中止された
   // 場合、以前はここをすり抜けて _apiFetch が「aborted」エラーで失敗 →
@@ -789,9 +811,11 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         verifyStatus.set(rjCode, status);
         if (status === 'exists') {
           verifiedAlive.add(rjCode);
-          log.warn('[detail] API missing but detail page confirms existence — rescuing from delisting', rjCode);
+          _tally('verify_rescued');
+          log.trace('[detail] API missing but detail page confirms existence — rescuing from delisting', rjCode);
         } else if (status === 'unknown') {
-          log.warn('[detail] verify inconclusive (not confirmed gone) — deferring to fetch-error instead of delisting', rjCode);
+          _tally('verify_unknown');
+          log.trace('[detail] verify inconclusive (not confirmed gone) — deferring to fetch-error instead of delisting', rjCode);
         }
         if (vi < toVerify.length) await sleep(300);   // 次がある場合のみ待機(最後の1件で無駄な待機をしない)
       }
@@ -821,7 +845,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         const body = await _apiFetch([{ rj_code: w.rj_code }], altSite);
         if (body && Object.keys(body).length > 0) {
           resolvedSite.set(w.rj_code, { site: altSite, body });
-          log.warn('[detail] site_id_unverified: resolved via alternate site', w.rj_code, altSite);
+          _tally('site_id_resolved');
+          log.trace('[detail] site_id_unverified: resolved via alternate site', w.rj_code, altSite);
           found = true;
           break;
         }
@@ -848,7 +873,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
             const singleBody = { [dbKey]: rBody[rDataKey] };
             db.updateSiteId(dbKey, resolved.site);
             db.clearSiteIdUnverified(dbKey);
-            const changed = _store(dbKey, singleBody, resolved.site);
+            const changed = _store(dbKey, singleBody, resolved.site, issueTally);
             if (changed === null) { result.errors++; result.storeError++; }
             else { result.priceChanges += changed ? 1 : 0; result.processed++; }
             continue;
@@ -862,7 +887,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
             result.fetchFail++;
             result.verifiedAlive++;
           } else {
-            log.warn('[detail] key not in API response', rj,
+            _tally('key_not_in_response');
+            log.trace('[detail] key not in API response', rj,
               'available:', Object.keys(normalizedBody).slice(0, 3).join(', '));
             // 全サイト試行済みでも見つからなかったインポート由来作品は、
             // これ以上「未検証」のまま毎回全サイト再試行を繰り返さないよう
@@ -895,7 +921,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
         // データ抽出用キーはnopadでも可、ただしDB操作は必ず dbKey を使う
         const dataKey     = (rj in normalizedBody) ? rj : rjNopad;
         const singleBody  = { [dbKey]: normalizedBody[dataKey] };  // DB キーで包み直す
-        const changed     = _store(dbKey, singleBody, site);
+        const changed     = _store(dbKey, singleBody, site, issueTally);
         // 現在のsite_idでの取得に成功した = このsite_idは正しかったと確定
         if (w.site_id_unverified) db.clearSiteIdUnverified(dbKey);
 
@@ -914,6 +940,10 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
       }
     }
   });
+
+  if (Object.keys(issueTally).length > 0) {
+    log.warn('[detail] batch issues summary', { site, batchSize: works.length, ...issueTally });
+  }
 
   return result;
 }
@@ -1082,7 +1112,7 @@ async function _apiFetch(works, site) {
 
 // ─── 1件保存 ─────────────────────────────────────────────────────────────────
 
-function _store(rjCode, body, site = null) {
+function _store(rjCode, body, site = null, issueTally = null) {
   const parsed = parser.parseProductInfo(rjCode, body);
   if (!parsed) {
     // 生データをエラーログに出力して原因を特定できるようにする
@@ -1137,6 +1167,7 @@ function _store(rjCode, body, site = null) {
 
   if (priceIssue) {
     db.recordPriceIssue(rjCode, priceIssue.type, priceIssue.raw);
+    if (issueTally) issueTally[priceIssue.type] = (issueTally[priceIssue.type] ?? 0) + 1;
     // price_issues.raw_fields は priceIssue.type ごとに厳選した一部フィールドのみ
     // (parser.js側で判定に使ったキーだけ)しか保持しておらず、そこに現れない
     // 未知のAPIフィールド（例: official_price/discountオブジェクトが実運用で

@@ -55,6 +55,12 @@ const _baseHeaders = _isElectron
 // ポーズ中はリクエストを送らずに待機する。
 let   _networkPaused    = false;
 let   _networkPauseMs   = 0;
+// ログ削減: concurrency分のワーカーがほぼ同時に同じネットワーク断を検知すると、
+// 全員が個別に「network pause: waiting Ns」「network error detected」を
+// warnで出し、1回の断が(concurrency件)行に増幅していた。1エピソードにつき
+// 最初の1件だけwarnで告知し、後続ワーカーの同種ログはtrace(events.jsonlのみ)に
+// 落とす。ポーズが解除されたら次のエピソードでまた告知できるようリセットする。
+let   _networkPauseAnnounced = false;
 const _NETWORK_ERRORS   = new Set([
   'ERR_NETWORK_IO_SUSPENDED', 'ERR_INTERNET_DISCONNECTED',
   'ERR_NETWORK_CHANGED', 'ERR_CONNECTION_RESET',
@@ -118,7 +124,12 @@ async function _waitForNetwork(abortFlagName) {
   if (!_networkPaused) return;
   const remaining = _networkPauseMs - Date.now();
   if (remaining > 0) {
-    log.warn(`[fetch] network pause: waiting ${Math.ceil(remaining/1000)}s`);
+    if (!_networkPauseAnnounced) {
+      _networkPauseAnnounced = true;
+      log.warn(`[fetch] network pause: waiting ${Math.ceil(remaining/1000)}s`);
+    } else {
+      log.trace(`[fetch] network pause: waiting ${Math.ceil(remaining/1000)}s (duplicate, other worker already announced)`);
+    }
     await _abortableSleep(remaining, abortFlagName);
   }
   _networkPaused = false;
@@ -214,12 +225,24 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
     } catch (e) {
       if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);
       last = e;
-      log.warn(`[fetch] error (${e.message})`, url);
+      const isNetErr      = _isNetworkError(e.message);
+      const alreadyPaused = _networkPaused;
+
+      if (isNetErr && alreadyPaused) {
+        // 既に他ワーカーがこのエピソードを検知・告知済み。同種の断を
+        // 追加でwarn連発しても情報価値が薄いため、traceに落とす
+        // (events.jsonlには残るので後から件数を確認できる)。
+        log.trace(`[fetch] error (${e.message}) — network pause already active, suppressing duplicate warn`, url);
+      } else {
+        log.warn(`[fetch] error (${e.message})`, url);
+      }
+
       // ネットワーク断を検知したらグローバルポーズをセット
       // （既にセット済みの場合は上書きしない = 最初の検知者のタイマーを尊重）
-      if (_isNetworkError(e.message) && !_networkPaused) {
-        _networkPaused  = true;
-        _networkPauseMs = Date.now() + _PAUSE_DURATION;
+      if (isNetErr && !alreadyPaused) {
+        _networkPaused          = true;
+        _networkPauseMs         = Date.now() + _PAUSE_DURATION;
+        _networkPauseAnnounced  = false;   // 「waiting Ns」の告知はまだこれから
         log.warn(`[fetch] network error detected — all workers pausing ${_PAUSE_DURATION/1000}s`, e.message);
       }
     }
