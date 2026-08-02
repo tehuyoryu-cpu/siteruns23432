@@ -328,6 +328,9 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
       '90秒おきのプローブ以外は送っていない＝処理件数が伸びなくて当然の状態）');
     L.push('- `global.backoffActive`: 複数サイト同時劣化によるグローバル抑制中か（trueなら全サイト並列度1）');
     L.push('- `autoThrottle[job].active`: 直近の連続高エラー率により次回実行が自動で抑制されるか');
+    L.push('- `globalConcurrency`: 系統横断(detail/discovery/compScan合計)の実効同時接続数。' +
+      '`waiting`が常態的に0でない場合はglobalMaxConcurrentが速度のボトルネックになっている可能性、' +
+      '`active`が`max`未満のままエラー率が高い場合は輻輳以外の要因(DLsite側のレート制限等)を疑う');
     L.push('');
   }
 

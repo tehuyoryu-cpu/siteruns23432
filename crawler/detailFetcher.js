@@ -9,7 +9,7 @@ const config = require('../config');
 const db     = require('./db');
 const parser = require('./parser');
 const log    = require('./logger');
-const { fetchWithRetry, sleep } = require('./queue');
+const { fetchWithRetry, sleep, globalActiveCount, globalWaitingCount } = require('./queue');
 const { pushDebugBundle } = require('../scripts/pushDebugBundle');
 const { getAbortSignal } = require('./abortSignals');
 const apiTrace = require('./apiTrace');
@@ -367,6 +367,18 @@ function getHealthSnapshot() {
       backoffActive:            _isInGlobalBackoff(),
       backoffRemainingSec:      Math.round(remainMs(_globalBackoffUntil) / 1000),
       lastTriggeredAt:          _globalCircuitTriggeredAt ? new Date(_globalCircuitTriggeredAt).toISOString() : null,
+    },
+    // 系統横断グローバル同時接続数セマフォ(queue.js)の現在値。
+    // detail/discovery/compScanが今合計何本のfetch()を同時に飛ばしていて、
+    // 何本が上限待ちでキューに並んでいるかをそのままダンプする。
+    // waiting > 0 が常態化している場合は globalMaxConcurrent が実際の
+    // 巡回ペースに対して低すぎる(=速度のボトルネックになっている)兆候、
+    // waiting が常に0で active も上限未満のままなら、そもそも系統横断の
+    // 輻輳ではなく別要因(DLsite側のレート制限そのもの等)を疑う判断材料になる。
+    globalConcurrency: {
+      active:  globalActiveCount(),
+      waiting: globalWaitingCount(),
+      max:     config.fetch.globalMaxConcurrent ?? 5,
     },
     rewarm: {
       lastRewarmAt:          _lastRewarmAt ? new Date(_lastRewarmAt).toISOString() : null,
