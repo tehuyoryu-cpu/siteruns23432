@@ -470,11 +470,27 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
         // 次チャンクがある場合のみsleep（最終バッチ後の無駄な700ms待機を除去）
         // ±20%のジッターを加え、複数サイト/ワーカーの待機が揃って規則的な
         // リクエストパターンになるのを避ける。
-        if (effRateLimit > 0 && nextIdx < chunks.length) {
-          const rl = effRateLimit;
-          const jittered = Math.round(rl * 0.8 + Math.random() * rl * 0.4)
-            + (inBackoff ? RATE_LIMIT_BACKOFF_EXTRA : 0);
-          await sleep(jittered);
+        //
+        // 効率化: r._noNetwork が立っている場合(サーキット開放中の意図的スキップ、
+        // または中止要求による早期return)は、そもそもDLsiteへリクエストを
+        // 送っていないため、レート制限のためのsleepを課す理由がない。
+        // 以前はここが無条件だったため、maniaxの循環ブレーカーが開いている間、
+        // 中身のないスキップの連続にまでrateLimit分(数百ms)のsleepを毎回
+        // 挟んでおり、"turbo"実行が数十分に渡って何もしない待機で埋まっていた
+        // (実データ例: 2026-08-02 03:36のturbo実行 duration:1811.0s のうち
+        //  相当割合がmaniaxサーキット開放中のスキップ待機だったと推測される)。
+        // 完全にゼロにすると同一サイトの他ワーカーが一斉にスキップ判定へ
+        // 突入しCPU/DBループが詰まる恐れがあるため、ごく短いyield(10ms)だけ
+        // 残す。
+        if (nextIdx < chunks.length) {
+          if (r._noNetwork) {
+            await sleep(10);
+          } else if (effRateLimit > 0) {
+            const rl = effRateLimit;
+            const jittered = Math.round(rl * 0.8 + Math.random() * rl * 0.4)
+              + (inBackoff ? RATE_LIMIT_BACKOFF_EXTRA : 0);
+            await sleep(jittered);
+          }
         }
       }
     }
@@ -600,7 +616,7 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // 中止要求が既に来ている場合は、fetchも分割もDB更新も一切行わず即座に
   // 空の結果を返す。該当作品は due のまま残るため、次回実行時に
   // ペナルティなしで再試行される。
-  if (getAbortSignal('detail').aborted) return result;
+  if (getAbortSignal('detail').aborted) { result._noNetwork = true; return result; }
 
   // サーキットが開いている/再ウォームアップ中なら、ネットワークを叩かずに即座に
   // スキップする。
@@ -618,6 +634,13 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     });
     result.errors    += works.length;
     result.fetchFail  += works.length;
+    // 効率化: このバッチはネットワークに一切触れていない(サーキット開放中の
+    // 意図的スキップ)。呼び出し元(worker())は「実際にリクエストを送った」
+    // ことを前提に次チャンクとの間でrateLimit分のsleepを挟んでいたが、
+    // 何も送っていないバッチの後にまでDLsite向けのレート制限待機を課すのは
+    // 無意味な時間浪費でしかない(むしろ回復待ちを引き延ばす)。フラグを立てて
+    // 呼び出し元にsleepスキップを許可する。
+    result._noNetwork = true;
     return result;
   }
 
