@@ -135,6 +135,62 @@ async function _waitForNetwork(abortFlagName) {
   _networkPaused = false;
 }
 
+// ─── グローバル同時接続数セマフォ（系統横断） ────────────────────────────────
+// detailFetcher.js / discovery.js / compScan.js はそれぞれ自分の concurrency
+// 設定しか見ておらず、他系統が今何本リクエストを飛ばしているか知らないまま
+// 独立に動く。ロック(apiServer.jsのsharedKeys)で排他されない組み合わせ
+// (turbo内のdetail+newrelease+endingsoonのPromise.all並走、circlegap実行中への
+// scheduler定期fetchの割り込み等)では、系統別concurrencyをどれだけ絞っても
+// DLsite側から見た合計同時接続数は際限なく積み上がりうる
+// (config.js の fetch.globalMaxConcurrent コメント参照)。
+// fetchWithRetryは全系統が経由する唯一の関数のため、ここで実際の fetch()
+// 呼び出し（リトライ待機・レート制限sleepは含まない）だけを対象にした
+// カウンティングセマフォを掛け、系統横断の合計同時接続数そのものをキャップする。
+const _GLOBAL_MAX_CONCURRENT = Math.max(1, config.fetch.globalMaxConcurrent ?? 5);
+let   _globalActive  = 0;
+const _globalWaiters  = [];
+
+/** 実行中のスロットを1つ確保する。空きがなければ空くまで待つ。 */
+function _acquireGlobalSlot(abortFlagName) {
+  if (_globalActive < _GLOBAL_MAX_CONCURRENT) {
+    _globalActive++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    const waiter = { resolve };
+    const signal = abortFlagName ? getAbortSignal(abortFlagName) : null;
+    if (signal) {
+      const onAbort = () => {
+        const idx = _globalWaiters.indexOf(waiter);
+        // 既にキューから外れて実行中(=スロット確保済み)ならabortしても
+        // ここでは何もしない。fetchWithRetry側のsignal監視がfetch自体を止める。
+        if (idx !== -1) {
+          _globalWaiters.splice(idx, 1);
+          signal.removeEventListener('abort', onAbort);
+          reject(new Error('aborted while waiting for global fetch slot'));
+        }
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+      waiter._cleanup = () => signal.removeEventListener('abort', onAbort);
+    }
+    _globalWaiters.push(waiter);
+  });
+}
+
+/** スロットを1つ返却する。待機者がいれば直接その待機者へスロットを引き渡す。 */
+function _releaseGlobalSlot() {
+  const next = _globalWaiters.shift();
+  if (next) {
+    next._cleanup?.();
+    next.resolve();   // スロットは減らさずそのまま次の待機者へ引き渡す
+  } else {
+    _globalActive = Math.max(0, _globalActive - 1);
+  }
+}
+
+function globalActiveCount() { return _globalActive; }
+function globalWaitingCount() { return _globalWaiters.length; }
+
 /**
  * @param {string} url
  * @param {object} opts
@@ -173,6 +229,16 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
       const onExtAbort = () => ctrl.abort();
       if (extSignal) extSignal.addEventListener('abort', onExtAbort, { once: true });
 
+      // グローバル同時接続数セマフォ: 空きスロットが出るまでここで待つ。
+      // (バックオフsleep中はスロットを保持しないので、待機自体は無駄にならない)
+      await _acquireGlobalSlot(abortFlagName);
+      if (_isAborted(abortFlagName)) {
+        _releaseGlobalSlot();
+        clearTimeout(tid);
+        if (extSignal) extSignal.removeEventListener('abort', onExtAbort);
+        throw new Error(`aborted: ${url}`);
+      }
+
       let res;
       try {
         // バグ修正: `cache: 'no-store'` は fetch() 呼び出し元(ブラウザ/Electron側)の
@@ -198,6 +264,7 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
       } finally {
         clearTimeout(tid);
         if (extSignal) extSignal.removeEventListener('abort', onExtAbort);
+        _releaseGlobalSlot();
       }
 
       if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);
@@ -255,4 +322,7 @@ function sleep(ms) {
 }
 
 function isNetworkPaused() { return _networkPaused; }
-module.exports = { fetchWithRetry, sleep, _isNetworkError, isNetworkPaused };
+module.exports = {
+  fetchWithRetry, sleep, _isNetworkError, isNetworkPaused,
+  globalActiveCount, globalWaitingCount,
+};

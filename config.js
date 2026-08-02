@@ -46,6 +46,24 @@ module.exports = {
     // 構造から来ているため、rateLimitを揃えても実用上の速度低下は小さい)。
     turboConcurrency: 3,
     turboRateLimit:   700,
+
+    // サイト単位の実効同時接続数の上限（系統横断）。
+    // 背景: turboConcurrency/turboRateLimitの調整コメントの通り、turbo/allの
+    // エラー率悪化の主因はdetail単体のconcurrencyではなく「detail(concurrency=3)
+    // + newrelease/endingsoon(discovery系)が同時に同じDLsiteへアクセスすることに
+    // よる実効同時接続数の増加」だった。各系統(detailFetcher.js/discovery.js/
+    // compScan.js)はそれぞれ自分のconcurrencyしか見ておらず、他系統が今何本
+    // リクエストを飛ばしているか知らないまま独立に動く。ロック(sharedKeys)で
+    // 排他されない組み合わせ(turbo内のPromise.all並走、circlegap実行中への
+    // scheduler定期fetchの割り込み等)では、系統別concurrencyをどれだけ絞っても
+    // DLsite側から見た合計同時接続数は際限なく積み上がりうる。
+    // → queue.js の fetchWithRetry(全系統が経由する唯一の関数)側で、実際の
+    //   fetch()呼び出し(リトライ待機・レート制限sleepは含まない)だけを対象に
+    //   系統横断のグローバルセマフォでハードキャップする。
+    // 値の根拠: turbo実行時の典型的な内訳は detail(3) + newrelease(実質1本ずつ
+    //   逐次) + endingsoon(実質1本ずつ逐次) ≒ 最大5本。他ジョブの割り込みに
+    //   若干の余裕を持たせて5に設定。
+    globalMaxConcurrent: 5,
   },
 
   cron: {
