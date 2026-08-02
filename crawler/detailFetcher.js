@@ -253,6 +253,23 @@ async function _recordApiEmptyAndMaybeRecover(site) {
   if (_siteEmptyStreak[site] < EMPTY_STREAK_THRESHOLD) return;
   if (_circuitOpenBySite[site] || _rewarmInProgressBySite[site]) return; // 既に対処中/対処済み
 
+  // バグ修正: 既にレート制限バックオフ中(_siteBackoffUntil未経過)の場合、
+  // バックオフ中も concurrency=1 で少数のリクエストは送り続けるため、
+  // 空応答streakが5分の抑制期間中に何度も再び閾値(5)へ到達しうる。
+  // 以前はそのたびに無条件でwarmUpSession()をフルに再実行しており、
+  // 実測では1〜2分おきに再ウォームが走っていた(03:28:11→03:31:27→
+  // 03:32:55→03:34:08→03:35:15、間隔が1分強まで縮まっていた)。
+  // 再ウォーム自体がDLsiteへの追加リクエスト(複数サイトのページ遷移)を
+  // 伴うため、レート制限が疑われている最中にこれを繰り返すことは
+  // 逆効果(負荷を増やし回復を遅らせる)になりうる。既にバックオフ中と
+  // 判明している間は、streakだけリセットして静かに待ち、バックオフの
+  // 残り時間が経過してから改めて判定させる。
+  if (_isInRateLimitBackoff(site)) {
+    _siteEmptyStreak[site] = 0;
+    log.debug(`[detail] ${site}: バックオフ中に空応答streak再到達 — 既知のレート制限抑制中のため再ウォームは行わず待機を継続`);
+    return;
+  }
+
   if (typeof global._reWarmUpSession !== 'function') {
     log.warn('[detail] no re-warmup hook available (non-Electron context?)', site);
     _circuitOpenBySite[site]    = true;
