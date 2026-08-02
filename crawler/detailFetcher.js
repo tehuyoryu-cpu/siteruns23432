@@ -523,7 +523,33 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     }
     const batchSize = Math.min(ITER_SIZE, remaining);
 
-    const due = db.getDueWorks(batchSize);
+    // バグ修正(iteration予算の圧迫対策): サーキット開放中で、かつ半開プローブの
+    // 時刻(CIRCUIT_PROBE_INTERVAL_MS毎)がまだ来ていないサイトは、db.getDueWorks()
+    // の取得候補から丸ごと除外する。除外しない場合、そのサイトの大量due作品
+    // (onSale/endingSoon等の高優先度作品が多いと顕著)がORDER BY priority DESCで
+    // 上位を占め、1回のiteration予算(ITER_SIZE=500件)の大半を消費してしまい、
+    // 同時に処理したい他サイト(bl/girls等)の処理機会を圧迫していた。
+    // 一方でプローブ対象(前回プローブからCIRCUIT_PROBE_INTERVAL_MS以上経過)の
+    // サイトまで一律除外すると、_shouldSkipRequest()の半開プローブが処理すべき
+    // works自体を受け取れず回復確認の機会を失うため、そのサイトだけは
+    // 別途少数(PROBE_FETCH_SIZE件)を専用取得してdueにマージする。
+    const now = Date.now();
+    const circuitOpenSites = Object.keys(_circuitOpenBySite).filter(s => _circuitOpenBySite[s]);
+    const probeEligibleSites = circuitOpenSites.filter(
+      s => now - (_circuitLastProbeAt[s] ?? 0) >= CIRCUIT_PROBE_INTERVAL_MS
+    );
+    const excludeSites = circuitOpenSites.filter(s => !probeEligibleSites.includes(s));
+
+    const due = excludeSites.length
+      ? db.getDueWorks(batchSize, { excludeSites })
+      : db.getDueWorks(batchSize);
+
+    const PROBE_FETCH_SIZE = BATCH; // 半開プローブ1バッチ分だけ取得(_shouldSkipRequestが1回だけ通す想定と一致させる)
+    for (const site of probeEligibleSites) {
+      const probeDue = db.getDueWorks(PROBE_FETCH_SIZE, { onlySites: [site] });
+      if (probeDue.length) due.push(...probeDue);
+    }
+
     if (!due.length) {
       if (result.total === 0) log.info('[detail] no due works');
       break;

@@ -900,15 +900,38 @@ function recordApiMissing(rjCode) {
   `, [now, errs, interval, now + interval, priority, rjCode]);
 }
 
-function getDueWorks(limit = 50) {
+/**
+ * @param {number} limit
+ * @param {{excludeSites?: string[], onlySites?: string[]}} [opts]
+ *   excludeSites: 指定サイトのdue作品を対象から除外する
+ *     （サーキット開放中で、まだ半開プローブの時刻でもないサイトの大量due作品が
+ *      iteration予算を食い潰し、正常な他サイトの処理機会を圧迫するのを防ぐため。
+ *      detailFetcher.js の runDetailFetch() から使用）。
+ *   onlySites: 指定サイトのdue作品のみを対象にする（半開プローブ用の少数取得）。
+ *   両方指定された場合は onlySites を優先する。
+ *   どちらも未指定の場合は従来通り全サイトを対象にする(既存呼び出し元との完全互換)。
+ */
+function getDueWorks(limit = 50, { excludeSites, onlySites } = {}) {
   const now = unixNow();
+  let where  = 'next_check_at <= ?';
+  const params = [now];
+
+  if (onlySites?.length) {
+    where += ` AND site_id IN (${onlySites.map(() => '?').join(',')})`;
+    params.push(...onlySites);
+  } else if (excludeSites?.length) {
+    where += ` AND site_id NOT IN (${excludeSites.map(() => '?').join(',')})`;
+    params.push(...excludeSites);
+  }
+  params.push(limit);
+
   // next_check_at にインデックスがあるため、計算式での全件スキャンより高速
   return _all(`
     SELECT * FROM works
-    WHERE next_check_at <= ?
+    WHERE ${where}
     ORDER BY priority DESC, next_check_at ASC
     LIMIT ?
-  `, [now, limit]);
+  `, params);
 }
 
 function getWorkByRj(rjCode) {
