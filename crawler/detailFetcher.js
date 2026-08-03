@@ -862,7 +862,23 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // いたことで発覚)。バックオフ中はこの追加確認をスキップし、単純な
   // recordFetchError(priorityは変えずintervalのみ延長)に倒す。バックオフが
   // 解除された後の正常な巡回で通常どおり再評価される。
-  const skipVerify = _isInRateLimitBackoff(site);
+  //
+  // 追加バグ修正(このバッチ単体が部分応答の場合): 上記の _isInRateLimitBackoff は
+  // 空応答/著しい劣化応答(SEVERE_PARTIAL_RATIO=0.2未満)が連続した場合のみ
+  // ストリークが立つ site 単位の状態であり、42〜48%程度の「中途半端に部分的」な
+  // 応答(_apiFetch側で成功扱いされ _recordApiSuccess が呼ばれてストリークが
+  // 都度リセットされる)はここに乗らない。この種の応答が続くと、1バッチあたり
+  // 20件超のnot-foundが「たまたま既にconsecutive_errors>=1だった」という理由で
+  // 毎回まとめてtoVerifyへ積まれ、バッチAPI1回に対し個別の詳細ページfetchが
+  // 数十件単位で発生する（globalMaxConcurrentで系統横断には頭打ちがかかるものの、
+  // それでも無駄な負荷であることに変わりはない）。not-foundの原因がAPI側の
+  // 部分応答そのものである可能性が高いバッチでは、個々の作品を疑う前にバッチ全体を
+  // 疑うべきなので、_apiFetch側の「部分応答」警告と同じ閾値(0.5)でこのバッチ内の
+  // 検証もまとめてスキップする。
+  const PARTIAL_BATCH_SKIP_VERIFY_RATIO = 0.5;
+  const isBatchPartial = works.length > 0 &&
+    Object.keys(body).length < works.length * PARTIAL_BATCH_SKIP_VERIFY_RATIO;
+  const skipVerify = _isInRateLimitBackoff(site) || isBatchPartial;
   for (const w of works) {
     const rj      = w.rj_code.toUpperCase();
     const rjNopad = rj.replace(/^RJ0+/, 'RJ');
@@ -870,7 +886,8 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     if (!skipVerify && (w.consecutive_errors ?? 0) >= 1) toVerify.push(w.rj_code);
   }
   if (skipVerify && works.some(w => (w.consecutive_errors ?? 0) >= 1)) {
-    log.debug('[detail] rate-limit backoff中のためverifyRjExists救済確認をスキップ', site);
+    log.debug('[detail] rate-limit backoff中またはバッチ部分応答のためverifyRjExists救済確認をスキップ',
+      site, `partial=${isBatchPartial}`, `got ${Object.keys(body).length}/${works.length}`);
   }
 
   const verifiedAlive = new Set();
