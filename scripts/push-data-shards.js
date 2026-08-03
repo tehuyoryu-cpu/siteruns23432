@@ -4,14 +4,22 @@
  * scripts/push-data-shards.js
  *
  * crawler/exportShards.js が生成したローカルの data-export/ ディレクトリを
- * GitHub の専用ブランチ(config.github.dataBranch, 既定 "data")へ丸ごと反映する。
+ * GitHub の専用ブランチ(config.github.dataBranch, 既定 "data")へ反映する。
  *
  * 方針:
  *   - コード用の main ブランチとは完全に分離する(データは頻繁に総入れ替えされるため)
  *   - 毎回 "親コミットなし" の orphan commit を作り、force-ref updateでブランチ全体を
  *     置き換える(スカッシュ)。これによりデータブランチの履歴が肥大化しない。
- *   - 生成物は全ファイルをそのまま反映する(差分アップロードの最適化はせず、
- *     1日1回程度の実行頻度であればシンプルさを優先する)。
+ *   - 効率化: 以前は毎回全ファイル(shards 最大1024 + index 最大64 + manifest + README
+ *     ≈ 1090件)を無条件に再アップロードしていたが、6時間毎の実行のうち大半のshardは
+ *     前回から中身が変わっていない(セールが動いたサークルの shard だけが変化する)。
+ *     git blob は内容のSHA1で一意に決まる(=同じ内容なら既にリポジトリに存在する)ことを
+ *     利用し、リモートの現在のtreeと比較して「実際に内容が変わったファイルだけ」を
+ *     アップロード対象にする。orphanコミット自体は変わらず維持しつつ(履歴は肥大化させない)、
+ *     base_tree には無関係にリモートの既存tree shaを指定することで、変化していない
+ *     大多数のファイルはblob再送信なしでそのまま引き継がれる。
+ *     (リモートに既存ブランチが無い初回pushや、tree取得がtruncatedで信頼できない場合は
+ *      安全側にフォールバックして従来通り全ファイルをアップロードする)
  *
  * トークン解決順序:
  *   1. 環境変数 GH_TOKEN
@@ -26,6 +34,7 @@
 
 const fs     = require('fs');
 const path   = require('path');
+const crypto = require('crypto');
 const config = require('../config');
 const log    = require('../crawler/logger');
 
@@ -63,6 +72,51 @@ const MAX_RETRY            = 4;
 const RETRY_BASE_DELAY_MS = 1500;
 
 function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/** git blob の SHA1 を計算する（"blob <byte長>\0<内容>" のSHA1。GitHubのtree entry.shaと同一の値になる） */
+function _gitBlobSha(content) {
+  const buf    = Buffer.from(content, 'utf8');
+  const header = Buffer.from(`blob ${buf.length}\0`);
+  return crypto.createHash('sha1').update(Buffer.concat([header, buf])).digest('hex');
+}
+
+/**
+ * リモートブランチの現在のtreeを再帰取得し、diff計算用の { treeSha, blobShaByPath } を返す。
+ * ブランチが存在しない(初回push等)場合や、tree応答がtruncated(エントリ数上限超過、
+ * 通常このデータ量では起きないはずだが安全のため)の場合は null を返し、
+ * 呼び出し側は全ファイルアップロードの従来動作にフォールバックする。
+ */
+async function _getRemoteTreeInfo(headers) {
+  const refRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/ref/heads/${BRANCH}`, { headers });
+  if (refRes.status === 404) return null; // ブランチ未作成(初回push)
+  if (!refRes.ok) {
+    log.warn('[push-data-shards] ref取得失敗、diff無しの全アップロードにフォールバック', refRes.status);
+    return null;
+  }
+  const { object } = await refRes.json();
+
+  const commitRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/commits/${object.sha}`, { headers });
+  if (!commitRes.ok) {
+    log.warn('[push-data-shards] commit取得失敗、diff無しの全アップロードにフォールバック', commitRes.status);
+    return null;
+  }
+  const { tree } = await commitRes.json();
+
+  const treeRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/trees/${tree.sha}?recursive=1`, { headers });
+  if (!treeRes.ok) {
+    log.warn('[push-data-shards] tree取得失敗、diff無しの全アップロードにフォールバック', treeRes.status);
+    return null;
+  }
+  const { tree: entries, truncated } = await treeRes.json();
+  if (truncated) {
+    log.warn('[push-data-shards] リモートtreeがtruncated、diff計算を信頼できないため全アップロードにフォールバック');
+    return null;
+  }
+
+  const blobShaByPath = new Map();
+  for (const e of entries) if (e.type === 'blob') blobShaByPath.set(e.path, e.sha);
+  return { treeSha: tree.sha, blobShaByPath };
+}
 
 async function _fetchWithRetry(url, opts = {}) {
   let lastErr;
@@ -171,7 +225,11 @@ async function main({ onProgress } = {}) {
     return { ok: false, skipped: true, reason: 'no-files', message };
   }
 
-  log.info('[push-data-shards] start', { branch: BRANCH, files: files.length });
+  // 全ファイルの内容とgit blob shaを先に確定させる(diff計算・tree項目の両方で使う)
+  for (const f of files) {
+    f.content = f.content ?? fs.readFileSync(f.abs, 'utf8');
+    f.sha     = _gitBlobSha(f.content);
+  }
 
   const headers = {
     Authorization: `token ${token}`,
@@ -179,21 +237,50 @@ async function main({ onProgress } = {}) {
     'Content-Type': 'application/json',
   };
 
-  // 1. ファイルをCHUNK_SIZE件ずつに分割し、tree項目としてcontentを直接埋め込む
-  //    (blob作成のラウンドトリップを避けつつ、1リクエストの肥大化も防ぐ)
-  log.info('[push-data-shards] tree構築開始', { chunks: Math.ceil(files.length / CHUNK_SIZE), chunkSize: CHUNK_SIZE });
-  let treeSha = null;
-  for (let i = 0; i < files.length; i += CHUNK_SIZE) {
-    const chunk = files.slice(i, i + CHUNK_SIZE);
-    const treeItems = chunk.map(f => ({
-      path:    f.path,
-      mode:    '100644',
-      type:    'blob',
-      content: f.content ?? fs.readFileSync(f.abs, 'utf8'),
-    }));
-    // base_treeを前チャンクのsha結果に指定して積み上げる。
-    // (base_treeに含まれるがこのチャンクで言及していないパスはそのまま維持される)
-    const body = treeSha ? { base_tree: treeSha, tree: treeItems } : { tree: treeItems };
+  // 差分計算: リモートの現在のtreeと比較し、内容が変わった(またはリモートに
+  // 存在しない)ファイルだけをアップロード対象にする。shard数が増減して
+  // ローカルに存在しなくなったパス(shards/ index/ 配下のみ)は明示的に削除する
+  // (manifest.json/README.mdは常に変化するため削除判定の対象外)。
+  const remoteInfo = await _getRemoteTreeInfo(headers);
+  let changedFiles = files;
+  let deletePaths  = [];
+  if (remoteInfo) {
+    changedFiles = files.filter(f => remoteInfo.blobShaByPath.get(f.path) !== f.sha);
+    const localPaths = new Set(files.map(f => f.path));
+    for (const remotePath of remoteInfo.blobShaByPath.keys()) {
+      if ((remotePath.startsWith('shards/') || remotePath.startsWith('index/')) && !localPaths.has(remotePath)) {
+        deletePaths.push(remotePath);
+      }
+    }
+    log.info('[push-data-shards] diff計算', {
+      totalFiles: files.length, changed: changedFiles.length, deleted: deletePaths.length,
+      unchanged: files.length - changedFiles.length,
+    });
+  } else {
+    log.info('[push-data-shards] リモートtree無し(初回pushまたはフォールバック) — 全ファイルをアップロードします');
+  }
+
+  const combined = [
+    ...changedFiles.map(f => ({ path: f.path, mode: '100644', type: 'blob', content: f.content })),
+    ...deletePaths.map(p => ({ path: p, mode: '100644', type: 'blob', sha: null })),
+  ];
+
+  if (remoteInfo && combined.length === 0) {
+    log.info('[push-data-shards] 変更なし(全ファイルが前回pushと同一) — pushをスキップします');
+    return { ok: true, skipped: true, reason: 'no-changes', files: files.length, changed: 0, branch: BRANCH };
+  }
+
+  log.info('[push-data-shards] start', { branch: BRANCH, totalFiles: files.length, toUpload: combined.length });
+
+  // 1. 変更分をCHUNK_SIZE件ずつに分割し、tree項目としてcontentを直接埋め込む
+  //    (blob作成のラウンドトリップを避けつつ、1リクエストの肥大化も防ぐ)。
+  //    base_treeにリモートの現在のtree shaを指定することで、変化していない
+  //    大多数のファイルはこのアップロードに一切含めずに引き継がれる。
+  log.info('[push-data-shards] tree構築開始', { chunks: Math.ceil(combined.length / CHUNK_SIZE) || 1, chunkSize: CHUNK_SIZE });
+  let treeSha = remoteInfo?.treeSha ?? null;
+  for (let i = 0; i < combined.length; i += CHUNK_SIZE) {
+    const chunk = combined.slice(i, i + CHUNK_SIZE);
+    const body = treeSha ? { base_tree: treeSha, tree: chunk } : { tree: chunk };
     const treeRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/trees`, {
       method: 'POST',
       headers,
@@ -204,15 +291,18 @@ async function main({ onProgress } = {}) {
     }
     ({ sha: treeSha } = await treeRes.json());
     log.info('[push-data-shards] tree chunk done', { from: i, count: chunk.length, treeSha });
-    onProgress?.({ done: Math.min(i + chunk.length, files.length), total: files.length });
+    onProgress?.({ done: Math.min(i + chunk.length, combined.length), total: combined.length || 1 });
   }
 
-  // 2. 親を持たないコミットを作成(スカッシュ運用のため毎回orphanにする)
+  // 2. 親を持たないコミットを作成(スカッシュ運用のため毎回orphanにする)。
+  //    base_treeで内容を引き継いだ場合でも、コミット自体は親を持たせない
+  //    (=ブランチ履歴は肥大化しない。treeオブジェクトはコミットの祖先関係とは
+  //    独立して参照できるため、この2つは両立する)。
   const commitRes = await _fetchWithRetry(`${API}/repos/${OWNER}/${REPO}/git/commits`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      message: `data: export ${new Date().toISOString()} (${files.length} files)`,
+      message: `data: export ${new Date().toISOString()} (${files.length} files, ${combined.length} changed)`,
       tree: treeSha,
       parents: [],
     }),
@@ -239,8 +329,8 @@ async function main({ onProgress } = {}) {
     if (!updateRes.ok) throw new Error(`ref update failed: HTTP ${updateRes.status} ${await updateRes.text()}`);
   }
 
-  log.info('[push-data-shards] done', { files: files.length, commit: commitSha });
-  return { ok: true, files: files.length, commit: commitSha, branch: BRANCH };
+  log.info('[push-data-shards] done', { files: files.length, changed: combined.length, commit: commitSha });
+  return { ok: true, files: files.length, changed: combined.length, commit: commitSha, branch: BRANCH };
 }
 
 function _resolveToken() {

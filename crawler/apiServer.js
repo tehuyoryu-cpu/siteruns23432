@@ -641,9 +641,17 @@ async function handleRun(job, res) {
         },
       });
 
-      if (pushResult?.ok) {
+      if (pushResult?.ok && pushResult?.skipped && pushResult?.reason === 'no-changes') {
+        // 効率化(差分push): 前回pushから内容が一切変わっていない場合、
+        // push-data-shards.js はコミット自体を作らずに正常終了する。
+        // ok:true だが commit は存在しないため、他の成功時と分岐して案内する。
         _lastResult[job] = { ok: true, ...pushResult, exportResult, finishedAt: Date.now() };
-        _sseSend('change', `GitHub push完了 — ${pushResult.files}ファイル / commit:${(pushResult.commit ?? '').slice(0, 7)}`);
+        _sseSend('log', `GitHub push完了 — 変更なし(前回pushと同一のため${pushResult.files}ファイル中0件のみ確認)`);
+        log.info('[api] pushdata done (no changes)', { exportResult, pushResult });
+      } else if (pushResult?.ok) {
+        _lastResult[job] = { ok: true, ...pushResult, exportResult, finishedAt: Date.now() };
+        const changedInfo = pushResult.changed != null ? ` (うち変更:${pushResult.changed}件)` : '';
+        _sseSend('change', `GitHub push完了 — ${pushResult.files}ファイル${changedInfo} / commit:${(pushResult.commit ?? '').slice(0, 7)}`);
         log.info('[api] pushdata done', { exportResult, pushResult });
       } else {
         // トークン未設定・出力なし等の意図的なスキップは「失敗」ではないが、
