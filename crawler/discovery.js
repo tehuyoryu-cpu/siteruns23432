@@ -72,7 +72,7 @@ async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = nul
   const tmpl = DISCOVERY_FSR[site];
   if (!tmpl) return 0;
 
-  let page = 1, count = 0, consecutiveShort = 0, failCount = 0;
+  let page = 1, count = 0, consecutiveShort = 0, failCount = 0, consecutiveKnown = 0;
   while (true) {
     if (_discoveryAborted()) { log.warn('[discovery] monthly aborted', { site, date, page }); break; }
     const pagePart = page === 1 ? '' : `/page/${page}`;
@@ -95,8 +95,29 @@ async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = nul
     }
     failCount = 0;
 
+    // 効率化: このFSRは order/release_d（新しい順）でソートされているため、
+    // ページを跨ぐほど古い作品になる。1ページ丸ごと(100件)が既に既知のRJだけで
+    // 構成されていた場合、それより後のページはさらに古い＝ほぼ確実に既知と
+    // 判断できる。2ページ連続で確認できたら早期に打ち切る（1回だけの偶発的な
+    // 重複ページで誤って打ち切らないための安全マージン）。
+    // これにより6時間毎のcron実行のたびに月初から全ページを再走査する無駄を
+    // 削減する。万一取りこぼしが生じても runCircleGapScan が全サークルを
+    // 定期的に網羅走査するバックストップとして機能する。
+    const fullyKnown = items.length >= 100 && items.every(it => !it.rjCode || knownRjs.has(it.rjCode));
+
     count += _upsert(items, site, knownRjs, delistedRjs);
     log.info('[discovery] monthly', { site, date, page, parsed: items.length, newAdded: count });
+
+    if (fullyKnown) {
+      consecutiveKnown++;
+      if (consecutiveKnown >= 2) {
+        log.info('[discovery] monthly: 既知ページが連続したため早期終了', { site, date, page });
+        break;
+      }
+    } else {
+      consecutiveKnown = 0;
+    }
+
     // 100件未満は通常「最終ページ」の合図だが、一時的な取得失敗/パース漏れで
     // 途中のページがたまたま短くなることがある。1回だけなら疑って継続し、
     // 2回連続で短ければ本当に終わりと判断する。
@@ -624,7 +645,7 @@ async function runNewReleaseScan({ onProgress = null } = {}) {
     const tmpl = urls.newRelease;
     if (!tmpl) continue;
 
-    let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0;
+    let page = 1, siteTotal = 0, consecutiveShort = 0, failCount = 0, consecutiveKnown = 0;
 
     while (true) {
       if (_discoveryAborted()) { log.warn('[discovery] newReleaseScan aborted', { site, page }); break; }
@@ -650,12 +671,31 @@ async function runNewReleaseScan({ onProgress = null } = {}) {
       }
       failCount = 0;
 
+      // 効率化(重要): このURLは1年分をorder/release_d（新しい順）で走査するため、
+      // ページ数が多いと数百ページに及ぶ。以前はturbo実行のたびに毎回1年分を
+      // 最初から全ページ再走査しており、既に収集済みの大半のページまで
+      // 無駄にリクエストし続けていた(discoverの月次スキャンとも実質重複)。
+      // _scanFsrMonthlyと同じ「既知ページが2回連続したら打ち切り」ロジックを
+      // 適用し、新着(未知)が尽きた時点で早期終了する。取りこぼしの保険は
+      // runCircleGapScan（全サークル網羅走査）に委ねる。
+      const fullyKnown = items.length >= 100 && items.every(it => !it.rjCode || knownRjs.has(it.rjCode));
+
       const added = _upsert(items, site, knownRjs, delistedRjs);
       siteTotal  += added;
       grandTotal += added;
 
       if (onProgress) onProgress({ site, page, found: added, total: siteTotal });
       log.info('[discovery] newReleaseScan', { site, page, parsed: items.length, added, total: siteTotal });
+
+      if (fullyKnown) {
+        consecutiveKnown++;
+        if (consecutiveKnown >= 2) {
+          log.info('[discovery] newReleaseScan end', { site, page, reason: '既知ページが連続したため早期終了' });
+          break;
+        }
+      } else {
+        consecutiveKnown = 0;
+      }
 
       // 100件未満は1回だけなら疑って継続し、2回連続で短ければ最終ページと判断する
       if (items.length < 100) {
