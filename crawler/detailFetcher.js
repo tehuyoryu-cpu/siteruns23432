@@ -113,6 +113,26 @@ const AUTO_THROTTLE_CONCURRENCY_CAP      = 2;       // 自動抑制中の並列�
 const AUTO_THROTTLE_RATE_LIMIT_MIN_MS    = 1500;    // 自動抑制中のrateLimit下限(ms、これより短くしない)
 const AUTO_THROTTLE_RESET_AFTER_MS       = 30 * 60_000; // この時間ノーラン(未実行)ならストリークを忘れる
 
+// ─── 実行"内"の高エラー率に基づく即時スロットル ─────────────────────────────
+// 上記の自動スロットルはあくまで「前回までのrunDetailFetch()が高エラー率
+// だったか」を見て"次回"の実行開始時にのみ効く事後・実行間フィードバック。
+// しかしrunDetailFetch()自体はITER_SIZE=500件単位のイテレーションを、
+// due件数が尽きるまで(実機ログでは533,271件のdueが恒常的に存在し、単一の
+// turbo実行が4414.6秒(約73分)続いた例もある)何十〜何百ラウンドも回し続ける
+// ため、健全な状態でブースト設定(concurrency高め・rateLimit短め)のまま
+// 開始した実行が、途中でDLsite側の状態悪化(実機ログでerrorRate 0.94等の
+// 実行が観測されている)に遭遇しても、そのまま同じ設定で残り全ラウンドを
+// 走り続けてしまう。cross-runのストリークは"この"実行が終わるまで一切
+// 更新されないため、実行内での自己防御が存在しなかった。
+// ITER_SIZE単位のラウンドは自然なチェックポイントなので、各ラウンド完了後に
+// そのラウンド単体のエラー率を見て、連続で閾値超過なら「この実行の残り分」
+// だけ即座に並列度・rateLimitを引き下げる。閾値・引き下げ幅はcross-run版と
+// 同じ定数(AUTO_THROTTLE_ERROR_RATE_THRESHOLD等)を再利用し、二重管理による
+// 閾値の食い違いを避ける。一度発動したら同一実行内では再度緩めない
+// (回復判定はサイト単位のサーキットブレーカー半開プローブに任せ、真の
+// 「通常運転への復帯」は次回実行のcross-runストリーク判定に委ねる)。
+const WITHIN_RUN_THROTTLE_STREAK_THRESHOLD = 2;   // 連続でこの回数、1ラウンドのエラー率が閾値超なら発動
+
 const _consecutiveHighErrorRuns = {}; // jobName -> 連続高エラー率回数
 const _lastRunFinishedAt        = {}; // jobName -> 直前実行の終了時刻(epoch ms)
 
@@ -414,8 +434,8 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
   // 直近の(ブーストされた)実行が連続で高エラー率だった場合、要求された値を
   // さらに下げる（詳細は「実行間の高エラー率履歴に基づく自動スロットル」参照）。
   const throttle = _maybeAutoThrottle(jobName, requestedRateLimit, requestedConcurrency);
-  const effRateLimit   = throttle.effRateLimit;
-  const effConcurrency = throttle.effConcurrency;
+  let effRateLimit   = throttle.effRateLimit;
+  let effConcurrency = throttle.effConcurrency;
 
   // due な作品が limit を超える場合でも、1回の呼び出しで全件処理し終えるまでループする。
   // （以前は limit 件で必ず打ち切られ、「全て巡回」等で残りが無視されるバグがあった）
@@ -513,6 +533,8 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
   // ITER_SIZE=500: concurrency=3, batchSize=50 → ceil(500/50)=10チャンク / 3worker = 4ラウンド
   // ≈ 4 × (APIレスポンス + 700ms) ≈ 約5秒/500件（前回の300件から1.67倍のスループット）
   const ITER_SIZE = 500;
+  let withinRunHighErrorStreak = 0;
+  let withinRunThrottled       = false;
   while (true) {
     if (isAborted()) {
       log.info('[detail] aborted by external request (before fetching due works)');
@@ -584,6 +606,7 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     // 1サイトの巡回が終わるまで他サイトを一切処理しなかった）。各サイトは
     // 内部で独自の concurrency プールと rateLimit 待機を持つため、サイト間を
     // 並列化しても単一サイトへの同時リクエスト数は変わらない。
+    const errorsBeforeRound = result.errors;
     const abortedFlags = await Promise.all(
       Object.entries(bySite).map(([site, works]) => _runConcurrentBatches(works, site))
     );
@@ -591,6 +614,40 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     if (abortedMidBatch) {
       log.info('[detail] aborted by external request (mid-batch)');
       break;
+    }
+
+    // 実行内アダプティブスロットル: このラウンド単体のエラー率を見て、
+    // 連続で悪ければ「この実行の残り分」だけ即座に設定を引き下げる
+    // (詳細は WITHIN_RUN_THROTTLE_STREAK_THRESHOLD 直上のコメント参照)。
+    if (!withinRunThrottled) {
+      const roundErrors    = result.errors - errorsBeforeRound;
+      const roundErrorRate = due.length > 0 ? roundErrors / due.length : 0;
+      if (due.length >= AUTO_THROTTLE_MIN_DENOM && roundErrorRate >= AUTO_THROTTLE_ERROR_RATE_THRESHOLD) {
+        withinRunHighErrorStreak++;
+      } else {
+        withinRunHighErrorStreak = 0;
+      }
+      if (withinRunHighErrorStreak >= WITHIN_RUN_THROTTLE_STREAK_THRESHOLD) {
+        const newConcurrency = Math.min(effConcurrency, AUTO_THROTTLE_CONCURRENCY_CAP);
+        const newRateLimit   = Math.max(effRateLimit,   AUTO_THROTTLE_RATE_LIMIT_MIN_MS);
+        withinRunThrottled = true;   // 同一実行内での再発動は行わない
+        if (newConcurrency !== effConcurrency || newRateLimit !== effRateLimit) {
+          log.warn(
+            `[detail] ${jobName ?? 'run'}: 実行中に${withinRunHighErrorStreak}ラウンド連続で高エラー率` +
+            `(直近ラウンド errorRate=${Math.round(roundErrorRate * 1000) / 1000}) を検出したため、` +
+            `この実行の残り分についてconcurrency/rateLimitを即座に引き下げます — ` +
+            `concurrency ${effConcurrency}→${newConcurrency} / rateLimit ${effRateLimit}→${newRateLimit}ms`
+          );
+          effConcurrency = newConcurrency;
+          effRateLimit   = newRateLimit;
+          // digest.log/events.jsonlに残る result.rateLimit/concurrency は
+          // 「実際にどのパラメータで走ったか」を示す一次情報のはずなので、
+          // 実行内スロットル後もここだけ古い(ブースト時の)値のままにしない。
+          result.rateLimit          = newRateLimit;
+          result.concurrency        = newConcurrency;
+          result.withinRunThrottled = true;
+        }
+      }
     }
 
     // 取得件数が batchSize 未満 → due 作品が枯渇、終了
