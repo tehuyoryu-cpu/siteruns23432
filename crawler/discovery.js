@@ -281,8 +281,19 @@ async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {
 }
 
 async function _collectCircles(knownRjs, delistedRjs = null) {
+  // 効率化: 以前は毎回固定30サークルしかローテーションしておらず、登録
+  // サークル数が増えるほど全サークルを一巡するのにかかる日数が伸び続けていた
+  // (discoveryは6時間毎cronのため、固定30件のままだとサークル数が1000件を
+  // 超えた時点で一巡に10日以上かかる計算になる)。総サークル数から
+  // 「約8回のcron実行(≒48時間)で一巡させる」逆算バッチサイズを算出し、
+  // 下限30(従来値、小規模DBでの過走査防止)・上限200(1回あたりの負荷上限)で
+  // クランプする。
+  const totalCircles = db.getStats().totalCircles ?? 0;
+  const ROTATION_RUNS = 8; // 6h毎cron×8回 ≈ 48時間で一巡させる目標
+  const batchSize = Math.max(30, Math.min(200, Math.ceil(totalCircles / ROTATION_RUNS) || 30));
+
   // セール中を優先し、最も長くチェックされていないサークルをローテーション
-  const toCheck = db.getCirclesForDiscovery(30);
+  const toCheck = db.getCirclesForDiscovery(batchSize);
   const CONC    = 5;  // 同時リクエスト数
 
   let count = 0;

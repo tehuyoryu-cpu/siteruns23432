@@ -431,12 +431,10 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
   // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
   const VALID_SITES = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
 
-  // better-sqlite3移行後、db.save()は各文/トランザクションの実行と同時に
-  // ディスクへ反映されるためno-opになっている。このバッチ間引きロジック自体は
-  // 現在は実質的な効果を持たないが、db.save()呼び出し箇所を減らす分だけ
-  // わずかにオーバーヘッドが下がるため、害はないのでそのまま残している。
-  const SAVE_EVERY_N_BATCHES = 5;
-  let batchesSinceSave = 0;
+  // バグ修正: 以前は SAVE_EVERY_N_BATCHES バッチごとに db.save() を挟んで
+  // いたが、better-sqlite3移行後 db.save() は各文/トランザクションの実行と
+  // 同時にディスクへ反映されるため完全なno-opであり、この間引きカウンタと
+  // 呼び出し自体が無意味なオーバーヘッドでしかなかった。撤去する。
 
   // 'all'/'turbo' ジョブからの中断要求を実際に確認する。
   // (以前は global._crawlerAbort.detail がセットされても誰も見ておらず、
@@ -472,12 +470,6 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
         result.storeError    += r.storeError;
         result.verifiedAlive += r.verifiedAlive;
         onProgress?.({ processed: result.processed, priceChanges: result.priceChanges, total: result.total });
-
-        batchesSinceSave++;
-        if (batchesSinceSave >= SAVE_EVERY_N_BATCHES) {
-          db.save();
-          batchesSinceSave = 0;
-        }
 
         // 次チャンクがある場合のみsleep（最終バッチ後の無駄な700ms待機を除去）
         // ±20%のジッターを加え、複数サイト/ワーカーの待機が揃って規則的な
@@ -605,9 +597,6 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     if (due.length < batchSize) break;
   }
 
-  // ループ終了時点でまだ保存していない分が残っていれば最後にフラッシュする
-  if (batchesSinceSave > 0) db.save();
-
   _updateAutoThrottleStreak(jobName, result);
 
   log.info('[detail] done', result);
@@ -625,13 +614,11 @@ async function fetchAndStore(rjCode, siteId = 'maniax') {
 
 // discovery が取得した初期価格を保存
 function saveDiscoveredPrice(rjCode, priceData) {
-  // バグ修正: savePriceIfChanged はオブジェクトを返す(changed=falseでも)ため
-  // 素の真偽値として扱うと常にtruthyになり、変化が無くても毎回db.save()を
-  // スケジュールしてしまっていた。
+  // savePriceIfChanged はオブジェクトを返す(changed=falseでも)ため .changed を見る。
+  // db.save()は better-sqlite3 移行後 no-op のため呼び出し自体を撤去済み
+  // (savePriceIfChanged 内の書き込みは同期的に即ディスクへ反映される)。
   const result = db.savePriceIfChanged(rjCode, priceData);
-  const changed = result.changed === true;
-  if (changed) db.save(); // Fix#7: ensure persistence outside transaction
-  return changed;
+  return result.changed === true;
 }
 
 // ─── バッチ処理 ───────────────────────────────────────────────────────────────
@@ -689,6 +676,19 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // 「こちらから中断した」ことによるnullなので、以降の分割・recordFetchErrorの
   // 対象にしてはならない。
   if (!body && getAbortSignal('detail').aborted) return result;
+
+  // 効率化: 空応答(HTTPレベルのエラーではない)はfetchWithRetry内部の
+  // ネットワーク層リトライでは救済されない一過性の不調であることが多い。
+  // いきなり半分に分割する(=リクエスト数を2倍に増やす)前に、depth 0 に
+  // 限り同一バッチのまま1回だけ素朴にリトライする。これで復帰すれば
+  // 分割による無駄な追加リクエストを避けられる。
+  if (!body && depth === 0 && !getAbortSignal('detail').aborted) {
+    await sleep(Math.max(rateLimit ?? 0, 300));
+    if (!getAbortSignal('detail').aborted) {
+      body = await _apiFetch(works, site);
+      if (!body && getAbortSignal('detail').aborted) return result;
+    }
+  }
 
   // 失敗→バイナリ分割（半分ずつ、最大1段階まで）→個別エラー記録
   // SUB=10 固定にすると works.length < SUB の場合に無限ループするため halving を使う
