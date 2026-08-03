@@ -798,17 +798,16 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
     resuming: resumedCount > 0, alreadyCheckedBefore: resumedCount,
   });
 
-  // 以前はここに「50ページ/missing150件で打ち切り」という上限があった。
-  // これはmaker_idフィルタが壊れている可能性を疑っての安全弁だったが、
-  // 直接検証(下記のmakerId不一致チェック)により実際にはフィルタは正常に
-  // 機能しており、上限に達していたサークル(RG01000107等)は本当にそれだけの
-  // 作品数を持つ実在の巨大サークルだったと確定した。
-  //
-  // circlegapは「待っていても二度と収集されない過去の取りこぼしを掘り起こす」
-  // ためのツールであり、巨大サークルほど取りこぼしが残りやすい。上限で
-  // 打ち切ってしまうとその目的に反するため撤廃し、真の無限ループ対策として
-  // 現実的にあり得ない水準の上限(1000ページ=10万作品/サークル)だけを
-  // 最終防波堤として残す。
+  // ── 1回の実行あたりの最大所要時間(time-box) ──────────────────────────────
+  // maxDurationMsを超えたら新規サークルの走査を開始せず、走査中のサークルも
+  // 次のページ取得前に打ち切る。未走査分は _discoveryAborted() と同じ扱い
+  // (markCircleGapCheckedしない=未完了のまま)にすることで、次回実行時に
+  // last_gap_checked ローテーションが自動的にそこから再開する。
+  const startedAt     = Date.now();
+  const maxDurationMs = config.circleGap?.maxDurationMs ?? 20 * 60 * 1000;
+  let   timedOut       = false;
+  const _timeBudgetExceeded = () => (Date.now() - startedAt) > maxDurationMs;
+
   const MAX_PAGES_PER_CIRCLE = 1000;
 
   async function _scanOneCircle(makerId, site) {
@@ -818,8 +817,14 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
       // maker_id 単位のFSR全ページを走査（per_page=100、page1は/page/{page}を省略）
       let page = 1, consecutiveShort = 0, failCount = 0;
       while (true) {
-        if (_discoveryAborted()) {
-          log.warn('[discovery] circleGap aborted', { makerId, site, page });
+        if (_discoveryAborted() || _timeBudgetExceeded()) {
+          if (_timeBudgetExceeded() && !_discoveryAborted()) {
+            timedOut = true;
+            log.warn('[discovery] circleGap time-box到達、このサークルを打ち切って次回に持ち越します',
+              { makerId, site, page, elapsedMs: Date.now() - startedAt });
+          } else {
+            log.warn('[discovery] circleGap aborted', { makerId, site, page });
+          }
           abortedThisCircle = true;   // 中断: このサークルは未完了のまま次回に持ち越す（checked済みにしない）
           break;
         }
@@ -916,6 +921,12 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
   async function worker() {
     while (nextIdx < makerIds.length) {
       if (_discoveryAborted()) { log.warn('[discovery] circleGapScan worker aborted', { nextIdx, total: makerIds.length }); break; }
+      if (_timeBudgetExceeded()) {
+        timedOut = true;
+        log.warn('[discovery] circleGapScan time-box到達、新規サークルの走査を打ち切ります',
+          { nextIdx, total: makerIds.length, elapsedMs: Date.now() - startedAt });
+        break;
+      }
       const myIdx  = nextIdx++;
       const makerId = makerIds[myIdx];
       const site    = makerSites.get(makerId);
@@ -928,14 +939,14 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
     }
   }
 
-  const poolSize = Math.max(1, Math.min(config.fetch.concurrency ?? 1, makerIds.length));
+  const poolSize = Math.max(1, Math.min(config.circleGap?.concurrency ?? 2, makerIds.length));
   log.info('[discovery] circleGapScan concurrency=' + poolSize);
   await Promise.all(Array.from({ length: poolSize }, () => worker()));
 
   log.info('[discovery] circleGapScan done', {
-    checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length, skippedInvalidSite,
+    checked, totalMissing, circlesWithGaps: Object.keys(missingByCircle).length, skippedInvalidSite, timedOut,
   });
-  return { checked, totalMissing, missingByCircle, skippedInvalidSite, totalCircles: makerIds.length, resumedFromPrevious: resumedCount > 0 };
+  return { checked, totalMissing, missingByCircle, skippedInvalidSite, totalCircles: makerIds.length, resumedFromPrevious: resumedCount > 0, timedOut };
 }
 
 // ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────

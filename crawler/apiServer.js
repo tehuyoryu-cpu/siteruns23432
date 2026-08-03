@@ -569,9 +569,11 @@ async function handleRun(job, res) {
         ` / 発見した欠落:${result.totalMissing}件` +
         (result.totalMissing > 0 ? ` (${Object.keys(result.missingByCircle).length}サークルで検出)` : '') +
         (result.skippedInvalidSite > 0 ? ` / site_id不明で除外:${result.skippedInvalidSite}サークル` : '');
+      const suffix = stopped ? '（続きは次回実行時に再開されます）'
+        : result.timedOut ? '（1回の実行あたりの時間上限に到達 — 続きは次回実行時に再開されます）'
+        : '';
       _sseSend(result.totalMissing > 0 ? 'change' : 'log',
-        (stopped ? 'サークル欠落診断を停止しました — ' : 'サークル欠落診断完了 — ') + gapSummary +
-        (stopped ? '（続きは次回実行時に再開されます）' : ''));
+        (stopped ? 'サークル欠落診断を停止しました — ' : 'サークル欠落診断完了 — ') + gapSummary + suffix);
       log.info('[api] circleGapScan done', { ...result, stopped });
 
     } else if (job === 'comp_listing') {

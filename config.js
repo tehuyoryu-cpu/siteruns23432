@@ -66,6 +66,27 @@ module.exports = {
     globalMaxConcurrent: 5,
   },
 
+  // サークル欠落診断(circleGapScan)専用の設定。
+  // 背景: circleGapScanは「待っていても二度と収集されない過去の取りこぼしを
+  // 掘り起こす」ための低優先度バックグラウンド診断であり、通常の
+  // discover/fetch/turbo/allのように短時間で完了することを期待していない
+  // (既知サークル数×最大1000ページが理論上の上限で、実運用では無制限に近い
+  // 時間がかかりうる)。apiServer.jsのsharedKeysでdiscover/endingsoon/newrelease
+  // とは排他されるが、detail(価格更新)とは意図的に排他されておらず並走できる
+  // ため、time-boxを入れずに長時間走らせ続けると globalMaxConcurrent の
+  // スロットを長時間占有し、並走中のdetailの実効速度を下げ続けてしまう。
+  // → 1回の実行あたりの最大所要時間(maxDurationMs)で強制的に区切り、
+  //   未走査分は次回実行に持ち越す。db.js の last_gap_checked ローテーション
+  //   (未チェック/最も古いサークルから優先)により、time-boxで打ち切っても
+  //   「同じサークルばかり見て他が永久に後回しになる」ことはなく、複数回の
+  //   実行を重ねれば自然に全サークルを消化できる。
+  // concurrencyもfetch.concurrency(detail用、既定3)とは分離し、診断ツールが
+  // 主系統(detail)と同等以上の枠を食わないよう低めに固定する。
+  circleGap: {
+    concurrency:   2,
+    maxDurationMs: 20 * 60 * 1000,   // 1回の実行あたり最大20分
+  },
+
   cron: {
     discovery: '0 */6 * * *',
     detail:    '*/10 * * * *',
