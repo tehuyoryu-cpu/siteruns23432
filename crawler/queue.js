@@ -48,19 +48,29 @@ const _baseHeaders = _isElectron
 
 // ─── fetchWithRetry ───────────────────────────────────────────────────────────
 
-// ── ネットワーク断グローバルポーズ ─────────────────────────────────────────
-// ERR_NETWORK_IO_SUSPENDED 等の全接続失敗を検知したとき、
-// concurrency=3 の全ワーカーが独立してリトライを繰り返すのを防ぐ。
-// 最初にエラーを検知したワーカーがフラグをセットし、全ワーカーが
-// ポーズ中はリクエストを送らずに待機する。
-let   _networkPaused    = false;
-let   _networkPauseMs   = 0;
-// ログ削減: concurrency分のワーカーがほぼ同時に同じネットワーク断を検知すると、
-// 全員が個別に「network pause: waiting Ns」「network error detected」を
-// warnで出し、1回の断が(concurrency件)行に増幅していた。1エピソードにつき
-// 最初の1件だけwarnで告知し、後続ワーカーの同種ログはtrace(events.jsonlのみ)に
-// 落とす。ポーズが解除されたら次のエピソードでまた告知できるようリセットする。
-let   _networkPauseAnnounced = false;
+// ── ネットワーク断ポーズ（系統別 + グローバルエスカレーション） ─────────────
+// ERR_NETWORK_IO_SUSPENDED 等の全接続失敗を検知したとき、同一系統
+// (detail/discovery/comp等、concurrency分の全ワーカー)が独立してリトライを
+// 繰り返すのを防ぐのが本来の目的だった。
+//
+// バグ修正(⑤ 系統横断でグローバルな点): しかし実装は queue.js モジュール
+// 全体で単一の _networkPaused フラグを共有していたため、ある1系統
+// (例: detail)が検知した単発のネットワークエラー(必ずしも本当のPC全体の
+// 断ではない)だけで、無関係な他系統(discovery/comp、さらには
+// scripts/push-data-shards.js が叩く api.github.com への通信のように
+// DLsiteとは無関係なドメイン)まで一律 _PAUSE_DURATION 秒止まってしまっていた。
+// detailFetcher.js のサイト単位サーキットブレーカーが「2サイト以上が
+// 同時にサーキット開放中のときだけグローバル抑制へ昇格する」設計に
+// なっているのと同じ考え方で、まず abortFlagName(系統)単位でポーズし、
+// 短い時間窓内に GLOBAL_ESCALATION_MIN_SYSTEMS 系統以上が独立して
+// ネットワークエラーを検知した場合にのみ、真に全系統を止める
+// グローバルポーズへ昇格させる。
+const _UNSCOPED_KEY = Symbol('unscoped');    // abortFlagName 未指定の呼び出し用の系統キー
+const _pauseUntilBySystem   = new Map();     // 系統キー -> ポーズ解除時刻(ms)
+const _pauseAnnouncedSystem = new Set();     // 「waiting Ns」を告知済みの系統キー
+const GLOBAL_ESCALATION_MIN_SYSTEMS = 2;     // 同時ポーズでグローバル昇格する最小系統数
+let   _globalPauseUntilMs   = 0;             // 0 = グローバル昇格していない
+let   _globalPauseAnnounced = false;
 const _NETWORK_ERRORS   = new Set([
   'ERR_NETWORK_IO_SUSPENDED', 'ERR_INTERNET_DISCONNECTED',
   'ERR_NETWORK_CHANGED', 'ERR_CONNECTION_RESET',
@@ -120,19 +130,42 @@ function _isAborted(abortFlagName) {
   return !!abortFlagName && getAbortSignal(abortFlagName).aborted;
 }
 
+function _systemKey(abortFlagName) { return abortFlagName ?? _UNSCOPED_KEY; }
+
+/** 現時点でポーズ中(期限切れでない)の系統数を数える。グローバル昇格判定に使う。 */
+function _countActivePausedSystems(now) {
+  let n = 0;
+  for (const until of _pauseUntilBySystem.values()) if (until > now) n++;
+  return n;
+}
+
 async function _waitForNetwork(abortFlagName) {
-  if (!_networkPaused) return;
-  const remaining = _networkPauseMs - Date.now();
-  if (remaining > 0) {
-    if (!_networkPauseAnnounced) {
-      _networkPauseAnnounced = true;
-      log.warn(`[fetch] network pause: waiting ${Math.ceil(remaining/1000)}s`);
-    } else {
-      log.trace(`[fetch] network pause: waiting ${Math.ceil(remaining/1000)}s (duplicate, other worker already announced)`);
-    }
-    await _abortableSleep(remaining, abortFlagName);
+  const key = _systemKey(abortFlagName);
+  const now = Date.now();
+  const sysUntil = _pauseUntilBySystem.get(key) ?? 0;
+  // グローバル昇格中はどの系統(自分がまだポーズしていない系統も含む)も
+  // 一律で待つ。そうでなければ自分の系統のポーズ期限のみに従う。
+  const until = Math.max(sysUntil, _globalPauseUntilMs);
+  if (until <= now) return;
+
+  const remaining = until - now;
+  const isGlobal  = _globalPauseUntilMs >= sysUntil;
+  const label     = isGlobal ? '全系統' : `系統:${String(abortFlagName ?? 'unscoped')}`;
+  const announced = isGlobal ? _globalPauseAnnounced : _pauseAnnouncedSystem.has(key);
+
+  if (!announced) {
+    if (isGlobal) _globalPauseAnnounced = true; else _pauseAnnouncedSystem.add(key);
+    log.warn(`[fetch] network pause (${label}): waiting ${Math.ceil(remaining/1000)}s`);
+  } else {
+    log.trace(`[fetch] network pause (${label}): waiting ${Math.ceil(remaining/1000)}s (duplicate, other worker already announced)`);
   }
-  _networkPaused = false;
+  await _abortableSleep(remaining, abortFlagName);
+
+  // 自分の系統のポーズは解除。グローバル昇格の解除は他系統も見ている
+  // ため、期限切れ(Date.now() >= _globalPauseUntilMs)に任せてここでは触らない。
+  if (sysUntil <= now) return; // グローバル昇格分の待機だけだった場合は系統状態は元々未セット
+  _pauseUntilBySystem.delete(key);
+  _pauseAnnouncedSystem.delete(key);
 }
 
 // ─── グローバル同時接続数セマフォ（系統横断） ────────────────────────────────
@@ -292,25 +325,45 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
     } catch (e) {
       if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);
       last = e;
-      const isNetErr      = _isNetworkError(e.message);
-      const alreadyPaused = _networkPaused;
+      const isNetErr = _isNetworkError(e.message);
+      const now       = Date.now();
+      const key       = _systemKey(abortFlagName);
+      const alreadyPaused =
+        (_pauseUntilBySystem.get(key) ?? 0) > now || _globalPauseUntilMs > now;
 
       if (isNetErr && alreadyPaused) {
-        // 既に他ワーカーがこのエピソードを検知・告知済み。同種の断を
-        // 追加でwarn連発しても情報価値が薄いため、traceに落とす
-        // (events.jsonlには残るので後から件数を確認できる)。
+        // 既に同系統(または昇格済みのグローバル)の他ワーカーがこの
+        // エピソードを検知・告知済み。同種の断を追加でwarn連発しても
+        // 情報価値が薄いため、traceに落とす(events.jsonlには残る)。
         log.trace(`[fetch] error (${e.message}) — network pause already active, suppressing duplicate warn`, url);
       } else {
         log.warn(`[fetch] error (${e.message})`, url);
       }
 
-      // ネットワーク断を検知したらグローバルポーズをセット
-      // （既にセット済みの場合は上書きしない = 最初の検知者のタイマーを尊重）
+      // ネットワーク断を検知したら、まず自分の系統(abortFlagName)だけを
+      // ポーズする（既にポーズ済みの場合は上書きしない = 最初の検知者の
+      // タイマーを尊重）。無関係な他系統は、自分自身がエラーに遭遇するまで
+      // 待たされない。
       if (isNetErr && !alreadyPaused) {
-        _networkPaused          = true;
-        _networkPauseMs         = Date.now() + _PAUSE_DURATION;
-        _networkPauseAnnounced  = false;   // 「waiting Ns」の告知はまだこれから
-        log.warn(`[fetch] network error detected — all workers pausing ${_PAUSE_DURATION/1000}s`, e.message);
+        _pauseUntilBySystem.set(key, now + _PAUSE_DURATION);
+        _pauseAnnouncedSystem.delete(key);   // 「waiting Ns」の告知はまだこれから
+        log.warn(`[fetch] network error detected [${String(abortFlagName ?? 'unscoped')}] — this system pausing ${_PAUSE_DURATION/1000}s`, e.message);
+
+        // 短時間のうちに複数系統が独立してネットワークエラーを検知した
+        // 場合は、単発の系統固有の不調ではなく本当のPC全体のネットワーク断
+        // である可能性が高いため、全系統を止めるグローバルポーズへ昇格する
+        // (detailFetcher.js のサイト単位サーキットブレーカーの
+        //  GLOBAL_CIRCUIT_MIN_SITES と同じ考え方)。
+        const activeSystems = _countActivePausedSystems(now);
+        if (activeSystems >= GLOBAL_ESCALATION_MIN_SYSTEMS && _globalPauseUntilMs <= now) {
+          _globalPauseUntilMs   = now + _PAUSE_DURATION;
+          _globalPauseAnnounced = false;
+          const pausedList = [..._pauseUntilBySystem.entries()]
+            .filter(([, until]) => until > now)
+            .map(([k]) => String(k === _UNSCOPED_KEY ? 'unscoped' : k))
+            .join(',');
+          log.warn(`[fetch] グローバルネットワーク断エスカレーション — ${activeSystems}系統(${pausedList})が同時にネットワークエラーを検知。全系統を${_PAUSE_DURATION/1000}s停止します`);
+        }
       }
     }
   }
@@ -321,7 +374,19 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-function isNetworkPaused() { return _networkPaused; }
+/**
+ * 現在ネットワークポーズ中かどうか。
+ * @param {string|null} abortFlagName  指定した系統についてのみ確認する場合。
+ *   省略時はグローバル昇格中か、いずれかの系統がポーズ中かを返す。
+ */
+function isNetworkPaused(abortFlagName) {
+  const now = Date.now();
+  if (_globalPauseUntilMs > now) return true;
+  if (abortFlagName !== undefined) {
+    return (_pauseUntilBySystem.get(_systemKey(abortFlagName)) ?? 0) > now;
+  }
+  return _countActivePausedSystems(now) > 0;
+}
 module.exports = {
   fetchWithRetry, sleep, _isNetworkError, isNetworkPaused,
   globalActiveCount, globalWaitingCount,
