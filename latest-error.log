@@ -1,0 +1,299 @@
+2026-08-03T09:48:50.452Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-08-01","page":1,"parsed":98}
+2026-08-03T09:48:57.730Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":1,"parsed":98}
+2026-08-03T09:49:08.486Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":4,"parsed":32}
+2026-08-03T09:49:13.885Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-07-01","page":1,"parsed":99}
+2026-08-03T09:49:20.796Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-07-01","page":1,"parsed":98}
+2026-08-03T09:49:28.114Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-07-01","page":1,"parsed":98}
+2026-08-03T09:49:59.876Z [ERROR] [discovery] fetch error https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG40830.html aborted: https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG40830.html
+2026-08-03T09:49:59.876Z [ERROR] [discovery] fetch error https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG40830.html aborted: https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG40830.html
+2026-08-03T09:49:59.877Z [ERROR] [discovery] fetch error https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG40830.html aborted: https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG40830.html
+2026-08-03T09:49:59.877Z [ERROR] [discovery] fetch error https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG42390.html aborted: https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG42390.html
+2026-08-03T09:49:59.877Z [ERROR] [discovery] fetch error https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG42390.html aborted: https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG42390.html
+2026-08-03T09:49:59.877Z [ERROR] [discovery] fetch error https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG42390.html aborted: https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG42390.html
+2026-08-03T09:49:59.878Z [ERROR] [discovery] fetch error https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG43257.html aborted: https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG43257.html
+2026-08-03T09:49:59.879Z [ERROR] [discovery] fetch error https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG43257.html aborted: https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG43257.html
+2026-08-03T09:49:59.879Z [ERROR] [discovery] fetch error https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG43257.html aborted: https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E/lang_options%5B1%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E8%A6%81/page/1/maker_id/RG43257.html
+2026-08-03T09:50:00.647Z [WARN ] [discovery] collectCircles aborted {"processed":30,"total":200}
+2026-08-03T09:50:00.833Z [WARN ] [scheduler] detail still running, skip
+2026-08-03T09:50:08.294Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"maniax","page":1,"parsed":99}
+2026-08-03T09:50:10.362Z [WARN ] [db] slow transaction (transactionNoSave): 310ms {"dbSizeMB":412.1}
+2026-08-03T09:50:15.092Z [WARN ] [db] slow transaction (transactionNoSave): 421ms {"dbSizeMB":412.1}
+2026-08-03T09:50:15.663Z [WARN ] [db] slow transaction (transactionNoSave): 396ms {"dbSizeMB":412.1}
+2026-08-03T09:50:15.877Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"girls","page":1,"parsed":98}
+2026-08-03T09:50:17.142Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":12}
+2026-08-03T09:50:17.336Z [WARN ] [detail] API returned partial data maniax got 17 / requested 50
+2026-08-03T09:50:17.359Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":33}
+2026-08-03T09:50:17.688Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":24}
+2026-08-03T09:50:20.335Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"girls","page":1,"parsed":33}
+2026-08-03T09:50:21.626Z [WARN ] [db] slow transaction (transactionNoSave): 336ms {"dbSizeMB":412.1}
+2026-08-03T09:50:23.486Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"verify_rescued":4,"key_not_in_response":13}
+2026-08-03T09:50:24.637Z [WARN ] [db] slow transaction (transactionNoSave): 843ms {"dbSizeMB":412.1}
+2026-08-03T09:50:27.511Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"verify_rescued":1,"key_not_in_response":3}
+2026-08-03T09:50:28.885Z [WARN ] [db] slow transaction (transactionNoSave): 583ms {"dbSizeMB":412.1}
+2026-08-03T09:50:30.904Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"bl","page":1,"parsed":13}
+2026-08-03T09:50:32.504Z [WARN ] [db] slow transaction (transactionNoSave): 397ms {"dbSizeMB":412.1}
+2026-08-03T09:50:32.815Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"bl","page":2,"parsed":63}
+2026-08-03T09:50:38.405Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 5 / requested 39
+2026-08-03T09:50:39.144Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 5 / requested 39
+2026-08-03T09:50:39.145Z [WARN ] [detail] batch fail, splitting 39
+2026-08-03T09:50:39.874Z [WARN ] [detail] API returned partial data maniax got 5 / requested 20
+2026-08-03T09:50:41.192Z [WARN ] [detail] API returned empty object maniax requested 19件 sample: RJ01061838,RJ01061821
+2026-08-03T09:50:41.625Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":9,"key_not_in_response":2}
+2026-08-03T09:50:42.906Z [WARN ] [detail] API returned partial data maniax got 19 / requested 50
+2026-08-03T09:50:55.346Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":39,"key_not_in_response":1}
+2026-08-03T09:50:58.913Z [ERROR] (集約) 同種メッセージが直近59秒で5回発生（2件を抑制）／ 例: [discovery] fetch error https://www.dlsite.com/maniax-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%
+2026-08-03T09:50:58.914Z [ERROR] (集約) 同種メッセージが直近59秒で5回発生（2件を抑制）／ 例: [discovery] fetch error https://www.dlsite.com/bl-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9C%A
+2026-08-03T09:50:58.914Z [ERROR] (集約) 同種メッセージが直近59秒で5回発生（2件を抑制）／ 例: [discovery] fetch error https://www.dlsite.com/girls-touch/circle/profile/=/order%5B0%5D/release_d/options%5B0%5D/JPN/options%5B1%5D/NM/per_page/100/show_type/3/hd/1/lang_options%5B0%5D/%E6%97%A5%E6%9
+2026-08-03T09:50:58.915Z [WARN ] (集約) 同種メッセージが直近42秒で34回発生（31件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":12}
+2026-08-03T09:50:58.915Z [WARN ] (集約) 同種メッセージが直近42秒で4回発生（1件を抑制）／ 例: [detail] API returned partial data maniax got 17 / requested 50
+2026-08-03T09:50:59.235Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":6}
+2026-08-03T09:50:59.724Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":10}
+2026-08-03T09:51:00.018Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01068176,RJ01060108
+2026-08-03T09:51:00.763Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01068176,RJ01060108
+2026-08-03T09:51:00.764Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:51:01.358Z [WARN ] [detail] API returned partial data maniax got 23 / requested 50
+2026-08-03T09:51:01.406Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":27}
+2026-08-03T09:51:01.569Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01068176,RJ01060108
+2026-08-03T09:51:04.090Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":50,"key_not_in_response":1}
+2026-08-03T09:51:04.095Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":2,"key_not_in_response":1}
+2026-08-03T09:51:04.771Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":15,"key_not_in_response":2}
+2026-08-03T09:51:09.660Z [WARN ] [detail] API returned partial data maniax got 22 / requested 50
+2026-08-03T09:51:11.197Z [WARN ] [detail] API returned partial data maniax got 22 / requested 50
+2026-08-03T09:51:16.328Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:51:52.383Z [WARN ] [db] slow transaction (transactionNoSave): 554ms {"dbSizeMB":412.1}
+2026-08-03T09:51:52.455Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":28,"key_not_in_response":1}
+2026-08-03T09:51:58.925Z [WARN ] (集約) 同種メッセージが直近60秒で45回発生（42件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":6}
+2026-08-03T09:51:58.926Z [WARN ] (集約) 同種メッセージが直近59秒で8回発生（5件を抑制）／ 例: [detail] API returned empty object maniax requested 50件 sample: RJ01068176,RJ01060108
+2026-08-03T09:51:58.926Z [WARN ] (集約) 同種メッセージが直近58秒で9回発生（6件を抑制）／ 例: [detail] API returned partial data maniax got 23 / requested 50
+2026-08-03T09:51:59.520Z [WARN ] [detail] API returned partial data maniax got 22 / requested 47
+2026-08-03T09:51:59.549Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":47,"key_not_in_response":25}
+2026-08-03T09:52:00.806Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":29,"key_not_in_response":3}
+2026-08-03T09:52:01.234Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":15}
+2026-08-03T09:52:01.503Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":18}
+2026-08-03T09:52:05.347Z [WARN ] [detail] API returned partial data maniax got 21 / requested 50
+2026-08-03T09:52:08.977Z [WARN ] [db] slow transaction (transactionNoSave): 348ms {"dbSizeMB":412.1}
+2026-08-03T09:52:09.057Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":30,"key_not_in_response":1}
+2026-08-03T09:52:10.055Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":29,"key_not_in_response":1}
+2026-08-03T09:52:14.810Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":33,"key_not_in_response":1}
+2026-08-03T09:52:16.076Z [WARN ] [db] slow transaction (transactionNoSave): 372ms {"dbSizeMB":412.1}
+2026-08-03T09:52:16.456Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":26,"key_not_in_response":4}
+2026-08-03T09:52:16.916Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":50,"key_not_in_response":5}
+2026-08-03T09:52:20.729Z [WARN ] [detail] API returned partial data maniax got 14 / requested 41
+2026-08-03T09:52:24.866Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":36,"key_not_in_response":1}
+2026-08-03T09:52:28.475Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":44,"key_not_in_response":4}
+2026-08-03T09:52:30.540Z [WARN ] [db] slow transaction (transactionNoSave): 356ms {"dbSizeMB":412.1}
+2026-08-03T09:52:31.083Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":28,"key_not_in_response":3}
+2026-08-03T09:52:35.272Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 50
+2026-08-03T09:52:36.440Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 50
+2026-08-03T09:52:36.441Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:52:38.954Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 25
+2026-08-03T09:52:43.431Z [WARN ] [db] slow transaction (transactionNoSave): 377ms {"dbSizeMB":412.1}
+2026-08-03T09:52:55.185Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:52:57.354Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01037251,RJ01038019
+2026-08-03T09:52:58.944Z [WARN ] (集約) 同種メッセージが直近59秒で12回発生（9件を抑制）／ 例: [detail] API returned partial data maniax got 22 / requested 47
+2026-08-03T09:52:58.944Z [WARN ] (集約) 同種メッセージが直近59秒で50回発生（47件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":47,"key_not_in_response":25}
+2026-08-03T09:52:58.944Z [WARN ] (集約) 同種メッセージが直近58秒で11回発生（8件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":29,"key_not_in_response":3}
+2026-08-03T09:52:58.945Z [WARN ] (集約) 同種メッセージが直近50秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":30,"key_not_in_response":1}
+2026-08-03T09:52:58.945Z [WARN ] (集約) 同種メッセージが直近42秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"home","batchSize":26,"key_not_in_response":4}
+2026-08-03T09:52:58.945Z [WARN ] (集約) 同種メッセージが直近24秒で5回発生（2件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 50
+2026-08-03T09:53:00.502Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":15}
+2026-08-03T09:53:01.594Z [WARN ] [detail] API returned partial data maniax got 17 / requested 50
+2026-08-03T09:53:01.614Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":33}
+2026-08-03T09:53:01.863Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":17}
+2026-08-03T09:53:01.909Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":16,"no_price_field":1}
+2026-08-03T09:53:10.799Z [WARN ] [db] slow transaction (transactionNoSave): 400ms {"dbSizeMB":412.1}
+2026-08-03T09:53:10.805Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 50
+2026-08-03T09:53:11.540Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 50
+2026-08-03T09:53:11.541Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:53:12.328Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 25
+2026-08-03T09:53:12.697Z [WARN ] [detail] API returned partial data maniax got 18 / requested 50
+2026-08-03T09:53:17.930Z [WARN ] [db] slow transaction (transactionNoSave): 701ms {"dbSizeMB":412.1}
+2026-08-03T09:53:19.687Z [WARN ] [detail] API returned partial data maniax got 21 / requested 50
+2026-08-03T09:53:24.512Z [WARN ] [db] slow transaction (transactionNoSave): 397ms {"dbSizeMB":412.1}
+2026-08-03T09:53:29.874Z [WARN ] [db] slow transaction (transactionNoSave): 372ms {"dbSizeMB":412.1}
+2026-08-03T09:53:36.815Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":4,"key_not_in_response":1}
+2026-08-03T09:53:39.685Z [WARN ] [db] slow transaction (transactionNoSave): 371ms {"dbSizeMB":412.1}
+2026-08-03T09:53:58.959Z [WARN ] (集約) 同種メッセージが直近58秒で59回発生（56件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":15}
+2026-08-03T09:53:58.959Z [WARN ] (集約) 同種メッセージが直近57秒で6回発生（3件を抑制）／ 例: [detail] API returned partial data maniax got 17 / requested 50
+2026-08-03T09:53:58.960Z [WARN ] (集約) 同種メッセージが直近48秒で4回発生（1件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 50
+2026-08-03T09:54:04.294Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":11}
+2026-08-03T09:54:04.548Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":48,"key_not_in_response":15}
+2026-08-03T09:54:05.560Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":10}
+2026-08-03T09:54:11.996Z [WARN ] [db] slow transaction (transactionNoSave): 328ms {"dbSizeMB":412.1}
+2026-08-03T09:54:28.294Z [WARN ] [detail] API returned partial data maniax got 4 / requested 16
+2026-08-03T09:54:29.726Z [WARN ] [detail] API returned partial data maniax got 10 / requested 50
+2026-08-03T09:54:29.773Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 9 / requested 50
+2026-08-03T09:54:30.513Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 9 / requested 50
+2026-08-03T09:54:30.514Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:54:31.186Z [WARN ] [detail] API returned partial data maniax got 6 / requested 25
+2026-08-03T09:54:32.668Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 25
+2026-08-03T09:54:38.167Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:54:40.399Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ011785,RJ011842
+2026-08-03T09:54:53.942Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:54:55.945Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ012243,RJ003238
+2026-08-03T09:54:58.150Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":28,"key_not_in_response":3}
+2026-08-03T09:54:58.970Z [WARN ] (集約) 同種メッセージが直近55秒で44回発生（41件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":11}
+2026-08-03T09:54:58.971Z [WARN ] (集約) 同種メッセージが直近31秒で5回発生（2件を抑制）／ 例: [detail] API returned partial data maniax got 4 / requested 16
+2026-08-03T09:54:58.971Z [WARN ] (集約) 同種メッセージが直近29秒で8回発生（5件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 9 / requested 50
+2026-08-03T09:55:00.315Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":9}
+2026-08-03T09:55:01.404Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":45,"key_not_in_response":1}
+2026-08-03T09:55:02.757Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":26,"key_not_in_response":1}
+2026-08-03T09:55:02.995Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":15}
+2026-08-03T09:55:06.998Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T09:55:07.736Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T09:55:07.737Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:55:08.430Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 25
+2026-08-03T09:55:11.641Z [WARN ] [db] slow transaction (transactionNoSave): 319ms {"dbSizeMB":412.1}
+2026-08-03T09:55:12.327Z [WARN ] [detail] API returned partial data maniax got 4 / requested 9
+2026-08-03T09:55:15.217Z [WARN ] [detail] API returned partial data maniax got 1 / requested 4
+2026-08-03T09:55:15.571Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":6}
+2026-08-03T09:55:15.604Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":3}
+2026-08-03T09:55:16.171Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":2}
+2026-08-03T09:55:24.237Z [WARN ] [detail] API returned partial data maniax got 12 / requested 50
+2026-08-03T09:55:27.493Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":7}
+2026-08-03T09:55:30.999Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":30,"key_not_in_response":1}
+2026-08-03T09:55:33.108Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":27,"key_not_in_response":1}
+2026-08-03T09:55:41.091Z [WARN ] [db] slow transaction (transactionNoSave): 308ms {"dbSizeMB":412.1}
+2026-08-03T09:55:51.038Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-08-03T09:55:53.255Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":34,"no_price_field":1,"key_not_in_response":14}
+2026-08-03T09:55:58.971Z [WARN ] (集約) 同種メッセージが直近59秒で17回発生（14件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":9}
+2026-08-03T09:55:58.972Z [WARN ] (集約) 同種メッセージが直近56秒で22回発生（19件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":26,"key_not_in_response":1}
+2026-08-03T09:55:58.972Z [WARN ] (集約) 同種メッセージが直近52秒で4回発生（1件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T09:55:58.973Z [WARN ] (集約) 同種メッセージが直近47秒で4回発生（1件を抑制）／ 例: [detail] API returned partial data maniax got 4 / requested 9
+2026-08-03T09:55:58.973Z [WARN ] (集約) 同種メッセージが直近43秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":6}
+2026-08-03T09:56:01.989Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":3}
+2026-08-03T09:56:05.404Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":17,"no_price_field":1}
+2026-08-03T09:56:07.157Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":10,"key_not_in_response":1}
+2026-08-03T09:56:08.737Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1,"key_not_in_response":3}
+2026-08-03T09:56:09.152Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":39,"key_not_in_response":5}
+2026-08-03T09:56:12.853Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":17,"no_price_field":1}
+2026-08-03T09:56:13.147Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":13}
+2026-08-03T09:56:13.374Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T09:56:13.517Z [WARN ] [detail] API returned partial data maniax got 8 / requested 22
+2026-08-03T09:56:13.536Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":22,"key_not_in_response":14}
+2026-08-03T09:56:18.299Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ003151,RJ012154
+2026-08-03T09:56:19.032Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ003151,RJ012154
+2026-08-03T09:56:19.033Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:56:19.088Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ010321,RJ010465
+2026-08-03T09:56:19.673Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2}
+2026-08-03T09:56:19.830Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T09:56:19.831Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T09:56:20.583Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:56:58.976Z [WARN ] (集約) 同種メッセージが直近41秒で7回発生（4件を抑制）／ 例: [detail] API returned empty object maniax requested 50件 sample: RJ003151,RJ012154
+2026-08-03T09:57:37.205Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T09:57:40.564Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":35,"key_not_in_response":7}
+2026-08-03T09:58:35.139Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":3,"key_not_in_response":1}
+2026-08-03T10:00:53.707Z [WARN ] [db] slow transaction (transactionNoSave): 304ms {"dbSizeMB":412.1}
+2026-08-03T10:01:25.169Z [WARN ] [db] slow transaction (transactionNoSave): 364ms {"dbSizeMB":412.1}
+2026-08-03T10:01:49.663Z [WARN ] [detail] API returned empty object home requested 1件 sample: RJ01503087
+2026-08-03T10:01:50.394Z [WARN ] [detail] API returned empty object home requested 1件 sample: RJ01503087
+2026-08-03T10:02:05.307Z [WARN ] [db] slow transaction (transactionNoSave): 316ms {"dbSizeMB":412.1}
+2026-08-03T10:02:39.022Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 50
+2026-08-03T10:02:39.751Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 50
+2026-08-03T10:02:39.752Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:02:40.530Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 25
+2026-08-03T10:02:41.825Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ415256,RJ01501805
+2026-08-03T10:02:46.157Z [WARN ] [detail] API returned partial data maniax got 19 / requested 50
+2026-08-03T10:02:46.227Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":31}
+2026-08-03T10:02:49.163Z [WARN ] [detail] API returned partial data maniax got 17 / requested 50
+2026-08-03T10:02:49.218Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":33}
+2026-08-03T10:02:52.438Z [WARN ] [detail] API returned partial data maniax got 10 / requested 50
+2026-08-03T10:02:52.674Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":40}
+2026-08-03T10:02:55.821Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01533303,RJ387098
+2026-08-03T10:02:56.553Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01533303,RJ387098
+2026-08-03T10:02:56.555Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:02:59.022Z [WARN ] (集約) 同種メッセージが直近17秒で5回発生（2件を抑制）／ 例: [detail] API returned empty object maniax requested 25件 sample: RJ415256,RJ01501805
+2026-08-03T10:03:01.340Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 1 / requested 38
+2026-08-03T10:03:01.340Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:03:01.340Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:04:28.642Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:06:18.472Z [WARN ] [db] slow transaction (transactionNoSave): 307ms {"dbSizeMB":412.1}
+2026-08-03T10:07:27.009Z [WARN ] [db] slow transaction (transactionNoSave): 347ms {"dbSizeMB":412.1}
+2026-08-03T10:09:21.909Z [WARN ] [db] slow transaction (transactionNoSave): 338ms {"dbSizeMB":412.1}
+2026-08-03T10:09:29.226Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:09:33.356Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":15}
+2026-08-03T10:09:37.294Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":5}
+2026-08-03T10:09:40.104Z [WARN ] [detail] API returned partial data maniax got 13 / requested 50
+2026-08-03T10:09:40.182Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 6 / requested 50
+2026-08-03T10:09:40.420Z [WARN ] [detail] API returned partial data maniax got 18 / requested 50
+2026-08-03T10:09:40.909Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 6 / requested 50
+2026-08-03T10:09:40.910Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:09:41.525Z [WARN ] [detail] API returned partial data maniax got 6 / requested 25
+2026-08-03T10:09:41.773Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:09:42.504Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:09:42.852Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01103132,RJ01102386
+2026-08-03T10:09:42.964Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:09:42.964Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:09:59.053Z [WARN ] (集約) 同種メッセージが直近30秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:09:59.053Z [WARN ] (集約) 同種メッセージが直近19秒で4回発生（1件を抑制）／ 例: [detail] API returned partial data maniax got 13 / requested 50
+2026-08-03T10:09:59.053Z [WARN ] (集約) 同種メッセージが直近19秒で6回発生（3件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 6 / requested 50
+2026-08-03T10:10:10.688Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html/?locale=ja_JP","title":"【90%OFF】処女ビッチたちのチ●ポシェア～俺の部屋に入り浸る二人の制服女子との3P性活で素人童貞を卒業した話～ [スタジオ山ロマン] | DLsite 同人 - R18","readyState":"complete","bodyLen":312709,"isLoading":false}
+2026-08-03T10:11:10.334Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:12:09.184Z [WARN ] [detail] API returned empty object girls requested 4件 sample: RJ01615985,RJ01673713
+2026-08-03T10:12:09.916Z [WARN ] [detail] API returned empty object girls requested 4件 sample: RJ01615985,RJ01673713
+2026-08-03T10:12:09.916Z [WARN ] [detail] batch fail, splitting 4
+2026-08-03T10:12:10.373Z [WARN ] [detail] API returned empty object girls requested 2件 sample: RJ01615985,RJ01673713
+2026-08-03T10:12:59.058Z [WARN ] (集約) 同種メッセージが直近50秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 4件 sample: RJ01615985,RJ01673713
+2026-08-03T10:13:42.114Z [WARN ] [db] slow transaction (transactionNoSave): 456ms {"dbSizeMB":412.1}
+2026-08-03T10:15:53.047Z [WARN ] [db] slow transaction (transactionNoSave): 311ms {"dbSizeMB":412.1}
+2026-08-03T10:16:16.107Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:16:27.190Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":21}
+2026-08-03T10:16:28.866Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":8}
+2026-08-03T10:16:34.607Z [WARN ] [detail] API returned partial data maniax got 23 / requested 50
+2026-08-03T10:16:38.742Z [WARN ] [detail] API returned partial data maniax got 14 / requested 50
+2026-08-03T10:16:40.544Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 49
+2026-08-03T10:16:41.274Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 49
+2026-08-03T10:16:41.275Z [WARN ] [detail] batch fail, splitting 49
+2026-08-03T10:16:41.890Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 2 / requested 25
+2026-08-03T10:16:43.313Z [WARN ] [detail] API returned partial data maniax got 6 / requested 24
+2026-08-03T10:16:47.293Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01614715,RJ01618385
+2026-08-03T10:16:48.026Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01614715,RJ01618385
+2026-08-03T10:16:48.027Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:16:48.744Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01614715,RJ01618385
+2026-08-03T10:16:49.237Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:16:49.237Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:16:50.364Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:16:59.088Z [WARN ] (集約) 同種メッセージが直近43秒で17回発生（14件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:16:59.088Z [WARN ] (集約) 同種メッセージが直近24秒で5回発生（2件を抑制）／ 例: [detail] API returned partial data maniax got 23 / requested 50
+2026-08-03T10:16:59.089Z [WARN ] (集約) 同種メッセージが直近19秒で7回発生（4件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 49
+2026-08-03T10:18:13.665Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:20:52.792Z [WARN ] [db] slow transaction (transactionNoSave): 384ms {"dbSizeMB":412.1}
+2026-08-03T10:21:43.662Z [WARN ] [db] slow transaction (transactionNoSave): 316ms {"dbSizeMB":412.1}
+2026-08-03T10:22:26.409Z [WARN ] [db] slow transaction (transactionNoSave): 351ms {"dbSizeMB":412.1}
+2026-08-03T10:22:26.972Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":1,"no_price_field":1}
+2026-08-03T10:23:06.745Z [WARN ] [db] slow transaction (transactionNoSave): 345ms {"dbSizeMB":412.1}
+2026-08-03T10:23:16.886Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":17}
+2026-08-03T10:23:27.545Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":13}
+2026-08-03T10:23:34.062Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":18}
+2026-08-03T10:23:44.253Z [WARN ] [db] slow transaction (transactionNoSave): 351ms {"dbSizeMB":412.1}
+2026-08-03T10:23:51.403Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50
+2026-08-03T10:23:52.129Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50
+2026-08-03T10:23:52.130Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:23:52.744Z [WARN ] [detail] API returned partial data maniax got 16 / requested 48
+2026-08-03T10:23:52.945Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 2 / requested 25
+2026-08-03T10:23:55.913Z [WARN ] [detail] API returned partial data maniax got 22 / requested 50
+2026-08-03T10:23:58.202Z [WARN ] [detail] API returned partial data maniax got 11 / requested 50
+2026-08-03T10:23:58.539Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:23:59.134Z [WARN ] (集約) 同種メッセージが直近42秒で18回発生（15件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":17}
+2026-08-03T10:23:59.134Z [WARN ] (集約) 同種メッセージが直近8秒で6回発生（3件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50
+2026-08-03T10:23:59.251Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01611503,RJ01608497
+2026-08-03T10:23:59.341Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:23:59.943Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 5 / requested 50
+2026-08-03T10:24:00.072Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:24:00.072Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:24:00.073Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:24:00.678Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:24:16.400Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/home/","title":"同人誌・同人ゲーム・同人ボイス・ASMRのダウンロードなら「DLsite 同人」","readyState":"complete","bodyLen":642845,"isLoading":false}
+2026-08-03T10:24:59.139Z [WARN ] (集約) 同種メッセージが直近60秒で5回発生（2件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:25:14.318Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:25:25.986Z [WARN ] [api] turbo: エラー率が高水準です(26.6% — 13277/49950件)。turboConcurrency/turboRateLimit(config.fetch)の負荷設定見直しを検討してください。
+2026-08-04T00:00:02.545Z [WARN ] [detail] API returned empty object bl requested 1件 sample: RJ01628879
+2026-08-04T00:00:02.583Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 15
+2026-08-04T00:00:04.198Z [WARN ] [detail] API returned empty object bl requested 1件 sample: RJ01628879
+2026-08-04T00:00:04.207Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 15
+2026-08-04T00:00:04.209Z [WARN ] [detail] batch fail, splitting 15
+2026-08-04T00:00:04.528Z [WARN ] [detail] API returned empty object girls requested 8件 sample: RJ01550271,RJ01622400
+2026-08-04T00:00:06.346Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 7
+2026-08-04T00:00:08.720Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"verify_rescued":9}
+2026-08-04T00:00:10.925Z [WARN ] [db] slow transaction (transactionNoSave): 959ms {"dbSizeMB":412.1}
+2026-08-04T00:10:25.186Z [WARN ] [db] slow transaction (transactionNoSave): 869ms {"dbSizeMB":412.1}

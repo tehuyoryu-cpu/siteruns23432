@@ -1,0 +1,799 @@
+{"ts":"2026-08-03T10:21:05.282Z","level":"trace","msg":"[detail] key not in API response RJ01490439 available: RJ01065782, RJ1065782, RJ01080727"}
+{"ts":"2026-08-03T10:21:05.282Z","level":"trace","msg":"[detail] key not in API response RJ01489779 available: RJ01065782, RJ1065782, RJ01080727"}
+{"ts":"2026-08-03T10:21:05.282Z","level":"trace","msg":"[detail] key not in API response RJ01489774 available: RJ01065782, RJ1065782, RJ01080727"}
+{"ts":"2026-08-03T10:21:08.457Z","level":"trace","msg":"[detail] key not in API response RJ01489499 available: RJ01101971, RJ1101971, RJ01186373"}
+{"ts":"2026-08-03T10:21:08.473Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01530406\",\"price\":770,\"sale_price\":385,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:21:11.710Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01314328\",\"price\":660,\"sale_price\":462,\"point\":null,\"point_rate\":null,\"discount_rate\":30,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:21:11.724Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01418485\",\"price\":770,\"sale_price\":385,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:21:15.108Z","level":"trace","msg":"[detail] key not in API response RJ01229227 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.108Z","level":"trace","msg":"[detail] key not in API response RJ01452051 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.116Z","level":"trace","msg":"[detail] key not in API response RJ01486686 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.116Z","level":"trace","msg":"[detail] key not in API response RJ01486638 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.116Z","level":"trace","msg":"[detail] key not in API response RJ01486584 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.117Z","level":"trace","msg":"[detail] key not in API response RJ01486011 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.117Z","level":"trace","msg":"[detail] key not in API response RJ01486938 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.120Z","level":"trace","msg":"[detail] key not in API response RJ01483577 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.120Z","level":"trace","msg":"[detail] key not in API response RJ01482553 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.121Z","level":"trace","msg":"[detail] key not in API response RJ01482344 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:15.121Z","level":"trace","msg":"[detail] key not in API response RJ01482343 available: RJ01027701, RJ1027701, RJ01139969"}
+{"ts":"2026-08-03T10:21:18.257Z","level":"trace","msg":"[detail] key not in API response RJ01479995 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.258Z","level":"trace","msg":"[detail] key not in API response RJ01479510 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.298Z","level":"trace","msg":"[detail] key not in API response RJ01474667 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.298Z","level":"trace","msg":"[detail] key not in API response RJ01470870 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.299Z","level":"trace","msg":"[detail] key not in API response RJ01470860 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.299Z","level":"trace","msg":"[detail] key not in API response RJ01475948 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.300Z","level":"trace","msg":"[detail] key not in API response RJ01455886 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.301Z","level":"trace","msg":"[detail] key not in API response RJ01479807 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:18.302Z","level":"trace","msg":"[detail] key not in API response RJ01468775 available: RJ01080948, RJ1080948, RJ01088838"}
+{"ts":"2026-08-03T10:21:43.662Z","level":"warn","msg":"[db] slow transaction (transactionNoSave): 316ms {\"dbSizeMB\":412.1}"}
+{"ts":"2026-08-03T10:21:46.795Z","level":"trace","msg":"[detail] key not in API response RJ01336405 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.796Z","level":"trace","msg":"[detail] key not in API response RJ225420 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.810Z","level":"trace","msg":"[detail] key not in API response RJ01195155 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.810Z","level":"trace","msg":"[detail] key not in API response RJ319545 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.810Z","level":"trace","msg":"[detail] key not in API response RJ172334 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.810Z","level":"trace","msg":"[detail] key not in API response RJ01560706 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ217124 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ230764 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ155961 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ207867 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ097093 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ325070 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.811Z","level":"trace","msg":"[detail] key not in API response RJ107680 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.812Z","level":"trace","msg":"[detail] key not in API response RJ297896 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.812Z","level":"trace","msg":"[detail] key not in API response RJ344723 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.812Z","level":"trace","msg":"[detail] key not in API response RJ184221 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.812Z","level":"trace","msg":"[detail] key not in API response RJ01075671 available: RJ01043749, RJ1043749, RJ01069758"}
+{"ts":"2026-08-03T10:21:46.831Z","level":"info","msg":"[detail] due batch: 500 (total so far: 47500 ) concurrency=3"}
+{"ts":"2026-08-03T10:22:01.295Z","level":"trace","msg":"[detail] key not in API response RJ01470250 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.295Z","level":"trace","msg":"[detail] key not in API response RJ01469439 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.296Z","level":"trace","msg":"[detail] key not in API response RJ01469329 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.297Z","level":"trace","msg":"[detail] key not in API response RJ01467156 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.298Z","level":"trace","msg":"[detail] key not in API response RJ01463891 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.299Z","level":"trace","msg":"[detail] key not in API response RJ01463879 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.299Z","level":"trace","msg":"[detail] key not in API response RJ01462998 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.300Z","level":"trace","msg":"[detail] key not in API response RJ01462155 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.300Z","level":"trace","msg":"[detail] key not in API response RJ01647368 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.303Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01675302\",\"price\":1650,\"sale_price\":1237,\"point\":null,\"point_rate\":null,\"discount_rate\":25,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:22:01.303Z","level":"trace","msg":"[detail] key not in API response RJ01674920 available: RJ009115, RJ9115, RJ01011434"}
+{"ts":"2026-08-03T10:22:01.305Z","level":"info","msg":"[detail] circle sale end RG01039230"}
+{"ts":"2026-08-03T10:22:01.305Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01674138\",\"price\":0,\"sale_price\":null,\"point\":null,\"point_rate\":null,\"discount_rate\":null,\"is_on_sale\":0,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:22:04.499Z","level":"trace","msg":"[detail] key not in API response RJ190043 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.516Z","level":"trace","msg":"[detail] key not in API response RJ01461358 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.517Z","level":"trace","msg":"[detail] key not in API response RJ01460936 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.518Z","level":"trace","msg":"[detail] key not in API response RJ01459670 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.519Z","level":"trace","msg":"[detail] key not in API response RJ01459772 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.519Z","level":"trace","msg":"[detail] key not in API response RJ01456441 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.519Z","level":"trace","msg":"[detail] key not in API response RJ01455716 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.519Z","level":"trace","msg":"[detail] key not in API response RJ01452135 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.520Z","level":"trace","msg":"[detail] key not in API response RJ01454723 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.520Z","level":"trace","msg":"[detail] key not in API response RJ01435340 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:04.520Z","level":"trace","msg":"[detail] key not in API response RJ01458724 available: RJ01011962, RJ1011962, RJ01084631"}
+{"ts":"2026-08-03T10:22:08.341Z","level":"trace","msg":"[detail] key not in API response RJ01452140 available: RJ01050922, RJ1050922, RJ01059824"}
+{"ts":"2026-08-03T10:22:08.342Z","level":"trace","msg":"[detail] key not in API response RJ01456781 available: RJ01050922, RJ1050922, RJ01059824"}
+{"ts":"2026-08-03T10:22:11.734Z","level":"trace","msg":"[detail] key not in API response RJ01453543 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.734Z","level":"trace","msg":"[detail] key not in API response RJ01451544 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.734Z","level":"trace","msg":"[detail] key not in API response RJ01434135 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.734Z","level":"trace","msg":"[detail] key not in API response RJ01431573 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.735Z","level":"trace","msg":"[detail] key not in API response RJ01402406 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.735Z","level":"trace","msg":"[detail] key not in API response RJ01423706 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.735Z","level":"trace","msg":"[detail] key not in API response RJ01451952 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.736Z","level":"trace","msg":"[detail] key not in API response RJ01451302 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:11.736Z","level":"trace","msg":"[detail] key not in API response RJ01449070 available: RJ01366853, RJ1366853, RJ01375769"}
+{"ts":"2026-08-03T10:22:15.404Z","level":"trace","msg":"[detail] key not in API response RJ01449040 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.405Z","level":"trace","msg":"[detail] key not in API response RJ01448399 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.405Z","level":"trace","msg":"[detail] key not in API response RJ01454504 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.405Z","level":"trace","msg":"[detail] key not in API response RJ01448427 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.408Z","level":"trace","msg":"[detail] key not in API response RJ01447941 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.408Z","level":"trace","msg":"[detail] key not in API response RJ01447003 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.408Z","level":"trace","msg":"[detail] key not in API response RJ01445997 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.409Z","level":"trace","msg":"[detail] key not in API response RJ01445327 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.409Z","level":"trace","msg":"[detail] key not in API response RJ01445126 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.410Z","level":"trace","msg":"[detail] key not in API response RJ01444093 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.410Z","level":"trace","msg":"[detail] key not in API response RJ01432946 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.411Z","level":"trace","msg":"[detail] key not in API response RJ01448104 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.412Z","level":"trace","msg":"[detail] key not in API response RJ01429596 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.412Z","level":"trace","msg":"[detail] key not in API response RJ01441480 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.412Z","level":"trace","msg":"[detail] key not in API response RJ01441437 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.414Z","level":"trace","msg":"[detail] key not in API response RJ01439885 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.414Z","level":"trace","msg":"[detail] key not in API response RJ01438908 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.415Z","level":"trace","msg":"[detail] key not in API response RJ01440705 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.415Z","level":"trace","msg":"[detail] key not in API response RJ01429593 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.415Z","level":"trace","msg":"[detail] key not in API response RJ01434837 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.416Z","level":"trace","msg":"[detail] key not in API response RJ01434406 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.416Z","level":"trace","msg":"[detail] key not in API response RJ01432898 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.418Z","level":"trace","msg":"[detail] key not in API response RJ01432077 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.419Z","level":"trace","msg":"[detail] key not in API response RJ01431801 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.421Z","level":"trace","msg":"[detail] key not in API response RJ01430649 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.421Z","level":"trace","msg":"[detail] key not in API response RJ01443821 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.422Z","level":"trace","msg":"[detail] key not in API response RJ01441328 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:15.422Z","level":"trace","msg":"[detail] key not in API response RJ01385318 available: RJ01378222, RJ1378222, RJ01381328"}
+{"ts":"2026-08-03T10:22:18.890Z","level":"trace","msg":"[detail] key not in API response RJ397588 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.891Z","level":"trace","msg":"[detail] key not in API response RJ296837 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.892Z","level":"trace","msg":"[detail] key not in API response RJ01461974 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.892Z","level":"trace","msg":"[detail] key not in API response RJ01429883 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.893Z","level":"trace","msg":"[detail] key not in API response RJ01429918 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.896Z","level":"trace","msg":"[detail] key not in API response RJ01403898 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.897Z","level":"trace","msg":"[detail] key not in API response RJ01402332 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.897Z","level":"trace","msg":"[detail] key not in API response RJ01403886 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.898Z","level":"trace","msg":"[detail] key not in API response RJ01403725 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.899Z","level":"trace","msg":"[detail] key not in API response RJ01403620 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.901Z","level":"trace","msg":"[detail] key not in API response RJ01402999 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.902Z","level":"trace","msg":"[detail] key not in API response RJ01403366 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.904Z","level":"trace","msg":"[detail] key not in API response RJ01400374 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.905Z","level":"trace","msg":"[detail] key not in API response RJ01402006 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.906Z","level":"trace","msg":"[detail] key not in API response RJ01375157 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.908Z","level":"trace","msg":"[detail] key not in API response RJ01397604 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.909Z","level":"trace","msg":"[detail] key not in API response RJ01398753 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.910Z","level":"trace","msg":"[detail] key not in API response RJ01395030 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.911Z","level":"trace","msg":"[detail] key not in API response RJ01375154 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.911Z","level":"trace","msg":"[detail] key not in API response RJ01391874 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.912Z","level":"trace","msg":"[detail] key not in API response RJ01391855 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.913Z","level":"trace","msg":"[detail] key not in API response RJ01393495 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.914Z","level":"trace","msg":"[detail] key not in API response RJ01389807 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.915Z","level":"trace","msg":"[detail] key not in API response RJ01389426 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.916Z","level":"trace","msg":"[detail] key not in API response RJ01389109 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.916Z","level":"trace","msg":"[detail] key not in API response RJ01388564 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.917Z","level":"trace","msg":"[detail] key not in API response RJ01388337 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.919Z","level":"trace","msg":"[detail] key not in API response RJ01387597 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.921Z","level":"trace","msg":"[detail] key not in API response RJ01375142 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.921Z","level":"trace","msg":"[detail] key not in API response RJ01379879 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.922Z","level":"trace","msg":"[detail] key not in API response RJ01386227 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.922Z","level":"trace","msg":"[detail] key not in API response RJ01404548 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.930Z","level":"trace","msg":"[detail] key not in API response RJ01676711 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.931Z","level":"trace","msg":"[detail] key not in API response RJ01671241 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.932Z","level":"trace","msg":"[detail] key not in API response RJ01670940 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.932Z","level":"trace","msg":"[detail] key not in API response RJ01670936 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:18.933Z","level":"trace","msg":"[detail] key not in API response RJ01670931 available: RJ01388229, RJ1388229, RJ01393259"}
+{"ts":"2026-08-03T10:22:22.569Z","level":"trace","msg":"[detail] key not in API response RJ01670485 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.570Z","level":"trace","msg":"[detail] key not in API response RJ01670469 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.570Z","level":"trace","msg":"[detail] key not in API response RJ01418403 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.571Z","level":"trace","msg":"[detail] key not in API response RJ01401835 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.571Z","level":"trace","msg":"[detail] key not in API response RJ01392118 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.572Z","level":"trace","msg":"[detail] key not in API response RJ01427201 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.572Z","level":"trace","msg":"[detail] key not in API response RJ01415103 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.573Z","level":"trace","msg":"[detail] key not in API response RJ01413176 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.573Z","level":"trace","msg":"[detail] key not in API response RJ01407839 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.573Z","level":"trace","msg":"[detail] key not in API response RJ01429226 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.574Z","level":"trace","msg":"[detail] key not in API response RJ01429908 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.574Z","level":"trace","msg":"[detail] key not in API response RJ01429506 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.575Z","level":"trace","msg":"[detail] key not in API response RJ01428517 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.575Z","level":"trace","msg":"[detail] key not in API response RJ01428206 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.575Z","level":"trace","msg":"[detail] key not in API response RJ01404235 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.578Z","level":"trace","msg":"[detail] key not in API response RJ01424054 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.578Z","level":"trace","msg":"[detail] key not in API response RJ01421959 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.580Z","level":"trace","msg":"[detail] key not in API response RJ01422702 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.580Z","level":"trace","msg":"[detail] key not in API response RJ01404233 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.581Z","level":"trace","msg":"[detail] key not in API response RJ01422085 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.582Z","level":"trace","msg":"[detail] key not in API response RJ01421539 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.583Z","level":"trace","msg":"[detail] key not in API response RJ01421330 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.584Z","level":"trace","msg":"[detail] key not in API response RJ01421322 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.589Z","level":"trace","msg":"[detail] key not in API response RJ01404227 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.590Z","level":"trace","msg":"[detail] key not in API response RJ01419468 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.591Z","level":"trace","msg":"[detail] key not in API response RJ01416281 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.591Z","level":"trace","msg":"[detail] key not in API response RJ01415777 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.592Z","level":"trace","msg":"[detail] key not in API response RJ01415173 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.593Z","level":"trace","msg":"[detail] key not in API response RJ01388043 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.594Z","level":"trace","msg":"[detail] key not in API response RJ01408641 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.594Z","level":"trace","msg":"[detail] key not in API response RJ01412373 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.595Z","level":"trace","msg":"[detail] key not in API response RJ01412257 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.595Z","level":"trace","msg":"[detail] key not in API response RJ01409905 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.595Z","level":"trace","msg":"[detail] key not in API response RJ01409896 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.596Z","level":"trace","msg":"[detail] key not in API response RJ01409868 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.597Z","level":"trace","msg":"[detail] key not in API response RJ01409835 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.597Z","level":"trace","msg":"[detail] key not in API response RJ01409821 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.597Z","level":"trace","msg":"[detail] key not in API response RJ01409299 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.599Z","level":"trace","msg":"[detail] key not in API response RJ01388037 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:22.600Z","level":"trace","msg":"[detail] key not in API response RJ01406430 available: RJ01402928, RJ1402928, RJ01405681"}
+{"ts":"2026-08-03T10:22:26.057Z","level":"trace","msg":"[detail] key not in API response RJ01404739 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.058Z","level":"trace","msg":"[detail] key not in API response RJ01403576 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.087Z","level":"trace","msg":"[detail] key not in API response RJ311363 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.088Z","level":"trace","msg":"[detail] key not in API response RJ254478 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.089Z","level":"trace","msg":"[detail] key not in API response RJ362939 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.089Z","level":"trace","msg":"[detail] key not in API response RJ198392 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.090Z","level":"trace","msg":"[detail] key not in API response RJ01454770 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.091Z","level":"trace","msg":"[detail] key not in API response RJ301875 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.091Z","level":"trace","msg":"[detail] key not in API response RJ01631959 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.092Z","level":"trace","msg":"[detail] key not in API response RJ01649891 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.095Z","level":"trace","msg":"[detail] key not in API response RJ034454 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.096Z","level":"trace","msg":"[detail] key not in API response RJ193696 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.096Z","level":"trace","msg":"[detail] key not in API response RJ138079 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.097Z","level":"trace","msg":"[detail] key not in API response RJ01511240 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.098Z","level":"trace","msg":"[detail] key not in API response RJ310526 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.100Z","level":"trace","msg":"[detail] key not in API response RJ222431 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.101Z","level":"trace","msg":"[detail] key not in API response RJ286004 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.101Z","level":"trace","msg":"[detail] key not in API response RJ01555231 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.102Z","level":"trace","msg":"[detail] key not in API response RJ01636222 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.102Z","level":"trace","msg":"[detail] key not in API response RJ01646560 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.103Z","level":"trace","msg":"[detail] key not in API response RJ01418897 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.103Z","level":"trace","msg":"[detail] key not in API response RJ156384 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.104Z","level":"trace","msg":"[detail] key not in API response RJ092443 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.105Z","level":"trace","msg":"[detail] key not in API response RJ361394 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.106Z","level":"trace","msg":"[detail] key not in API response RJ279577 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.109Z","level":"trace","msg":"[detail] key not in API response RJ01653301 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.110Z","level":"trace","msg":"[detail] key not in API response RJ01653370 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.110Z","level":"trace","msg":"[detail] key not in API response RJ252852 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.111Z","level":"trace","msg":"[detail] key not in API response RJ01630531 available: RJ01318207, RJ1318207, RJ01332053"}
+{"ts":"2026-08-03T10:22:26.409Z","level":"warn","msg":"[db] slow transaction (transactionNoSave): 351ms {\"dbSizeMB\":412.1}"}
+{"ts":"2026-08-03T10:22:26.453Z","level":"info","msg":"[detail] due batch: 500 (total so far: 48000 ) concurrency=3"}
+{"ts":"2026-08-03T10:22:26.966Z","level":"trace","msg":"[parser] no usable price field at all RJ01596467 {\"price\":null,\"official_price\":null}"}
+{"ts":"2026-08-03T10:22:26.972Z","level":"warn","msg":"[detail] batch issues summary {\"site\":\"girls\",\"batchSize\":1,\"no_price_field\":1}"}
+{"ts":"2026-08-03T10:22:33.407Z","level":"trace","msg":"[detail] key not in API response RJ01136797 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.409Z","level":"trace","msg":"[detail] key not in API response RJ01386252 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.430Z","level":"trace","msg":"[detail] key not in API response RJ365703 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.431Z","level":"trace","msg":"[detail] key not in API response RJ291553 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.431Z","level":"trace","msg":"[detail] key not in API response RJ01485497 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.432Z","level":"trace","msg":"[detail] key not in API response RJ01634187 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.433Z","level":"trace","msg":"[detail] key not in API response RJ117903 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.433Z","level":"trace","msg":"[detail] key not in API response RJ138136 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.433Z","level":"trace","msg":"[detail] key not in API response RJ335778 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.434Z","level":"trace","msg":"[detail] key not in API response RJ01215830 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.434Z","level":"trace","msg":"[detail] key not in API response RJ01470424 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.435Z","level":"trace","msg":"[detail] key not in API response RJ179784 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.435Z","level":"trace","msg":"[detail] key not in API response RJ084436 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.436Z","level":"trace","msg":"[detail] key not in API response RJ194761 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.436Z","level":"trace","msg":"[detail] key not in API response RJ233395 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.436Z","level":"trace","msg":"[detail] key not in API response RJ142314 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.437Z","level":"trace","msg":"[detail] key not in API response RJ287200 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.438Z","level":"trace","msg":"[detail] key not in API response RJ01626344 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.439Z","level":"trace","msg":"[detail] key not in API response RJ262651 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.440Z","level":"trace","msg":"[detail] key not in API response RJ297444 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.441Z","level":"trace","msg":"[detail] key not in API response RJ304419 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.441Z","level":"trace","msg":"[detail] key not in API response RJ087829 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.442Z","level":"trace","msg":"[detail] key not in API response RJ224179 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.443Z","level":"trace","msg":"[detail] key not in API response RJ201299 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.443Z","level":"trace","msg":"[detail] key not in API response RJ204254 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.444Z","level":"trace","msg":"[detail] key not in API response RJ01464921 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.444Z","level":"trace","msg":"[detail] key not in API response RJ01627778 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.445Z","level":"trace","msg":"[detail] key not in API response RJ212469 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.445Z","level":"trace","msg":"[detail] key not in API response RJ01307162 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.446Z","level":"trace","msg":"[detail] key not in API response RJ157134 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:33.446Z","level":"trace","msg":"[detail] key not in API response RJ01579222 available: RJ01315674, RJ1315674, RJ01345429"}
+{"ts":"2026-08-03T10:22:36.902Z","level":"trace","msg":"[detail] key not in API response RJ248907 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.903Z","level":"trace","msg":"[detail] key not in API response RJ01256285 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.904Z","level":"trace","msg":"[detail] key not in API response RJ01519654 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.905Z","level":"trace","msg":"[detail] key not in API response RJ226352 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.907Z","level":"trace","msg":"[detail] key not in API response RJ183604 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.909Z","level":"trace","msg":"[detail] key not in API response RJ01261680 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.911Z","level":"trace","msg":"[detail] key not in API response RJ085191 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.911Z","level":"trace","msg":"[detail] key not in API response RJ01352991 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.912Z","level":"trace","msg":"[detail] key not in API response RJ227584 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.913Z","level":"trace","msg":"[detail] key not in API response RJ01489201 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.914Z","level":"trace","msg":"[detail] key not in API response RJ332553 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.915Z","level":"trace","msg":"[detail] key not in API response RJ01508676 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.915Z","level":"trace","msg":"[detail] key not in API response RJ01196624 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.916Z","level":"trace","msg":"[detail] key not in API response RJ096409 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.916Z","level":"trace","msg":"[detail] key not in API response RJ01629140 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.917Z","level":"trace","msg":"[detail] key not in API response RJ01646388 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.917Z","level":"trace","msg":"[detail] key not in API response RJ01656205 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.918Z","level":"trace","msg":"[parser] no usable price field at all RJ01648862 {\"price\":null,\"official_price\":null}"}
+{"ts":"2026-08-03T10:22:36.920Z","level":"trace","msg":"[detail] key not in API response RJ01655579 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.920Z","level":"trace","msg":"[detail] key not in API response RJ01654985 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.921Z","level":"trace","msg":"[detail] key not in API response RJ01611117 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.922Z","level":"trace","msg":"[detail] key not in API response RJ01660410 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.922Z","level":"trace","msg":"[detail] key not in API response RJ01664364 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.931Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01598633\",\"price\":1650,\"sale_price\":null,\"point\":null,\"point_rate\":null,\"discount_rate\":null,\"is_on_sale\":1,\"is_point_only\":1}"}
+{"ts":"2026-08-03T10:22:36.937Z","level":"trace","msg":"[detail] key not in API response RJ01635355 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.939Z","level":"trace","msg":"[detail] key not in API response RJ01638369 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.939Z","level":"trace","msg":"[detail] key not in API response RJ01411689 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.940Z","level":"trace","msg":"[detail] key not in API response RJ01621667 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.940Z","level":"trace","msg":"[detail] key not in API response RJ01632913 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.941Z","level":"trace","msg":"[detail] key not in API response RJ01644893 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.941Z","level":"trace","msg":"[detail] key not in API response RJ01654527 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.941Z","level":"trace","msg":"[detail] key not in API response RJ01616204 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.942Z","level":"trace","msg":"[detail] key not in API response RJ01649743 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.942Z","level":"trace","msg":"[detail] key not in API response RJ01629810 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.943Z","level":"trace","msg":"[detail] key not in API response RJ01638013 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.948Z","level":"trace","msg":"[detail] key not in API response RJ01644287 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.949Z","level":"trace","msg":"[detail] key not in API response RJ01544285 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.949Z","level":"trace","msg":"[detail] key not in API response RJ01638331 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.950Z","level":"trace","msg":"[detail] key not in API response RJ01653842 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.950Z","level":"trace","msg":"[detail] key not in API response RJ01589446 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:36.951Z","level":"trace","msg":"[detail] key not in API response RJ204161 available: RJ01060974, RJ1060974, RJ01448438"}
+{"ts":"2026-08-03T10:22:40.385Z","level":"trace","msg":"[detail] key not in API response RJ01617139 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.386Z","level":"trace","msg":"[detail] key not in API response RJ01636042 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.387Z","level":"trace","msg":"[detail] key not in API response RJ01653017 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.387Z","level":"trace","msg":"[detail] key not in API response RJ01647384 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.389Z","level":"trace","msg":"[detail] key not in API response RJ01639300 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.389Z","level":"trace","msg":"[detail] key not in API response RJ01658446 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.390Z","level":"trace","msg":"[detail] key not in API response RJ01649349 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.390Z","level":"trace","msg":"[detail] key not in API response RJ01594281 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.391Z","level":"trace","msg":"[detail] key not in API response RJ01633813 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.392Z","level":"trace","msg":"[detail] key not in API response RJ211980 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.392Z","level":"trace","msg":"[detail] key not in API response RJ01611675 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.393Z","level":"trace","msg":"[detail] key not in API response RJ01590344 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.402Z","level":"trace","msg":"[detail] key not in API response RJ01668923 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.402Z","level":"trace","msg":"[detail] key not in API response RJ01669472 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.403Z","level":"trace","msg":"[detail] key not in API response RJ01383504 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.404Z","level":"trace","msg":"[detail] key not in API response RJ01361148 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.405Z","level":"trace","msg":"[detail] key not in API response RJ01210625 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.407Z","level":"trace","msg":"[detail] key not in API response RJ01380589 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.408Z","level":"trace","msg":"[detail] key not in API response RJ01378292 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.410Z","level":"trace","msg":"[detail] key not in API response RJ01374211 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.411Z","level":"trace","msg":"[detail] key not in API response RJ01380916 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.411Z","level":"trace","msg":"[detail] key not in API response RJ01366339 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.412Z","level":"trace","msg":"[detail] key not in API response RJ01376010 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.412Z","level":"trace","msg":"[detail] key not in API response RJ01356941 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.414Z","level":"trace","msg":"[detail] key not in API response RJ01366039 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.414Z","level":"trace","msg":"[detail] key not in API response RJ01374088 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.415Z","level":"trace","msg":"[detail] key not in API response RJ01372457 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.415Z","level":"trace","msg":"[detail] key not in API response RJ01372561 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.415Z","level":"trace","msg":"[detail] key not in API response RJ01372256 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.416Z","level":"trace","msg":"[detail] key not in API response RJ01372076 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.416Z","level":"trace","msg":"[detail] key not in API response RJ01368294 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.417Z","level":"trace","msg":"[detail] key not in API response RJ01368511 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.417Z","level":"trace","msg":"[detail] key not in API response RJ01368354 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.418Z","level":"trace","msg":"[detail] key not in API response RJ01368338 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.418Z","level":"trace","msg":"[detail] key not in API response RJ01368267 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.420Z","level":"trace","msg":"[detail] key not in API response RJ01061246 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:40.420Z","level":"trace","msg":"[detail] key not in API response RJ01370046 available: RJ01100708, RJ1100708, RJ01260762"}
+{"ts":"2026-08-03T10:22:44.243Z","level":"trace","msg":"[detail] key not in API response RJ01625047 available: RJ01079238, RJ1079238, RJ01243113"}
+{"ts":"2026-08-03T10:22:44.244Z","level":"trace","msg":"[detail] key not in API response RJ01661673 available: RJ01079238, RJ1079238, RJ01243113"}
+{"ts":"2026-08-03T10:22:44.244Z","level":"trace","msg":"[detail] key not in API response RJ01658345 available: RJ01079238, RJ1079238, RJ01243113"}
+{"ts":"2026-08-03T10:22:44.244Z","level":"trace","msg":"[detail] key not in API response RJ01666281 available: RJ01079238, RJ1079238, RJ01243113"}
+{"ts":"2026-08-03T10:22:44.245Z","level":"trace","msg":"[detail] key not in API response RJ01670239 available: RJ01079238, RJ1079238, RJ01243113"}
+{"ts":"2026-08-03T10:22:48.783Z","level":"trace","msg":"[detail] key not in API response RJ01661446 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.784Z","level":"trace","msg":"[detail] key not in API response RJ01662278 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.786Z","level":"trace","msg":"[detail] key not in API response RJ01670596 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.787Z","level":"trace","msg":"[detail] key not in API response RJ01662921 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.787Z","level":"trace","msg":"[detail] key not in API response RJ01666903 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.788Z","level":"trace","msg":"[detail] key not in API response RJ01662149 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.789Z","level":"trace","msg":"[detail] key not in API response RJ01655101 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.790Z","level":"trace","msg":"[detail] key not in API response RJ01656433 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.792Z","level":"trace","msg":"[detail] key not in API response RJ01660250 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.793Z","level":"trace","msg":"[detail] key not in API response RJ01668214 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.794Z","level":"trace","msg":"[detail] key not in API response RJ01669445 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.797Z","level":"trace","msg":"[detail] key not in API response RJ01669463 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.803Z","level":"trace","msg":"[detail] key not in API response RJ01673563 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.804Z","level":"trace","msg":"[detail] key not in API response RJ01672037 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.806Z","level":"trace","msg":"[detail] key not in API response RJ01365275 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.807Z","level":"trace","msg":"[detail] key not in API response RJ01355593 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.807Z","level":"trace","msg":"[detail] key not in API response RJ01354581 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:48.810Z","level":"trace","msg":"[detail] key not in API response RJ01363012 available: RJ01162185, RJ1162185, RJ01360548"}
+{"ts":"2026-08-03T10:22:54.107Z","level":"trace","msg":"[detail] key not in API response RJ01346601 available: RJ01078785, RJ1078785, RJ01122644"}
+{"ts":"2026-08-03T10:22:54.108Z","level":"trace","msg":"[detail] key not in API response RJ01348716 available: RJ01078785, RJ1078785, RJ01122644"}
+{"ts":"2026-08-03T10:22:54.109Z","level":"trace","msg":"[detail] key not in API response RJ01346049 available: RJ01078785, RJ1078785, RJ01122644"}
+{"ts":"2026-08-03T10:22:54.110Z","level":"trace","msg":"[detail] key not in API response RJ01300055 available: RJ01078785, RJ1078785, RJ01122644"}
+{"ts":"2026-08-03T10:22:54.111Z","level":"trace","msg":"[detail] key not in API response RJ01301831 available: RJ01078785, RJ1078785, RJ01122644"}
+{"ts":"2026-08-03T10:22:57.517Z","level":"trace","msg":"[detail] key not in API response RJ01323498 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.519Z","level":"trace","msg":"[detail] key not in API response RJ01564823 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.519Z","level":"trace","msg":"[detail] key not in API response RJ01235145 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.520Z","level":"trace","msg":"[detail] key not in API response RJ01312819 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.520Z","level":"trace","msg":"[detail] key not in API response RJ01293448 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.521Z","level":"trace","msg":"[detail] key not in API response RJ01303479 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.521Z","level":"trace","msg":"[detail] key not in API response RJ01121041 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.523Z","level":"trace","msg":"[detail] key not in API response RJ01301341 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.523Z","level":"trace","msg":"[detail] key not in API response RJ01294041 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.524Z","level":"trace","msg":"[detail] key not in API response RJ01259960 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.524Z","level":"trace","msg":"[detail] key not in API response RJ01330247 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.524Z","level":"trace","msg":"[detail] key not in API response RJ01309510 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:22:57.525Z","level":"trace","msg":"[detail] key not in API response RJ01271730 available: RJ01073609, RJ1073609, RJ01082260"}
+{"ts":"2026-08-03T10:23:05.138Z","level":"trace","msg":"[detail] key not in API response RJ01183344 available: RJ01018829, RJ1018829, RJ01055654"}
+{"ts":"2026-08-03T10:23:05.139Z","level":"trace","msg":"[detail] key not in API response RJ01235118 available: RJ01018829, RJ1018829, RJ01055654"}
+{"ts":"2026-08-03T10:23:05.140Z","level":"trace","msg":"[detail] key not in API response RJ01163966 available: RJ01018829, RJ1018829, RJ01055654"}
+{"ts":"2026-08-03T10:23:05.141Z","level":"trace","msg":"[detail] key not in API response RJ01135865 available: RJ01018829, RJ1018829, RJ01055654"}
+{"ts":"2026-08-03T10:23:05.143Z","level":"trace","msg":"[detail] key not in API response RJ01174736 available: RJ01018829, RJ1018829, RJ01055654"}
+{"ts":"2026-08-03T10:23:05.143Z","level":"trace","msg":"[detail] key not in API response RJ01189383 available: RJ01018829, RJ1018829, RJ01055654"}
+{"ts":"2026-08-03T10:23:05.216Z","level":"info","msg":"[detail] due batch: 500 (total so far: 48500 ) concurrency=3"}
+{"ts":"2026-08-03T10:23:06.745Z","level":"warn","msg":"[db] slow transaction (transactionNoSave): 345ms {\"dbSizeMB\":412.1}"}
+{"ts":"2026-08-03T10:23:16.874Z","level":"trace","msg":"[detail] key not in API response RJ423458 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.875Z","level":"trace","msg":"[detail] key not in API response RJ01013197 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.875Z","level":"trace","msg":"[detail] key not in API response RJ01110285 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.875Z","level":"trace","msg":"[detail] key not in API response RJ01105330 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.875Z","level":"trace","msg":"[detail] key not in API response RJ01093617 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.876Z","level":"trace","msg":"[detail] key not in API response RJ01138228 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.876Z","level":"trace","msg":"[detail] key not in API response RJ01091693 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.877Z","level":"trace","msg":"[detail] key not in API response RJ01669207 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.877Z","level":"trace","msg":"[detail] key not in API response RJ01669204 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.878Z","level":"trace","msg":"[detail] key not in API response RJ01672639 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.879Z","level":"trace","msg":"[detail] key not in API response RJ01668679 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.880Z","level":"trace","msg":"[detail] key not in API response RJ01668360 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.880Z","level":"trace","msg":"[detail] key not in API response RJ01668350 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.880Z","level":"trace","msg":"[detail] key not in API response RJ01646576 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.881Z","level":"trace","msg":"[detail] key not in API response RJ01645304 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.882Z","level":"trace","msg":"[detail] key not in API response RJ01667504 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.883Z","level":"trace","msg":"[detail] key not in API response RJ01667337 available: RJ01018813, RJ1018813, RJ01068790"}
+{"ts":"2026-08-03T10:23:16.886Z","level":"warn","msg":"[detail] batch issues summary {\"site\":\"maniax\",\"batchSize\":50,\"key_not_in_response\":17}"}
+{"ts":"2026-08-03T10:23:27.522Z","level":"trace","msg":"[detail] key not in API response RJ01010064 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.523Z","level":"trace","msg":"[detail] key not in API response RJ430704 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.523Z","level":"trace","msg":"[detail] key not in API response RJ429807 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.524Z","level":"trace","msg":"[detail] key not in API response RJ01010479 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.525Z","level":"trace","msg":"[detail] key not in API response RJ01024413 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.525Z","level":"trace","msg":"[detail] key not in API response RJ01017095 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.526Z","level":"trace","msg":"[detail] key not in API response RJ423841 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.527Z","level":"trace","msg":"[detail] key not in API response RJ01024126 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.529Z","level":"trace","msg":"[detail] key not in API response RJ440029 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.530Z","level":"trace","msg":"[detail] key not in API response RJ421287 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.533Z","level":"trace","msg":"[detail] key not in API response RJ01058813 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.533Z","level":"trace","msg":"[detail] key not in API response RJ01057248 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.534Z","level":"trace","msg":"[detail] key not in API response RJ01057135 available: RJ01011851, RJ1011851, RJ01016514"}
+{"ts":"2026-08-03T10:23:27.546Z","level":"warn","msg":"[detail] batch issues summary {\"site\":\"maniax\",\"batchSize\":50,\"key_not_in_response\":13}"}
+{"ts":"2026-08-03T10:23:34.054Z","level":"trace","msg":"[detail] key not in API response RJ383683 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.054Z","level":"trace","msg":"[detail] key not in API response RJ404929 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.055Z","level":"trace","msg":"[detail] key not in API response RJ392576 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.055Z","level":"trace","msg":"[detail] key not in API response RJ381589 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.055Z","level":"trace","msg":"[detail] key not in API response RJ388884 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.055Z","level":"trace","msg":"[detail] key not in API response RJ392033 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.055Z","level":"trace","msg":"[detail] key not in API response RJ394284 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.056Z","level":"trace","msg":"[detail] key not in API response RJ408855 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.056Z","level":"trace","msg":"[detail] key not in API response RJ406431 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.056Z","level":"trace","msg":"[detail] key not in API response RJ416246 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.056Z","level":"trace","msg":"[detail] key not in API response RJ400609 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.057Z","level":"trace","msg":"[detail] key not in API response RJ400890 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.057Z","level":"trace","msg":"[detail] key not in API response RJ398298 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.057Z","level":"trace","msg":"[detail] key not in API response RJ390681 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.057Z","level":"trace","msg":"[detail] key not in API response RJ406760 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.057Z","level":"trace","msg":"[detail] key not in API response RJ396859 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.058Z","level":"trace","msg":"[detail] key not in API response RJ382811 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.058Z","level":"trace","msg":"[detail] key not in API response RJ406438 available: RJ321580, RJ324306, RJ343158"}
+{"ts":"2026-08-03T10:23:34.063Z","level":"warn","msg":"[detail] batch issues summary {\"site\":\"maniax\",\"batchSize\":50,\"key_not_in_response\":18}"}
+{"ts":"2026-08-03T10:23:37.985Z","level":"trace","msg":"[detail] key not in API response RJ366407 available: RJ296117, RJ296821, RJ316988"}
+{"ts":"2026-08-03T10:23:37.986Z","level":"trace","msg":"[detail] key not in API response RJ372716 available: RJ296117, RJ296821, RJ316988"}
+{"ts":"2026-08-03T10:23:37.987Z","level":"trace","msg":"[detail] key not in API response RJ375036 available: RJ296117, RJ296821, RJ316988"}
+{"ts":"2026-08-03T10:23:37.988Z","level":"trace","msg":"[detail] key not in API response RJ363851 available: RJ296117, RJ296821, RJ316988"}
+{"ts":"2026-08-03T10:23:38.228Z","level":"info","msg":"[detail] due batch: 500 (total so far: 49000 ) concurrency=3"}
+{"ts":"2026-08-03T10:23:39.611Z","level":"trace","msg":"[detail] key not in API response RJ356228 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.612Z","level":"trace","msg":"[detail] key not in API response RJ359551 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.613Z","level":"trace","msg":"[detail] key not in API response RJ356981 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.613Z","level":"trace","msg":"[detail] key not in API response RJ345374 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.614Z","level":"trace","msg":"[detail] key not in API response RJ341856 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.615Z","level":"trace","msg":"[detail] key not in API response RJ351175 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.616Z","level":"trace","msg":"[detail] key not in API response RJ353835 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.617Z","level":"trace","msg":"[detail] key not in API response RJ340524 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.617Z","level":"trace","msg":"[detail] key not in API response RJ337355 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.618Z","level":"trace","msg":"[detail] key not in API response RJ342899 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.619Z","level":"trace","msg":"[detail] key not in API response RJ345571 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.620Z","level":"trace","msg":"[detail] key not in API response RJ345890 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.622Z","level":"trace","msg":"[detail] key not in API response RJ362224 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.622Z","level":"trace","msg":"[detail] key not in API response RJ363621 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:39.623Z","level":"trace","msg":"[detail] key not in API response RJ353273 available: RJ277706, RJ280567, RJ288182"}
+{"ts":"2026-08-03T10:23:41.261Z","level":"trace","msg":"[detail] key not in API response RJ332437 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.268Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ328251\",\"price\":1210,\"sale_price\":null,\"point\":null,\"point_rate\":null,\"discount_rate\":null,\"is_on_sale\":1,\"is_point_only\":1}"}
+{"ts":"2026-08-03T10:23:41.269Z","level":"trace","msg":"[detail] key not in API response RJ333096 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.269Z","level":"trace","msg":"[detail] key not in API response RJ331456 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.270Z","level":"trace","msg":"[detail] key not in API response RJ329605 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.271Z","level":"trace","msg":"[detail] key not in API response RJ317581 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.271Z","level":"trace","msg":"[detail] key not in API response RJ333971 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.272Z","level":"trace","msg":"[detail] key not in API response RJ318045 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.272Z","level":"trace","msg":"[detail] key not in API response RJ333715 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.273Z","level":"trace","msg":"[detail] key not in API response RJ317499 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.274Z","level":"trace","msg":"[detail] key not in API response RJ326163 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.275Z","level":"trace","msg":"[detail] key not in API response RJ322764 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.275Z","level":"trace","msg":"[detail] key not in API response RJ319370 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.276Z","level":"trace","msg":"[detail] key not in API response RJ317162 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.277Z","level":"trace","msg":"[detail] key not in API response RJ313837 available: RJ247372, RJ248256, RJ251941"}
+{"ts":"2026-08-03T10:23:41.583Z","level":"trace","msg":"[detail] key not in API response RJ271145 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.585Z","level":"trace","msg":"[detail] key not in API response RJ285273 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.585Z","level":"trace","msg":"[detail] key not in API response RJ294262 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.586Z","level":"trace","msg":"[detail] key not in API response RJ302009 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.600Z","level":"trace","msg":"[detail] key not in API response RJ293607 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.600Z","level":"trace","msg":"[detail] key not in API response RJ290907 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.601Z","level":"trace","msg":"[detail] key not in API response RJ297696 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.602Z","level":"trace","msg":"[detail] key not in API response RJ296422 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.602Z","level":"trace","msg":"[detail] key not in API response RJ274510 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.603Z","level":"trace","msg":"[detail] key not in API response RJ287872 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:41.604Z","level":"trace","msg":"[detail] key not in API response RJ288300 available: RJ223204, RJ224408, RJ238776"}
+{"ts":"2026-08-03T10:23:43.524Z","level":"trace","msg":"[detail] key not in API response RJ270625 available: RJ171098, RJ198010, RJ204332"}
+{"ts":"2026-08-03T10:23:43.525Z","level":"trace","msg":"[detail] key not in API response RJ261015 available: RJ171098, RJ198010, RJ204332"}
+{"ts":"2026-08-03T10:23:43.526Z","level":"trace","msg":"[detail] key not in API response RJ246863 available: RJ171098, RJ198010, RJ204332"}
+{"ts":"2026-08-03T10:23:43.527Z","level":"trace","msg":"[detail] key not in API response RJ288667 available: RJ171098, RJ198010, RJ204332"}
+{"ts":"2026-08-03T10:23:43.527Z","level":"trace","msg":"[detail] key not in API response RJ254457 available: RJ171098, RJ198010, RJ204332"}
+{"ts":"2026-08-03T10:23:44.253Z","level":"warn","msg":"[db] slow transaction (transactionNoSave): 351ms {\"dbSizeMB\":412.1}"}
+{"ts":"2026-08-03T10:23:45.638Z","level":"trace","msg":"[detail] key not in API response RJ241240 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.639Z","level":"trace","msg":"[detail] key not in API response RJ242808 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.641Z","level":"trace","msg":"[detail] key not in API response RJ235448 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.641Z","level":"trace","msg":"[detail] key not in API response RJ236859 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.641Z","level":"trace","msg":"[detail] key not in API response RJ232599 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.642Z","level":"trace","msg":"[detail] key not in API response RJ242006 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.642Z","level":"trace","msg":"[detail] key not in API response RJ221353 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.643Z","level":"trace","msg":"[detail] key not in API response RJ235841 available: RJ164233, RJ193932, RJ208211"}
+{"ts":"2026-08-03T10:23:45.694Z","level":"info","msg":"[detail] due batch: 500 (total so far: 49500 ) concurrency=3"}
+{"ts":"2026-08-03T10:23:48.946Z","level":"trace","msg":"[detail] key not in API response RJ193219 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:48.947Z","level":"trace","msg":"[detail] key not in API response RJ190503 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:48.947Z","level":"trace","msg":"[detail] key not in API response RJ198683 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:48.948Z","level":"trace","msg":"[detail] key not in API response RJ194092 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:48.948Z","level":"trace","msg":"[detail] key not in API response RJ194969 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:48.948Z","level":"trace","msg":"[detail] key not in API response RJ173507 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:48.949Z","level":"trace","msg":"[detail] key not in API response RJ188763 available: RJ114125, RJ121373, RJ148678"}
+{"ts":"2026-08-03T10:23:49.491Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ027952\",\"price\":1540,\"sale_price\":308,\"point\":null,\"point_rate\":null,\"discount_rate\":80,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:23:50.327Z","level":"trace","msg":"[detail] key not in API response RJ147123 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.328Z","level":"trace","msg":"[detail] key not in API response RJ143414 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.328Z","level":"trace","msg":"[detail] key not in API response RJ156197 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.329Z","level":"trace","msg":"[detail] key not in API response RJ168209 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.329Z","level":"trace","msg":"[detail] key not in API response RJ125755 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.330Z","level":"trace","msg":"[detail] key not in API response RJ107838 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.330Z","level":"trace","msg":"[detail] key not in API response RJ104278 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.331Z","level":"trace","msg":"[detail] key not in API response RJ086892 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.331Z","level":"trace","msg":"[detail] key not in API response RJ126527 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.331Z","level":"trace","msg":"[detail] key not in API response RJ163447 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.332Z","level":"trace","msg":"[detail] key not in API response RJ101148 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.332Z","level":"trace","msg":"[detail] key not in API response RJ112706 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.332Z","level":"trace","msg":"[detail] key not in API response RJ139018 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.333Z","level":"trace","msg":"[detail] key not in API response RJ01241871 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.333Z","level":"trace","msg":"[detail] key not in API response RJ01215520 available: RJ01621784, RJ1621784, RJ01635990"}
+{"ts":"2026-08-03T10:23:50.336Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01669770\",\"price\":990,\"sale_price\":null,\"point\":null,\"point_rate\":null,\"discount_rate\":null,\"is_on_sale\":1,\"is_point_only\":1}"}
+{"ts":"2026-08-03T10:23:50.960Z","level":"trace","msg":"[detail] key not in API response RJ051830 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.960Z","level":"trace","msg":"[detail] key not in API response RJ056933 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.961Z","level":"trace","msg":"[detail] key not in API response RJ081303 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.961Z","level":"trace","msg":"[detail] key not in API response RJ084831 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.961Z","level":"trace","msg":"[detail] key not in API response RJ046763 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.961Z","level":"trace","msg":"[detail] key not in API response RJ030301 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.963Z","level":"trace","msg":"[detail] key not in API response RJ032858 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.963Z","level":"trace","msg":"[detail] key not in API response RJ061320 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.963Z","level":"trace","msg":"[detail] key not in API response RJ072945 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.964Z","level":"trace","msg":"[detail] key not in API response RJ027145 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.964Z","level":"trace","msg":"[detail] key not in API response RJ029842 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.964Z","level":"trace","msg":"[detail] key not in API response RJ034368 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.964Z","level":"trace","msg":"[detail] key not in API response RJ018145 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.965Z","level":"trace","msg":"[detail] key not in API response RJ049647 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.965Z","level":"trace","msg":"[detail] key not in API response RJ058143 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.965Z","level":"trace","msg":"[detail] key not in API response RJ01664667 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.966Z","level":"trace","msg":"[detail] key not in API response RJ01649372 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.966Z","level":"trace","msg":"[detail] key not in API response RJ01662911 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.966Z","level":"trace","msg":"[detail] key not in API response RJ01669262 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.966Z","level":"trace","msg":"[detail] key not in API response RJ01594275 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.967Z","level":"trace","msg":"[detail] key not in API response RJ01507773 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.967Z","level":"trace","msg":"[detail] key not in API response RJ01343908 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.968Z","level":"trace","msg":"[detail] key not in API response RJ01340909 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:50.968Z","level":"trace","msg":"[detail] key not in API response RJ01342203 available: RJ008421, RJ8421, RJ01343445"}
+{"ts":"2026-08-03T10:23:51.403Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50"}
+{"ts":"2026-08-03T10:23:52.129Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50"}
+{"ts":"2026-08-03T10:23:52.130Z","level":"warn","msg":"[detail] batch fail, splitting 50"}
+{"ts":"2026-08-03T10:23:52.744Z","level":"warn","msg":"[detail] API returned partial data maniax got 16 / requested 48"}
+{"ts":"2026-08-03T10:23:52.745Z","level":"trace","msg":"[detail] key not in API response RJ01296893 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.746Z","level":"trace","msg":"[detail] key not in API response RJ01255516 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.746Z","level":"trace","msg":"[detail] key not in API response RJ01289757 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.746Z","level":"trace","msg":"[detail] key not in API response RJ01286229 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.747Z","level":"trace","msg":"[detail] key not in API response RJ01283396 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.747Z","level":"trace","msg":"[detail] key not in API response RJ01235123 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.748Z","level":"trace","msg":"[detail] key not in API response RJ01282208 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.748Z","level":"trace","msg":"[detail] key not in API response RJ01279262 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.748Z","level":"trace","msg":"[detail] key not in API response RJ01275846 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.750Z","level":"trace","msg":"[detail] key not in API response RJ01255195 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.751Z","level":"trace","msg":"[detail] key not in API response RJ01275473 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.751Z","level":"trace","msg":"[detail] key not in API response RJ01275355 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.753Z","level":"trace","msg":"[detail] key not in API response RJ01272522 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.761Z","level":"trace","msg":"[detail] key not in API response RJ01206908 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.761Z","level":"trace","msg":"[detail] key not in API response RJ01121042 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.762Z","level":"trace","msg":"[detail] key not in API response RJ01199413 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.762Z","level":"trace","msg":"[detail] key not in API response RJ01205039 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.762Z","level":"trace","msg":"[detail] key not in API response RJ01204239 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.763Z","level":"trace","msg":"[detail] key not in API response RJ01199123 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.763Z","level":"trace","msg":"[detail] key not in API response RJ01195125 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.763Z","level":"trace","msg":"[detail] key not in API response RJ01195601 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.767Z","level":"trace","msg":"[detail] key not in API response RJ01127392 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.769Z","level":"trace","msg":"[detail] key not in API response RJ01190271 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.770Z","level":"trace","msg":"[detail] key not in API response RJ01182341 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.770Z","level":"trace","msg":"[detail] key not in API response RJ01186776 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.771Z","level":"trace","msg":"[detail] key not in API response RJ01180784 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.771Z","level":"trace","msg":"[detail] key not in API response RJ01181100 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.772Z","level":"trace","msg":"[detail] key not in API response RJ01166404 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.772Z","level":"trace","msg":"[detail] key not in API response RJ01176830 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.772Z","level":"trace","msg":"[detail] key not in API response RJ01174889 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.773Z","level":"trace","msg":"[detail] key not in API response RJ01175067 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.774Z","level":"trace","msg":"[detail] key not in API response RJ01647366 available: RJ01004129, RJ1004129, RJ01007399"}
+{"ts":"2026-08-03T10:23:52.945Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 2 / requested 25"}
+{"ts":"2026-08-03T10:23:54.677Z","level":"info","msg":"[detail] due batch: 500 (total so far: 50000 ) concurrency=3"}
+{"ts":"2026-08-03T10:23:55.819Z","level":"trace","msg":"[detail] key not in API response RJ01612669 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.819Z","level":"trace","msg":"[detail] key not in API response RJ01613289 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.820Z","level":"trace","msg":"[detail] key not in API response RJ01611097 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.820Z","level":"trace","msg":"[detail] key not in API response RJ01617349 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.823Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01653686\",\"price\":990,\"sale_price\":495,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-03T10:23:55.823Z","level":"trace","msg":"[detail] key not in API response RJ01607227 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.823Z","level":"trace","msg":"[detail] key not in API response RJ01616762 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.823Z","level":"trace","msg":"[detail] key not in API response RJ01594288 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.824Z","level":"trace","msg":"[detail] key not in API response RJ01599427 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.824Z","level":"trace","msg":"[detail] key not in API response RJ01622510 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.824Z","level":"trace","msg":"[detail] key not in API response RJ01620304 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.825Z","level":"trace","msg":"[detail] key not in API response RJ01620229 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.825Z","level":"trace","msg":"[detail] key not in API response RJ01619568 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.826Z","level":"trace","msg":"[detail] key not in API response RJ01618144 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.826Z","level":"trace","msg":"[detail] key not in API response RJ01618139 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.826Z","level":"trace","msg":"[detail] key not in API response RJ01616918 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.826Z","level":"trace","msg":"[detail] key not in API response RJ01616063 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.827Z","level":"trace","msg":"[detail] key not in API response RJ01616176 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.827Z","level":"trace","msg":"[detail] key not in API response RJ01614994 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.827Z","level":"trace","msg":"[detail] key not in API response RJ01614759 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.828Z","level":"trace","msg":"[detail] key not in API response RJ01614476 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.828Z","level":"trace","msg":"[detail] key not in API response RJ01466914 available: RJ01189367, RJ1189367, RJ01191750"}
+{"ts":"2026-08-03T10:23:55.869Z","level":"trace","msg":"[detail] key not in API response RJ01636962 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.894Z","level":"trace","msg":"[detail] key not in API response RJ01621924 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.895Z","level":"trace","msg":"[detail] key not in API response RJ01612671 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.895Z","level":"trace","msg":"[detail] key not in API response RJ01630765 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.896Z","level":"trace","msg":"[detail] key not in API response RJ01650607 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.896Z","level":"trace","msg":"[detail] key not in API response RJ01627354 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.896Z","level":"trace","msg":"[detail] key not in API response RJ01650605 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.897Z","level":"trace","msg":"[detail] key not in API response RJ01625127 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.897Z","level":"trace","msg":"[detail] key not in API response RJ01658785 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.897Z","level":"trace","msg":"[detail] key not in API response RJ01628121 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.898Z","level":"trace","msg":"[detail] key not in API response RJ01629240 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.899Z","level":"trace","msg":"[detail] key not in API response RJ01626657 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.899Z","level":"trace","msg":"[detail] key not in API response RJ01634673 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.900Z","level":"trace","msg":"[detail] key not in API response RJ01624995 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.900Z","level":"trace","msg":"[detail] key not in API response RJ01623219 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.900Z","level":"trace","msg":"[detail] key not in API response RJ01620422 available: RJ01158890, RJ1158890, RJ01166729"}
+{"ts":"2026-08-03T10:23:55.914Z","level":"warn","msg":"[detail] API returned partial data maniax got 22 / requested 50"}
+{"ts":"2026-08-03T10:23:55.922Z","level":"trace","msg":"[detail] key not in API response RJ01060540 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.923Z","level":"trace","msg":"[detail] key not in API response RJ01102459 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.924Z","level":"trace","msg":"[detail] key not in API response RJ01095663 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.924Z","level":"trace","msg":"[detail] key not in API response RJ01088997 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.924Z","level":"trace","msg":"[detail] key not in API response RJ01101327 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.926Z","level":"trace","msg":"[detail] key not in API response RJ01095772 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.926Z","level":"trace","msg":"[detail] key not in API response RJ01052616 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.926Z","level":"trace","msg":"[detail] key not in API response RJ01072038 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.927Z","level":"trace","msg":"[detail] key not in API response RJ400371 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.927Z","level":"trace","msg":"[detail] key not in API response RJ01090043 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.928Z","level":"trace","msg":"[detail] key not in API response RJ01088156 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.929Z","level":"trace","msg":"[detail] key not in API response RJ01086262 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.930Z","level":"trace","msg":"[detail] key not in API response RJ01082777 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.930Z","level":"trace","msg":"[detail] key not in API response RJ01086510 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.931Z","level":"trace","msg":"[detail] key not in API response RJ01073075 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.931Z","level":"trace","msg":"[detail] key not in API response RJ01082786 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.932Z","level":"trace","msg":"[detail] key not in API response RJ01079983 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.932Z","level":"trace","msg":"[detail] key not in API response RJ01080905 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.933Z","level":"trace","msg":"[detail] key not in API response RJ01080325 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.933Z","level":"trace","msg":"[detail] key not in API response RJ01072443 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.933Z","level":"trace","msg":"[detail] key not in API response RJ01071053 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.934Z","level":"trace","msg":"[detail] key not in API response RJ01075504 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.934Z","level":"trace","msg":"[detail] key not in API response RJ01019247 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.935Z","level":"trace","msg":"[detail] key not in API response RJ410021 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.935Z","level":"trace","msg":"[detail] key not in API response RJ01070115 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.936Z","level":"trace","msg":"[detail] key not in API response RJ01068474 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.936Z","level":"trace","msg":"[detail] key not in API response RJ01045739 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:55.937Z","level":"trace","msg":"[detail] key not in API response RJ01270928 available: RJ01088295, RJ1088295, RJ01091726"}
+{"ts":"2026-08-03T10:23:57.602Z","level":"info","msg":"[detail] circle sale end RG01066466"}
+{"ts":"2026-08-03T10:23:57.603Z","level":"trace","msg":"[detail] key not in API response RJ229799 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.604Z","level":"trace","msg":"[detail] key not in API response RJ01248250 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.604Z","level":"trace","msg":"[detail] key not in API response RJ01437237 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.604Z","level":"trace","msg":"[detail] key not in API response RJ01607773 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.605Z","level":"trace","msg":"[detail] key not in API response RJ01499061 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.605Z","level":"trace","msg":"[detail] key not in API response RJ01469191 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.605Z","level":"trace","msg":"[detail] key not in API response RJ01424396 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.606Z","level":"trace","msg":"[detail] key not in API response RJ01155677 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.606Z","level":"trace","msg":"[detail] key not in API response RJ150597 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.606Z","level":"trace","msg":"[detail] key not in API response RJ01494028 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.606Z","level":"trace","msg":"[detail] key not in API response RJ019219 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.607Z","level":"trace","msg":"[detail] key not in API response RJ01417160 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.607Z","level":"trace","msg":"[detail] key not in API response RJ273606 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.607Z","level":"trace","msg":"[detail] key not in API response RJ286306 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.607Z","level":"trace","msg":"[detail] key not in API response RJ01584852 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.607Z","level":"trace","msg":"[detail] key not in API response RJ01612322 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.608Z","level":"trace","msg":"[detail] key not in API response RJ01413695 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.608Z","level":"trace","msg":"[detail] key not in API response RJ232172 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.608Z","level":"trace","msg":"[detail] key not in API response RJ01117276 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.608Z","level":"trace","msg":"[detail] key not in API response RJ260092 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.609Z","level":"trace","msg":"[detail] key not in API response RJ408510 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.609Z","level":"trace","msg":"[detail] key not in API response RJ292883 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.609Z","level":"trace","msg":"[detail] key not in API response RJ01610215 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:57.609Z","level":"trace","msg":"[detail] key not in API response RJ01615103 available: RJ01571517, RJ1571517, RJ01573466"}
+{"ts":"2026-08-03T10:23:58.202Z","level":"warn","msg":"[detail] API returned partial data maniax got 11 / requested 50"}
+{"ts":"2026-08-03T10:23:58.203Z","level":"trace","msg":"[detail] key not in API response RJ01415769 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.204Z","level":"trace","msg":"[detail] key not in API response RJ01365132 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.204Z","level":"trace","msg":"[detail] key not in API response RJ01347509 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.205Z","level":"trace","msg":"[detail] key not in API response RJ01170734 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.206Z","level":"trace","msg":"[detail] key not in API response RJ01164121 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.207Z","level":"trace","msg":"[detail] key not in API response RJ01160410 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.208Z","level":"trace","msg":"[detail] key not in API response RJ01164822 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.208Z","level":"trace","msg":"[detail] key not in API response RJ01162792 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.208Z","level":"trace","msg":"[detail] key not in API response RJ01159477 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.209Z","level":"trace","msg":"[detail] key not in API response RJ01159590 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.209Z","level":"trace","msg":"[detail] key not in API response RJ01077059 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.210Z","level":"trace","msg":"[detail] key not in API response RJ01148847 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.210Z","level":"trace","msg":"[detail] key not in API response RJ01150560 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.212Z","level":"trace","msg":"[detail] key not in API response RJ01144239 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.215Z","level":"trace","msg":"[detail] key not in API response RJ01135819 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.216Z","level":"trace","msg":"[detail] key not in API response RJ01137250 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.216Z","level":"trace","msg":"[detail] key not in API response RJ01133834 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.217Z","level":"trace","msg":"[detail] key not in API response RJ01130855 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.217Z","level":"trace","msg":"[detail] key not in API response RJ01136573 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.219Z","level":"trace","msg":"[detail] key not in API response RJ01091064 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.220Z","level":"trace","msg":"[detail] key not in API response RJ01134378 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.221Z","level":"trace","msg":"[detail] key not in API response RJ01130028 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.221Z","level":"trace","msg":"[detail] key not in API response RJ01133626 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.222Z","level":"trace","msg":"[detail] key not in API response RJ01125459 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.223Z","level":"trace","msg":"[detail] key not in API response RJ01116121 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.224Z","level":"trace","msg":"[detail] key not in API response RJ01122816 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.227Z","level":"trace","msg":"[detail] key not in API response RJ01118342 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.228Z","level":"trace","msg":"[detail] key not in API response RJ01116151 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.228Z","level":"trace","msg":"[detail] key not in API response RJ01115627 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.228Z","level":"trace","msg":"[detail] key not in API response RJ01113281 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.229Z","level":"trace","msg":"[detail] key not in API response RJ01111879 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.229Z","level":"trace","msg":"[detail] key not in API response RJ01110714 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.230Z","level":"trace","msg":"[detail] key not in API response RJ01111480 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.235Z","level":"trace","msg":"[detail] key not in API response RJ01102653 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.236Z","level":"trace","msg":"[detail] key not in API response RJ01102098 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.236Z","level":"trace","msg":"[detail] key not in API response RJ01102042 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.237Z","level":"trace","msg":"[detail] key not in API response RJ01614466 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.237Z","level":"trace","msg":"[detail] key not in API response RJ01613530 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.238Z","level":"trace","msg":"[detail] key not in API response RJ01612741 available: RJ01106240, RJ1106240, RJ01133154"}
+{"ts":"2026-08-03T10:23:58.539Z","level":"warn","msg":"[detail] batch fail, splitting 50"}
+{"ts":"2026-08-03T10:23:59.134Z","level":"warn","msg":"[detail] batch issues summary {\"site\":\"maniax\",\"batchSize\":50,\"key_not_in_response\":17}","aggregated":true,"count":18,"windowSec":42}
+{"ts":"2026-08-03T10:23:59.134Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50","aggregated":true,"count":6,"windowSec":8}
+{"ts":"2026-08-03T10:23:59.251Z","level":"warn","msg":"[detail] API returned empty object maniax requested 25件 sample: RJ01611503,RJ01608497"}
+{"ts":"2026-08-03T10:23:59.341Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50"}
+{"ts":"2026-08-03T10:23:59.943Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 5 / requested 50"}
+{"ts":"2026-08-03T10:24:00.072Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50"}
+{"ts":"2026-08-03T10:24:00.072Z","level":"warn","msg":"[detail] maniax: 空応答が5回連続 — セッション再確立を試みます"}
+{"ts":"2026-08-03T10:24:00.073Z","level":"warn","msg":"[warmUp] re-warmup triggered externally (repeated empty responses detected)"}
+{"ts":"2026-08-03T10:24:00.678Z","level":"warn","msg":"[detail] batch fail, splitting 50"}
+{"ts":"2026-08-03T10:24:04.909Z","level":"info","msg":"[api] stop requested for turbo (abort flags: detail,discovery)"}
+{"ts":"2026-08-03T10:24:16.400Z","level":"warn","msg":"[warmUp] timeout diagnostics {\"url\":\"https://www.dlsite.com/home/\",\"title\":\"同人誌・同人ゲーム・同人ボイス・ASMRのダウンロードなら「DLsite 同人」\",\"readyState\":\"complete\",\"bodyLen\":642845,\"isLoading\":false}"}
+{"ts":"2026-08-03T10:24:16.424Z","level":"info","msg":"[warmUp] クリック試行結果 {\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html\",\"clicked\":false,\"clickedInfo\":null}"}
+{"ts":"2026-08-03T10:24:16.424Z","level":"info","msg":"[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html\",\"title\":\"同人誌・同人ゲーム・同人ボイス・ASMRのダウンロードなら「DLsite 同人」\"}"}
+{"ts":"2026-08-03T10:24:16.438Z","level":"info","msg":"[warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html\",\"productUrl\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html\"}"}
+{"ts":"2026-08-03T10:24:27.476Z","level":"info","msg":"[warmUp] クリック試行結果 {\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html\",\"clicked\":false,\"clickedInfo\":null}"}
+{"ts":"2026-08-03T10:24:27.477Z","level":"info","msg":"[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html\",\"title\":\"たまにはポニテなウマ〇すめ。 [あいすしゃーべっと] | DLsite 同人 - R18\"}"}
+{"ts":"2026-08-03T10:24:33.484Z","level":"info","msg":"[warmUp] site done {\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html\",\"clicked\":false,\"reason\":\"gate-absent(product)\",\"navigatedAfterClick\":false}"}
+{"ts":"2026-08-03T10:24:33.486Z","level":"info","msg":"[warmUp] cookie check (maniax) {\"hasAgeCookie\":true,\"ageCookies\":[\"adultchecked=1\"],\"allCookieNames\":[\"_vwo_uuid_v2\",\"_trust360_\",\"_inflow_params\",\"_inflow_ad_params\",\"_gcl_au\",\"_twpid\",\"_fbp\",\"_gaid\",\"_im_vid\",\"_tt_enable_cookie\",\"_ttp\",\"_unv_aid\",\"recommend_device_id\",\"__DLsite_SID\",\"_vwo_uuid\",\"_vwo_ds\",\"_vis_opt_s\",\"adultchecked\",\"lamp_cookie_synced_flag\",\"2026721_julycoupon_home\",\"2026724_julycoupon_home\",\"2026727_set_home\",\"2026731_julycoupon_home\",\"_gid\",\"rtg_bfp\",\"locale\",\"_ga_sid\",\"_unv_id\",\"DL_PRODUCT_LOG\",\"_gat\",\"_dd_s\",\"_inflow_dlsite_params\",\"_ga\",\"_ga_ZW5GTXK6EV\",\"ttcsid\",\"ttcsid_CKRMHGRC77U81CKC8HNG\",\"ttcsid_CLVT5NRC77U95UC4O12G\",\"ttcsid_CPLBGI3C77U3S3PJLFRG\",\"ttcsid_CQ3QNNBC77U0CETNEGNG\",\"ttcsid_D02V363C77U9GIBTNP9G\",\"ttcsid_D0DFBO3C77U626LJDL6G\"]}"}
+{"ts":"2026-08-03T10:24:42.737Z","level":"info","msg":"[warmUp] クリック試行結果 {\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html\",\"clicked\":false,\"clickedInfo\":null}"}
+{"ts":"2026-08-03T10:24:42.737Z","level":"info","msg":"[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html\",\"title\":\"ゲイプロレス [東京ミックス] | DLsite がるまに\"}"}
+{"ts":"2026-08-03T10:24:42.746Z","level":"info","msg":"[warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html\",\"productUrl\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP\"}"}
+{"ts":"2026-08-03T10:24:49.118Z","level":"info","msg":"[warmUp] クリック試行結果 {\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP\",\"clicked\":false,\"clickedInfo\":null}"}
+{"ts":"2026-08-03T10:24:49.118Z","level":"info","msg":"[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP\",\"title\":\"ゲイプロレス [東京ミックス] | DLsite がるまに\"}"}
+{"ts":"2026-08-03T10:24:55.126Z","level":"info","msg":"[warmUp] site done {\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html\",\"clicked\":false,\"reason\":\"gate-absent(product)\",\"navigatedAfterClick\":false}"}
+{"ts":"2026-08-03T10:24:55.127Z","level":"info","msg":"[warmUp] cookie check (bl) {\"hasAgeCookie\":true,\"ageCookies\":[\"adultchecked=1\"],\"allCookieNames\":[\"_vwo_uuid_v2\",\"_trust360_\",\"_inflow_params\",\"_inflow_ad_params\",\"_gcl_au\",\"_twpid\",\"_fbp\",\"_gaid\",\"_im_vid\",\"_tt_enable_cookie\",\"_ttp\",\"_unv_aid\",\"recommend_device_id\",\"__DLsite_SID\",\"_vwo_uuid\",\"_vwo_ds\",\"_vis_opt_s\",\"adultchecked\",\"lamp_cookie_synced_flag\",\"2026721_julycoupon_home\",\"2026724_julycoupon_home\",\"2026727_set_home\",\"2026731_julycoupon_home\",\"_gid\",\"rtg_bfp\",\"locale\",\"_ga_sid\",\"_unv_id\",\"DL_PRODUCT_LOG\",\"_gat\",\"_dd_s\",\"_inflow_dlsite_params\",\"_ga\",\"_ga_ZW5GTXK6EV\",\"ttcsid\",\"ttcsid_CKRMHGRC77U81CKC8HNG\",\"ttcsid_CLVT5NRC77U95UC4O12G\",\"ttcsid_CPLBGI3C77U3S3PJLFRG\",\"ttcsid_CQ3QNNBC77U0CETNEGNG\",\"ttcsid_D02V363C77U9GIBTNP9G\",\"ttcsid_D0DFBO3C77U626LJDL6G\"]}"}
+{"ts":"2026-08-03T10:24:59.139Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50","aggregated":true,"count":5,"windowSec":60}
+{"ts":"2026-08-03T10:25:02.055Z","level":"info","msg":"[warmUp] クリック試行結果 {\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html\",\"clicked\":false,\"clickedInfo\":null}"}
+{"ts":"2026-08-03T10:25:02.055Z","level":"info","msg":"[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html\",\"title\":\"【25%OFF】【強○連続クリ絶頂♡】あまあまS♡後輩彼氏のあやせくん [ドメスティックうさちゃんズ] | DLsite がるまに\"}"}
+{"ts":"2026-08-03T10:25:02.056Z","level":"info","msg":"[warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html\",\"productUrl\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP\"}"}
+{"ts":"2026-08-03T10:25:08.309Z","level":"info","msg":"[warmUp] クリック試行結果 {\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP\",\"clicked\":false,\"clickedInfo\":null}"}
+{"ts":"2026-08-03T10:25:08.309Z","level":"info","msg":"[warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP\",\"title\":\"【25%OFF】【強○連続クリ絶頂♡】あまあまS♡後輩彼氏のあやせくん [ドメスティックうさちゃんズ] | DLsite がるまに\"}"}
+{"ts":"2026-08-03T10:25:14.314Z","level":"info","msg":"[warmUp] site done {\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html\",\"clicked\":false,\"reason\":\"gate-absent(product)\",\"navigatedAfterClick\":false}"}
+{"ts":"2026-08-03T10:25:14.315Z","level":"info","msg":"[warmUp] cookie check (girls) {\"hasAgeCookie\":true,\"ageCookies\":[\"adultchecked=1\"],\"allCookieNames\":[\"_vwo_uuid_v2\",\"_trust360_\",\"_inflow_params\",\"_inflow_ad_params\",\"_gcl_au\",\"_twpid\",\"_fbp\",\"_gaid\",\"_im_vid\",\"_tt_enable_cookie\",\"_ttp\",\"_unv_aid\",\"recommend_device_id\",\"__DLsite_SID\",\"_vwo_uuid\",\"_vwo_ds\",\"_vis_opt_s\",\"adultchecked\",\"lamp_cookie_synced_flag\",\"2026721_julycoupon_home\",\"2026724_julycoupon_home\",\"2026727_set_home\",\"2026731_julycoupon_home\",\"_gid\",\"rtg_bfp\",\"locale\",\"_ga_sid\",\"_unv_id\",\"DL_PRODUCT_LOG\",\"_dd_s\",\"_inflow_dlsite_params\",\"_ga\",\"_ga_ZW5GTXK6EV\",\"ttcsid\",\"ttcsid_CKRMHGRC77U81CKC8HNG\",\"ttcsid_CLVT5NRC77U95UC4O12G\",\"ttcsid_CPLBGI3C77U3S3PJLFRG\",\"ttcsid_CQ3QNNBC77U0CETNEGNG\",\"ttcsid_D02V363C77U9GIBTNP9G\",\"ttcsid_D0DFBO3C77U626LJDL6G\"]}"}
+{"ts":"2026-08-03T10:25:14.316Z","level":"info","msg":"[warmUp] age-gate results (per site) {\"maniax\":{\"clicked\":false,\"reason\":\"gate-absent(product)\",\"diag\":{\"title\":\"たまにはポニテなウマ〇すめ。 [あいすしゃーべっと] | DLsite 同人 - R18\",\"url\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html\",\"bodyTextSample\":\" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム \",\"anchorTextsSample\":[\"日本語\",\"English\",\"简体中文\",\"繁體中文\",\"한국어\",\"Español\",\"Deutsch\",\"Français\",\"Bahasa Indonesia\",\"Italiano\",\"Português\",\"Svenska\",\"ภาษาไทย\",\"Tiếng Việt\"],\"clickedInfo\":null},\"gateAbsent\":true,\"regionBlocked\":false,\"targetUrl\":\"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html\",\"rjUsed\":\"RJ01611503\",\"cookieObtained\":true},\"bl\":{\"clicked\":false,\"reason\":\"gate-absent(product)\",\"diag\":{\"title\":\"ゲイプロレス [東京ミックス] | DLsite がるまに\",\"url\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP\",\"bodyTextSample\":\" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコ\",\"anchorTextsSample\":[\"日本語\",\"English\",\"简体中文\",\"繁體中文\",\"한국어\",\"Español\",\"Deutsch\",\"Français\",\"Bahasa Indonesia\",\"Italiano\",\"Português\",\"Svenska\",\"ภาษาไทย\",\"Tiếng Việt\"],\"clickedInfo\":null},\"gateAbsent\":true,\"regionBlocked\":false,\"targetUrl\":\"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html\",\"rjUsed\":\"RJ01630973\",\"cookieObtained\":true},\"girls\":{\"clicked\":false,\"reason\":\"gate-absent(product)\",\"diag\":{\"title\":\"【25%OFF】【強○連続クリ絶頂♡】あまあまS♡後輩彼氏のあやせくん [ドメスティックうさちゃんズ] | DLsite がるまに\",\"url\":\"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP\",\"bodyTextSample\":\" Select Language 日本語 "}
+{"ts":"2026-08-03T10:25:14.318Z","level":"info","msg":"[detail] session re-warmup completed, resuming maniax"}
+{"ts":"2026-08-03T10:25:14.318Z","level":"warn","msg":"[detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します"}
+{"ts":"2026-08-03T10:25:14.318Z","level":"info","msg":"[detail] aborted by external request (before fetching due works)"}
+{"ts":"2026-08-03T10:25:14.318Z","level":"info","msg":"[detail] done {\"processed\":36673,\"priceChanges\":960,\"errors\":13277,\"total\":50000,\"apiMissing\":3088,\"contaminated\":0,\"fetchFail\":10189,\"storeError\":0,\"verifiedAlive\":5,\"autoThrottled\":false,\"rateLimit\":700,\"concurrency\":3,\"errorRate\":0.266,\"highErrorRate\":true}"}
+{"ts":"2026-08-03T10:25:25.986Z","level":"info","msg":"[pushDebugBundle] pushed {\"job\":\"turbo\",\"files\":12,\"branch\":\"debug\"}"}
+{"ts":"2026-08-03T10:25:25.986Z","level":"warn","msg":"[api] turbo: エラー率が高水準です(26.6% — 13277/49950件)。turboConcurrency/turboRateLimit(config.fetch)の負荷設定見直しを検討してください。"}
+{"ts":"2026-08-03T10:25:26.009Z","type":"job_digest","job":"turbo","duration":"2141.2s","ok":true,"processed":36673,"priceChanges":960,"errors":13277,"total":50000,"apiMissing":3088,"contaminated":0,"fetchFail":10189,"storeError":0,"verifiedAlive":5,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0.266,"highErrorRate":true,"newRelease":{"grandTotal":16,"sites":{"maniax":0,"girls":0,"bl":16}},"endingSoon":{"grandTotal":247,"newCount":80,"boostedCount":247,"sites":{"maniax":201,"girls":33,"bl":13}},"stopped":true}
+{"ts":"2026-08-04T00:00:01.005Z","level":"info","msg":"[detail] due batch: 500 (total so far: 500 ) concurrency=3"}
+{"ts":"2026-08-04T00:00:02.545Z","level":"warn","msg":"[detail] API returned empty object bl requested 1件 sample: RJ01628879"}
+{"ts":"2026-08-04T00:00:02.583Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 15"}
+{"ts":"2026-08-04T00:00:03.521Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01457799\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:03.894Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01603552\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:04.199Z","level":"warn","msg":"[detail] API returned empty object bl requested 1件 sample: RJ01628879"}
+{"ts":"2026-08-04T00:00:04.209Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 15"}
+{"ts":"2026-08-04T00:00:04.209Z","level":"warn","msg":"[detail] batch fail, splitting 15"}
+{"ts":"2026-08-04T00:00:04.528Z","level":"warn","msg":"[detail] API returned empty object girls requested 8件 sample: RJ01550271,RJ01622400"}
+{"ts":"2026-08-04T00:00:05.442Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01387511"}
+{"ts":"2026-08-04T00:00:05.683Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01640122"}
+{"ts":"2026-08-04T00:00:06.122Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01640126"}
+{"ts":"2026-08-04T00:00:06.201Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01564886\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.204Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01564074\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.208Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01559300\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.214Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01557999\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.216Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01554530\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.221Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01553353\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.226Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01551798\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.231Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01551126\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.235Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01548662\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.238Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01547654\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.330Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01552562\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:06.346Z","level":"warn","msg":"[detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 7"}
+{"ts":"2026-08-04T00:00:06.661Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01640075"}
+{"ts":"2026-08-04T00:00:06.851Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01640076"}
+{"ts":"2026-08-04T00:00:07.382Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01639976"}
+{"ts":"2026-08-04T00:00:07.680Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01622223\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:07.684Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01505582\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:07.698Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01528646\",\"price\":1320,\"sale_price\":198,\"point\":null,\"point_rate\":null,\"discount_rate\":85,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:07.699Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01528648\",\"price\":1320,\"sale_price\":198,\"point\":null,\"point_rate\":null,\"discount_rate\":85,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:07.704Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01528658\",\"price\":1320,\"sale_price\":198,\"point\":null,\"point_rate\":null,\"discount_rate\":85,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:08.138Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01639975"}
+{"ts":"2026-08-04T00:00:08.261Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01308860"}
+{"ts":"2026-08-04T00:00:08.634Z","level":"trace","msg":"[detail] API missing but detail page confirms existence — rescuing from delisting RJ01680988"}
+{"ts":"2026-08-04T00:00:08.720Z","level":"warn","msg":"[detail] batch issues summary {\"site\":\"maniax\",\"batchSize\":50,\"verify_rescued\":9}"}
+{"ts":"2026-08-04T00:00:09.856Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01545390\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:09.859Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01528654\",\"price\":1320,\"sale_price\":198,\"point\":null,\"point_rate\":null,\"discount_rate\":85,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:09.865Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01528657\",\"price\":1320,\"sale_price\":198,\"point\":null,\"point_rate\":null,\"discount_rate\":85,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:00:10.925Z","level":"warn","msg":"[db] slow transaction (transactionNoSave): 959ms {\"dbSizeMB\":412.1}"}
+{"ts":"2026-08-04T00:00:10.995Z","level":"info","msg":"[detail] limit reached: 500"}
+{"ts":"2026-08-04T00:00:10.995Z","level":"info","msg":"[detail] done {\"processed\":475,\"priceChanges\":21,\"errors\":25,\"total\":500,\"apiMissing\":0,\"contaminated\":0,\"fetchFail\":25,\"storeError\":0,\"verifiedAlive\":9,\"autoThrottled\":false,\"rateLimit\":700,\"concurrency\":3,\"errorRate\":0.05,\"highErrorRate\":false}"}
+{"ts":"2026-08-04T00:00:32.128Z","level":"info","msg":"[pushDebugBundle] pushed {\"job\":\"detail\",\"files\":12,\"branch\":\"debug\"}"}
+{"ts":"2026-08-04T00:00:32.129Z","type":"job_digest","job":"fetch","trigger":"cron","processed":475,"priceChanges":21,"errors":25,"total":500,"apiMissing":0,"contaminated":0,"fetchFail":25,"storeError":0,"verifiedAlive":9,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0.05,"highErrorRate":false,"duration":"31.4s"}
+{"ts":"2026-08-04T00:10:00.625Z","level":"info","msg":"[detail] due batch: 500 (total so far: 500 ) concurrency=3"}
+{"ts":"2026-08-04T00:10:19.771Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01473247\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:10:20.064Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01489192\",\"price\":110,\"sale_price\":55,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:10:22.280Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01637675\",\"price\":440,\"sale_price\":220,\"point\":null,\"point_rate\":null,\"discount_rate\":50,\"is_on_sale\":1,\"is_point_only\":0}"}
+{"ts":"2026-08-04T00:10:25.187Z","level":"warn","msg":"[db] slow transaction (transactionNoSave): 869ms {\"dbSizeMB\":412.1}"}
+{"ts":"2026-08-04T00:10:25.217Z","level":"info","msg":"[detail] price changed {\"rj\":\"RJ01647634\",\"price\":1650,\"sale_price\":null,\"point\":null,\"point_rate\":null,\"discount_rate\":null,\"is_on_sale\":1,\"is_point_only\":1}"}

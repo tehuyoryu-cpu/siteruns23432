@@ -1,0 +1,499 @@
+2026-08-03T09:55:07.737Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:55:08.430Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 25
+2026-08-03T09:55:09.939Z [INFO ] [detail] due batch: 500 (total so far: 23500 ) concurrency=3
+2026-08-03T09:55:11.641Z [WARN ] [db] slow transaction (transactionNoSave): 319ms {"dbSizeMB":412.1}
+2026-08-03T09:55:12.327Z [WARN ] [detail] API returned partial data maniax got 4 / requested 9
+2026-08-03T09:55:14.612Z [INFO ] [detail] due batch: 500 (total so far: 24000 ) concurrency=3
+2026-08-03T09:55:15.217Z [WARN ] [detail] API returned partial data maniax got 1 / requested 4
+2026-08-03T09:55:15.571Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":6}
+2026-08-03T09:55:15.604Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":3}
+2026-08-03T09:55:16.171Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":2}
+2026-08-03T09:55:18.401Z [INFO ] [detail] due batch: 500 (total so far: 24500 ) concurrency=3
+2026-08-03T09:55:23.096Z [INFO ] [detail] due batch: 500 (total so far: 25000 ) concurrency=3
+2026-08-03T09:55:24.237Z [WARN ] [detail] API returned partial data maniax got 12 / requested 50
+2026-08-03T09:55:26.367Z [INFO ] [detail] due batch: 500 (total so far: 25500 ) concurrency=3
+2026-08-03T09:55:27.493Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":7}
+2026-08-03T09:55:30.999Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":30,"key_not_in_response":1}
+2026-08-03T09:55:31.056Z [INFO ] [detail] due batch: 500 (total so far: 26000 ) concurrency=3
+2026-08-03T09:55:33.108Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":27,"key_not_in_response":1}
+2026-08-03T09:55:34.601Z [INFO ] [detail] due batch: 500 (total so far: 26500 ) concurrency=3
+2026-08-03T09:55:40.818Z [INFO ] [detail] circle sale end RG35694
+2026-08-03T09:55:40.820Z [INFO ] [detail] price changed {"rj":"RJ188980","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T09:55:41.091Z [WARN ] [db] slow transaction (transactionNoSave): 308ms {"dbSizeMB":412.1}
+2026-08-03T09:55:41.122Z [INFO ] [detail] due batch: 500 (total so far: 27000 ) concurrency=3
+2026-08-03T09:55:45.532Z [INFO ] [detail] due batch: 500 (total so far: 27500 ) concurrency=3
+2026-08-03T09:55:50.780Z [INFO ] [detail] circle sale end RG54446
+2026-08-03T09:55:50.782Z [INFO ] [detail] price changed {"rj":"RJ01457811","price":0,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T09:55:51.038Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-08-03T09:55:51.875Z [INFO ] [detail] circle sale start RG54446
+2026-08-03T09:55:51.921Z [INFO ] [detail] due batch: 500 (total so far: 28000 ) concurrency=3
+2026-08-03T09:55:53.255Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":34,"no_price_field":1,"key_not_in_response":14}
+2026-08-03T09:55:56.841Z [INFO ] [detail] due batch: 500 (total so far: 28500 ) concurrency=3
+2026-08-03T09:55:58.971Z [WARN ] (集約) 同種メッセージが直近59秒で17回発生（14件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":9}
+2026-08-03T09:55:58.972Z [WARN ] (集約) 同種メッセージが直近56秒で22回発生（19件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":26,"key_not_in_response":1}
+2026-08-03T09:55:58.972Z [WARN ] (集約) 同種メッセージが直近52秒で4回発生（1件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T09:55:58.973Z [WARN ] (集約) 同種メッセージが直近47秒で4回発生（1件を抑制）／ 例: [detail] API returned partial data maniax got 4 / requested 9
+2026-08-03T09:55:58.973Z [WARN ] (集約) 同種メッセージが直近43秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":6}
+2026-08-03T09:56:01.989Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":3}
+2026-08-03T09:56:02.829Z [INFO ] [detail] due batch: 500 (total so far: 29000 ) concurrency=3
+2026-08-03T09:56:05.404Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":17,"no_price_field":1}
+2026-08-03T09:56:06.715Z [INFO ] [detail] due batch: 500 (total so far: 29500 ) concurrency=3
+2026-08-03T09:56:07.157Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":10,"key_not_in_response":1}
+2026-08-03T09:56:08.737Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1,"key_not_in_response":3}
+2026-08-03T09:56:09.147Z [INFO ] [detail] price changed {"rj":"RJ01678142","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:56:09.152Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":39,"key_not_in_response":5}
+2026-08-03T09:56:11.844Z [INFO ] [detail] due batch: 500 (total so far: 30000 ) concurrency=3
+2026-08-03T09:56:12.853Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":17,"no_price_field":1}
+2026-08-03T09:56:13.147Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":13}
+2026-08-03T09:56:13.374Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T09:56:13.517Z [WARN ] [detail] API returned partial data maniax got 8 / requested 22
+2026-08-03T09:56:13.536Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":22,"key_not_in_response":14}
+2026-08-03T09:56:16.926Z [INFO ] [detail] due batch: 500 (total so far: 30500 ) concurrency=3
+2026-08-03T09:56:18.299Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ003151,RJ012154
+2026-08-03T09:56:19.032Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ003151,RJ012154
+2026-08-03T09:56:19.033Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:56:19.088Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ010321,RJ010465
+2026-08-03T09:56:19.673Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2}
+2026-08-03T09:56:19.830Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T09:56:19.831Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T09:56:20.583Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T09:56:31.694Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html","clicked":false,"clickedInfo":null}
+2026-08-03T09:56:31.695Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html","title":"【20%OFF】治癒されぬ [日が暮れる頃] | DLsite 同人 - R18"}
+2026-08-03T09:56:31.707Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html/?locale=ja_JP"}
+2026-08-03T09:56:42.293Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T09:56:42.294Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html/?locale=ja_JP","title":"【20%OFF】治癒されぬ [日が暮れる頃] | DLsite 同人 - R18"}
+2026-08-03T09:56:48.297Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T09:56:48.300Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_gat","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T09:56:57.114Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html","clicked":false,"clickedInfo":null}
+2026-08-03T09:56:57.114Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html","title":"サクラトアイト [セツナセカイ] | DLsite がるまに"}
+2026-08-03T09:56:57.124Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html/?locale=ja_JP"}
+2026-08-03T09:56:58.976Z [WARN ] (集約) 同種メッセージが直近41秒で7回発生（4件を抑制）／ 例: [detail] API returned empty object maniax requested 50件 sample: RJ003151,RJ012154
+2026-08-03T09:57:06.558Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T09:57:06.558Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html/?locale=ja_JP","title":"サクラトアイト [セツナセカイ] | DLsite がるまに"}
+2026-08-03T09:57:12.562Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T09:57:12.566Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","_gat","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T09:57:22.733Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html","clicked":false,"clickedInfo":null}
+2026-08-03T09:57:22.733Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html","title":"おっさんVR [SCONE] | DLsite がるまに"}
+2026-08-03T09:57:22.747Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html/?locale=ja_JP"}
+2026-08-03T09:57:31.184Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T09:57:31.184Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html/?locale=ja_JP","title":"おっさんVR [SCONE] | DLsite がるまに"}
+2026-08-03T09:57:37.188Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T09:57:37.193Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T09:57:37.194Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【20%OFF】治癒されぬ [日が暮れる頃] | DLsite 同人 - R18","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611610.html","rjUsed":"RJ01611610","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"サクラトアイト [セツナセカイ] | DLsite がるまに","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01483865.html","rjUsed":"RJ01483865","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"おっさんVR [SCONE] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 T","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01619257.html","rjUsed":"RJ01619257","cookieObtained":true}}
+2026-08-03T09:57:37.204Z [INFO ] [detail] session re-warmup completed, resuming maniax
+2026-08-03T09:57:37.205Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T09:57:39.746Z [INFO ] [detail] due batch: 500 (total so far: 31000 ) concurrency=3
+2026-08-03T09:57:40.564Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":35,"key_not_in_response":7}
+2026-08-03T09:58:34.654Z [INFO ] [detail] due batch: 500 (total so far: 31500 ) concurrency=3
+2026-08-03T09:58:35.139Z [WARN ] [detail] batch issues summary {"site":"home","batchSize":3,"key_not_in_response":1}
+2026-08-03T09:59:12.871Z [INFO ] [detail] due batch: 500 (total so far: 32000 ) concurrency=3
+2026-08-03T09:59:13.845Z [INFO ] [detail] price changed {"rj":"RJ01680117","price":220,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:17.837Z [INFO ] [detail] price changed {"rj":"RJ01659880","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:17.847Z [INFO ] [detail] price changed {"rj":"RJ01659658","price":220,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.240Z [INFO ] [detail] price changed {"rj":"RJ01659604","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.242Z [INFO ] [detail] price changed {"rj":"RJ01659519","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.244Z [INFO ] [detail] price changed {"rj":"RJ01659511","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.245Z [INFO ] [detail] price changed {"rj":"RJ01659482","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.247Z [INFO ] [detail] price changed {"rj":"RJ01659413","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.248Z [INFO ] [detail] price changed {"rj":"RJ01659378","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.249Z [INFO ] [detail] price changed {"rj":"RJ01659293","price":1980,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.254Z [INFO ] [detail] price changed {"rj":"RJ01644202","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.256Z [INFO ] [detail] price changed {"rj":"RJ01644197","price":1430,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.257Z [INFO ] [detail] price changed {"rj":"RJ01644185","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.259Z [INFO ] [detail] price changed {"rj":"RJ01644174","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.260Z [INFO ] [detail] price changed {"rj":"RJ01644170","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.274Z [INFO ] [detail] price changed {"rj":"RJ01644012","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:21.276Z [INFO ] [detail] price changed {"rj":"RJ01643985","price":220,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:36.707Z [INFO ] [detail] price changed {"rj":"RJ01643920","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:36.709Z [INFO ] [detail] price changed {"rj":"RJ01643861","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:36.711Z [INFO ] [detail] price changed {"rj":"RJ01643791","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T09:59:36.725Z [INFO ] [detail] circle sale end RG01072135
+2026-08-03T09:59:36.725Z [INFO ] [detail] price changed {"rj":"RJ01643222","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T09:59:56.349Z [INFO ] [detail] due batch: 500 (total so far: 32500 ) concurrency=3
+2026-08-03T10:00:22.131Z [INFO ] [detail] price changed {"rj":"RJ01317267","price":2530,"sale_price":1771,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:22.138Z [INFO ] [detail] price changed {"rj":"RJ356899","price":2750,"sale_price":1925,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:22.141Z [INFO ] [detail] price changed {"rj":"RJ01581920","price":880,"sale_price":616,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:22.149Z [INFO ] [detail] price changed {"rj":"RJ01619260","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:22.161Z [INFO ] [detail] price changed {"rj":"RJ186178","price":1540,"sale_price":1078,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:29.686Z [INFO ] [detail] price changed {"rj":"RJ272372","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:29.698Z [INFO ] [detail] price changed {"rj":"RJ175399","price":1540,"sale_price":1078,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:29.715Z [INFO ] [detail] price changed {"rj":"RJ01564713","price":110,"sale_price":11,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:36.447Z [INFO ] [detail] due batch: 500 (total so far: 33000 ) concurrency=3
+2026-08-03T10:00:36.961Z [INFO ] [detail] price changed {"rj":"RJ01686937","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:36.963Z [INFO ] [detail] price changed {"rj":"RJ01686906","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:36.964Z [INFO ] [detail] price changed {"rj":"RJ01686822","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:36.966Z [INFO ] [detail] price changed {"rj":"RJ01686782","price":1100,"sale_price":880,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:36.968Z [INFO ] [detail] price changed {"rj":"RJ01686537","price":880,"sale_price":616,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:00:48.848Z [INFO ] [detail] price changed {"rj":"RJ01666317","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:48.850Z [INFO ] [detail] price changed {"rj":"RJ01666249","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:48.854Z [INFO ] [detail] price changed {"rj":"RJ01665465","price":1760,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:48.858Z [INFO ] [detail] price changed {"rj":"RJ01660918","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:00:53.707Z [WARN ] [db] slow transaction (transactionNoSave): 304ms {"dbSizeMB":412.1}
+2026-08-03T10:00:57.185Z [INFO ] [detail] price changed {"rj":"RJ01156682","price":1760,"sale_price":1320,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:01:00.528Z [INFO ] [detail] price changed {"rj":"RJ01168428","price":2750,"sale_price":1925,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:01:10.811Z [INFO ] [detail] price changed {"rj":"RJ01475602","price":110,"sale_price":11,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:01:14.075Z [INFO ] [detail] due batch: 500 (total so far: 33500 ) concurrency=3
+2026-08-03T10:01:25.169Z [WARN ] [db] slow transaction (transactionNoSave): 364ms {"dbSizeMB":412.1}
+2026-08-03T10:01:49.212Z [INFO ] [detail] due batch: 500 (total so far: 34000 ) concurrency=3
+2026-08-03T10:01:49.663Z [WARN ] [detail] API returned empty object home requested 1件 sample: RJ01503087
+2026-08-03T10:01:50.394Z [WARN ] [detail] API returned empty object home requested 1件 sample: RJ01503087
+2026-08-03T10:01:54.468Z [INFO ] [detail] price changed {"rj":"RJ01406230","price":5280,"sale_price":3696,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:02:05.307Z [WARN ] [db] slow transaction (transactionNoSave): 316ms {"dbSizeMB":412.1}
+2026-08-03T10:02:16.574Z [INFO ] [detail] price changed {"rj":"RJ01669830","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:02:23.950Z [INFO ] [detail] due batch: 500 (total so far: 34500 ) concurrency=3
+2026-08-03T10:02:39.022Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 50
+2026-08-03T10:02:39.751Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 50
+2026-08-03T10:02:39.752Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:02:40.530Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 4 / requested 25
+2026-08-03T10:02:41.825Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ415256,RJ01501805
+2026-08-03T10:02:46.157Z [WARN ] [detail] API returned partial data maniax got 19 / requested 50
+2026-08-03T10:02:46.194Z [INFO ] [detail] price changed {"rj":"RJ01670262","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:02:46.227Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":31}
+2026-08-03T10:02:49.163Z [WARN ] [detail] API returned partial data maniax got 17 / requested 50
+2026-08-03T10:02:49.218Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":33}
+2026-08-03T10:02:52.438Z [WARN ] [detail] API returned partial data maniax got 10 / requested 50
+2026-08-03T10:02:52.674Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":40}
+2026-08-03T10:02:55.821Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01533303,RJ387098
+2026-08-03T10:02:56.553Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01533303,RJ387098
+2026-08-03T10:02:56.555Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:02:59.022Z [WARN ] (集約) 同種メッセージが直近17秒で5回発生（2件を抑制）／ 例: [detail] API returned empty object maniax requested 25件 sample: RJ415256,RJ01501805
+2026-08-03T10:03:01.340Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 1 / requested 38
+2026-08-03T10:03:01.340Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:03:01.340Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:03:11.135Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:03:11.135Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html","title":"【オホ声】クソ生意気なメ○ガキを脳天アクメでわからせたw [アオスタジオ] | DLsite 同人 - R18"}
+2026-08-03T10:03:11.158Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html/?locale=ja_JP"}
+2026-08-03T10:03:22.808Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:03:22.808Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html/?locale=ja_JP","title":"【オホ声】クソ生意気なメ○ガキを脳天アクメでわからせたw [アオスタジオ] | DLsite 同人 - R18"}
+2026-08-03T10:03:28.817Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:03:28.822Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_gat","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:03:41.133Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:03:41.134Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html","title":"満員電車で紳士な会社員にクリ責めされて初絶頂、ホテルでは潮吹きさせられるカントボーイ [げっか] | DLsite がるまに"}
+2026-08-03T10:03:41.143Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html/?locale=ja_JP"}
+2026-08-03T10:03:52.472Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:03:52.472Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html/?locale=ja_JP","title":"満員電車で紳士な会社員にクリ責めされて初絶頂、ホテルでは潮吹きさせられるカントボーイ [げっか] | DLsite がるまに"}
+2026-08-03T10:03:58.481Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:03:58.484Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","_gat","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:04:10.335Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:04:10.335Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html","title":"【50%OFF】姉さんのパンティー [ウケダン] | DLsite がるまに"}
+2026-08-03T10:04:10.346Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html/?locale=ja_JP"}
+2026-08-03T10:04:22.616Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:04:22.616Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html/?locale=ja_JP","title":"【50%OFF】姉さんのパンティー [ウケダン] | DLsite がるまに"}
+2026-08-03T10:04:28.627Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:04:28.632Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_gat","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:04:28.632Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【オホ声】クソ生意気なメ○ガキを脳天アクメでわからせたw [アオスタジオ] | DLsite 同人 - R18","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ379466.html","rjUsed":"RJ379466","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"満員電車で紳士な会社員にクリ責めされて初絶頂、ホテルでは潮吹きさせられるカントボーイ [げっか] | DLsite がるまに","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01686937.html","rjUsed":"RJ01686937","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【50%OFF】姉さんのパンティー [ウケダン] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 T","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ296274.html","rjUsed":"RJ296274","cookieObtained":true}}
+2026-08-03T10:04:28.642Z [INFO ] [detail] session re-warmup completed, resuming maniax
+2026-08-03T10:04:28.642Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:04:31.323Z [INFO ] [detail] due batch: 500 (total so far: 35000 ) concurrency=3
+2026-08-03T10:04:57.345Z [INFO ] [detail] price changed {"rj":"RJ273233","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.348Z [INFO ] [detail] price changed {"rj":"RJ283528","price":660,"sale_price":66,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.354Z [INFO ] [detail] price changed {"rj":"RJ431851","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.357Z [INFO ] [detail] price changed {"rj":"RJ388398","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.376Z [INFO ] [detail] price changed {"rj":"RJ353193","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.380Z [INFO ] [detail] price changed {"rj":"RJ369505","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.383Z [INFO ] [detail] price changed {"rj":"RJ01066448","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.385Z [INFO ] [detail] price changed {"rj":"RJ249269","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.387Z [INFO ] [detail] price changed {"rj":"RJ296734","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.388Z [INFO ] [detail] price changed {"rj":"RJ241514","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.390Z [INFO ] [detail] price changed {"rj":"RJ01191906","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:04:57.392Z [INFO ] [detail] price changed {"rj":"RJ333421","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.153Z [INFO ] [detail] price changed {"rj":"RJ260272","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.155Z [INFO ] [detail] price changed {"rj":"RJ01386432","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.159Z [INFO ] [detail] price changed {"rj":"RJ315060","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.160Z [INFO ] [detail] price changed {"rj":"RJ01260666","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.162Z [INFO ] [detail] price changed {"rj":"RJ204978","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.163Z [INFO ] [detail] price changed {"rj":"RJ265424","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.168Z [INFO ] [detail] price changed {"rj":"RJ230701","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.170Z [INFO ] [detail] price changed {"rj":"RJ159920","price":550,"sale_price":55,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.172Z [INFO ] [detail] price changed {"rj":"RJ168278","price":550,"sale_price":55,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.175Z [INFO ] [detail] price changed {"rj":"RJ243858","price":1540,"sale_price":154,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:01.179Z [INFO ] [detail] price changed {"rj":"RJ199174","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:05.211Z [INFO ] [detail] circle sale end RG01015350
+2026-08-03T10:05:05.221Z [INFO ] [detail] price changed {"rj":"RJ01534248","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:08.630Z [INFO ] [detail] price changed {"rj":"RJ176081","price":550,"sale_price":55,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:08.636Z [INFO ] [detail] price changed {"rj":"RJ226368","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:08.642Z [INFO ] [detail] price changed {"rj":"RJ238919","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:12.035Z [INFO ] [detail] price changed {"rj":"RJ215003","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:12.038Z [INFO ] [detail] price changed {"rj":"RJ176083","price":660,"sale_price":66,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:12.043Z [INFO ] [detail] price changed {"rj":"RJ190995","price":660,"sale_price":66,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:12.080Z [INFO ] [detail] price changed {"rj":"RJ181917","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:12.147Z [INFO ] [detail] due batch: 500 (total so far: 35500 ) concurrency=3
+2026-08-03T10:05:13.456Z [INFO ] [detail] price changed {"rj":"RJ186316","price":770,"sale_price":77,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:20.914Z [INFO ] [detail] price changed {"rj":"RJ149808","price":660,"sale_price":66,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:05:48.047Z [INFO ] [detail] due batch: 500 (total so far: 36000 ) concurrency=3
+2026-08-03T10:05:49.496Z [INFO ] [detail] circle sale end RG01036379
+2026-08-03T10:05:49.500Z [INFO ] [detail] circle sale start RG01036379
+2026-08-03T10:06:18.472Z [WARN ] [db] slow transaction (transactionNoSave): 307ms {"dbSizeMB":412.1}
+2026-08-03T10:06:21.623Z [INFO ] [detail] due batch: 500 (total so far: 36500 ) concurrency=3
+2026-08-03T10:06:27.142Z [INFO ] [detail] circle sale end RG01070089
+2026-08-03T10:06:27.144Z [INFO ] [detail] price changed {"rj":"RJ01630904","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:06:27.147Z [INFO ] [detail] circle sale end RG01070090
+2026-08-03T10:06:27.149Z [INFO ] [detail] price changed {"rj":"RJ01654881","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:06:39.441Z [INFO ] [detail] price changed {"rj":"RJ411285","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:07:11.848Z [INFO ] [detail] due batch: 500 (total so far: 37000 ) concurrency=3
+2026-08-03T10:07:27.009Z [WARN ] [db] slow transaction (transactionNoSave): 347ms {"dbSizeMB":412.1}
+2026-08-03T10:07:41.308Z [INFO ] [detail] price changed {"rj":"RJ01613084","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:07:47.689Z [INFO ] [detail] price changed {"rj":"RJ01560953","price":110,"sale_price":11,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:07:47.761Z [INFO ] [detail] due batch: 500 (total so far: 37500 ) concurrency=3
+2026-08-03T10:07:49.681Z [INFO ] [detail] circle sale end RG01060479
+2026-08-03T10:07:49.683Z [INFO ] [detail] price changed {"rj":"RJ01630779","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:07:57.181Z [INFO ] [detail] price changed {"rj":"RJ01433613","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:08:01.346Z [INFO ] [detail] price changed {"rj":"RJ01501469","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:08:25.069Z [INFO ] [detail] due batch: 500 (total so far: 38000 ) concurrency=3
+2026-08-03T10:09:02.477Z [INFO ] [detail] due batch: 500 (total so far: 38500 ) concurrency=3
+2026-08-03T10:09:21.909Z [WARN ] [db] slow transaction (transactionNoSave): 338ms {"dbSizeMB":412.1}
+2026-08-03T10:09:29.226Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:09:33.356Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":15}
+2026-08-03T10:09:37.294Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":5}
+2026-08-03T10:09:37.344Z [INFO ] [detail] due batch: 500 (total so far: 39000 ) concurrency=3
+2026-08-03T10:09:40.104Z [WARN ] [detail] API returned partial data maniax got 13 / requested 50
+2026-08-03T10:09:40.144Z [INFO ] [detail] circle sale end RG66793
+2026-08-03T10:09:40.147Z [INFO ] [detail] price changed {"rj":"RJ01422764","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:09:40.182Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 6 / requested 50
+2026-08-03T10:09:40.420Z [WARN ] [detail] API returned partial data maniax got 18 / requested 50
+2026-08-03T10:09:40.909Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 6 / requested 50
+2026-08-03T10:09:40.910Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:09:41.525Z [WARN ] [detail] API returned partial data maniax got 6 / requested 25
+2026-08-03T10:09:41.773Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:09:42.504Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:09:42.852Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01103132,RJ01102386
+2026-08-03T10:09:42.964Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:09:42.964Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:09:54.031Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:09:54.031Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html","title":"【90%OFF】処女ビッチたちのチ●ポシェア～俺の部屋に入り浸る二人の制服女子との3P性活で素人童貞を卒業した話～ [スタジオ山ロマン] | DLsite 同人 - R18"}
+2026-08-03T10:09:54.035Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html/?locale=ja_JP"}
+2026-08-03T10:09:59.053Z [WARN ] (集約) 同種メッセージが直近30秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:09:59.053Z [WARN ] (集約) 同種メッセージが直近19秒で4回発生（1件を抑制）／ 例: [detail] API returned partial data maniax got 13 / requested 50
+2026-08-03T10:09:59.053Z [WARN ] (集約) 同種メッセージが直近19秒で6回発生（3件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 6 / requested 50
+2026-08-03T10:10:10.688Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html/?locale=ja_JP","title":"【90%OFF】処女ビッチたちのチ●ポシェア～俺の部屋に入り浸る二人の制服女子との3P性活で素人童貞を卒業した話～ [スタジオ山ロマン] | DLsite 同人 - R18","readyState":"complete","bodyLen":312709,"isLoading":false}
+2026-08-03T10:10:10.695Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:10:10.696Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html/?locale=ja_JP","title":"【90%OFF】処女ビッチたちのチ●ポシェア～俺の部屋に入り浸る二人の制服女子との3P性活で素人童貞を卒業した話～ [スタジオ山ロマン] | DLsite 同人 - R18"}
+2026-08-03T10:10:16.704Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:10:16.708Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_gat","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D0DFBO3C77U626LJDL6G","ttcsid","ttcsid_D02V363C77U9GIBTNP9G"]}
+2026-08-03T10:10:27.474Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:10:27.474Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","title":"ゲイプロレス [東京ミックス] | DLsite がるまに"}
+2026-08-03T10:10:27.495Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP"}
+2026-08-03T10:10:37.797Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:10:37.798Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","title":"ゲイプロレス [東京ミックス] | DLsite がるまに"}
+2026-08-03T10:10:43.809Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:10:43.815Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","_gat","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:10:54.564Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:10:54.565Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html","title":"龍神さまの嫁入り [パンダが一匹。] | DLsite がるまに"}
+2026-08-03T10:10:54.582Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html/?locale=ja_JP"}
+2026-08-03T10:11:04.305Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:11:04.305Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html/?locale=ja_JP","title":"龍神さまの嫁入り [パンダが一匹。] | DLsite がるまに"}
+2026-08-03T10:11:10.314Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:11:10.318Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_gat","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:11:10.319Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【90%OFF】処女ビッチたちのチ●ポシェア～俺の部屋に入り浸る二人の制服女子との3P性活で素人童貞を卒業した話～ [スタジオ山ロマン] | DLsite 同人 - R18","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01103132.html","rjUsed":"RJ01103132","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"ゲイプロレス [東京ミックス] | DLsite がるまに","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","rjUsed":"RJ01630973","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"龍神さまの嫁入り [パンダが一匹。] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 T","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01085991.html","rjUsed":"RJ01085991","cookieObtained":true}}
+2026-08-03T10:11:10.334Z [INFO ] [detail] session re-warmup completed, resuming maniax
+2026-08-03T10:11:10.334Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:11:12.310Z [INFO ] [detail] due batch: 500 (total so far: 39500 ) concurrency=3
+2026-08-03T10:12:08.697Z [INFO ] [detail] due batch: 500 (total so far: 40000 ) concurrency=3
+2026-08-03T10:12:09.184Z [WARN ] [detail] API returned empty object girls requested 4件 sample: RJ01615985,RJ01673713
+2026-08-03T10:12:09.916Z [WARN ] [detail] API returned empty object girls requested 4件 sample: RJ01615985,RJ01673713
+2026-08-03T10:12:09.916Z [WARN ] [detail] batch fail, splitting 4
+2026-08-03T10:12:10.373Z [WARN ] [detail] API returned empty object girls requested 2件 sample: RJ01615985,RJ01673713
+2026-08-03T10:12:47.467Z [INFO ] [detail] due batch: 500 (total so far: 40500 ) concurrency=3
+2026-08-03T10:12:48.763Z [INFO ] [detail] price changed {"rj":"RJ01544167","price":3410,"sale_price":2387,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:12:58.835Z [INFO ] [detail] price changed {"rj":"RJ01543864","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:12:58.851Z [INFO ] [detail] circle sale end RG26901
+2026-08-03T10:12:58.855Z [INFO ] [detail] price changed {"rj":"RJ01664387","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:12:59.058Z [WARN ] (集約) 同種メッセージが直近50秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 4件 sample: RJ01615985,RJ01673713
+2026-08-03T10:13:06.203Z [INFO ] [detail] circle sale start RG26901
+2026-08-03T10:13:10.034Z [INFO ] [detail] price changed {"rj":"RJ01386839","price":2970,"sale_price":1485,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:13:13.379Z [INFO ] [detail] price changed {"rj":"RJ01523301","price":330,"sale_price":231,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:13:17.038Z [INFO ] [detail] price changed {"rj":"RJ01649904","price":220,"sale_price":154,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:13:20.370Z [INFO ] [detail] due batch: 500 (total so far: 41000 ) concurrency=3
+2026-08-03T10:13:25.205Z [INFO ] [detail] circle sale end RG01064220
+2026-08-03T10:13:25.206Z [INFO ] [detail] price changed {"rj":"RJ01620779","price":1980,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:13:42.114Z [WARN ] [db] slow transaction (transactionNoSave): 456ms {"dbSizeMB":412.1}
+2026-08-03T10:13:48.601Z [INFO ] [detail] price changed {"rj":"RJ01554993","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:13:52.027Z [INFO ] [detail] price changed {"rj":"RJ01554997","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:13:52.102Z [INFO ] [detail] due batch: 500 (total so far: 41500 ) concurrency=3
+2026-08-03T10:13:53.012Z [INFO ] [detail] price changed {"rj":"RJ038346","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:13:53.029Z [INFO ] [detail] price changed {"rj":"RJ01490732","price":110,"sale_price":77,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:14:00.117Z [INFO ] [detail] price changed {"rj":"RJ01233981","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:14:07.191Z [INFO ] [detail] price changed {"rj":"RJ031751","price":1980,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:14:36.039Z [INFO ] [detail] due batch: 500 (total so far: 42000 ) concurrency=3
+2026-08-03T10:14:46.418Z [INFO ] [detail] price changed {"rj":"RJ01466681","price":220,"sale_price":154,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:14:52.621Z [INFO ] [detail] price changed {"rj":"RJ041606","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:14:56.614Z [INFO ] [detail] price changed {"rj":"RJ038720","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:15:00.199Z [INFO ] [detail] price changed {"rj":"RJ01424385","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:15:10.693Z [INFO ] [detail] price changed {"rj":"RJ01356756","price":2750,"sale_price":1787,"point":null,"point_rate":null,"discount_rate":35,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:15:14.687Z [INFO ] [detail] due batch: 500 (total so far: 42500 ) concurrency=3
+2026-08-03T10:15:52.779Z [INFO ] [detail] price changed {"rj":"RJ01204921","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:15:52.789Z [INFO ] [detail] price changed {"rj":"RJ01302070","price":1650,"sale_price":1155,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:15:53.047Z [WARN ] [db] slow transaction (transactionNoSave): 311ms {"dbSizeMB":412.1}
+2026-08-03T10:15:53.085Z [INFO ] [detail] due batch: 500 (total so far: 43000 ) concurrency=3
+2026-08-03T10:16:16.107Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:16:26.346Z [INFO ] [detail] due batch: 500 (total so far: 43500 ) concurrency=3
+2026-08-03T10:16:27.190Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":21}
+2026-08-03T10:16:28.866Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":8}
+2026-08-03T10:16:33.621Z [INFO ] [detail] due batch: 500 (total so far: 44000 ) concurrency=3
+2026-08-03T10:16:34.607Z [WARN ] [detail] API returned partial data maniax got 23 / requested 50
+2026-08-03T10:16:38.742Z [WARN ] [detail] API returned partial data maniax got 14 / requested 50
+2026-08-03T10:16:40.544Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 49
+2026-08-03T10:16:41.274Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 49
+2026-08-03T10:16:41.275Z [WARN ] [detail] batch fail, splitting 49
+2026-08-03T10:16:41.890Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 2 / requested 25
+2026-08-03T10:16:43.313Z [WARN ] [detail] API returned partial data maniax got 6 / requested 24
+2026-08-03T10:16:43.385Z [INFO ] [detail] due batch: 500 (total so far: 44500 ) concurrency=3
+2026-08-03T10:16:47.293Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01614715,RJ01618385
+2026-08-03T10:16:48.026Z [WARN ] [detail] API returned empty object maniax requested 50件 sample: RJ01614715,RJ01618385
+2026-08-03T10:16:48.027Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:16:48.744Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01614715,RJ01618385
+2026-08-03T10:16:49.237Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:16:49.237Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:16:50.364Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:16:59.088Z [WARN ] (集約) 同種メッセージが直近43秒で17回発生（14件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":22}
+2026-08-03T10:16:59.088Z [WARN ] (集約) 同種メッセージが直近24秒で5回発生（2件を抑制）／ 例: [detail] API returned partial data maniax got 23 / requested 50
+2026-08-03T10:16:59.089Z [WARN ] (集約) 同種メッセージが直近19秒で7回発生（4件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 8 / requested 49
+2026-08-03T10:17:03.323Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01614715.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:17:03.323Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01614715.html","title":"同人誌・同人ゲーム・同人ボイス・ASMRのダウンロードなら「DLsite 同人」"}
+2026-08-03T10:17:03.331Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01614715.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html"}
+2026-08-03T10:17:13.787Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:17:13.787Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html","title":"たまにはポニテなウマ〇すめ。 [あいすしゃーべっと] | DLsite 同人 - R18"}
+2026-08-03T10:17:19.795Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01614715.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:17:19.796Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","_gat","_dd_s","DL_PRODUCT_LOG","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:17:29.345Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:17:29.345Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","title":"ゲイプロレス [東京ミックス] | DLsite がるまに"}
+2026-08-03T10:17:29.366Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP"}
+2026-08-03T10:17:39.391Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:17:39.391Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","title":"ゲイプロレス [東京ミックス] | DLsite がるまに"}
+2026-08-03T10:17:45.394Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:17:45.399Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","_gat","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:17:56.281Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:17:56.281Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html","title":"【50%OFF】ここってヘアサロンですよね!? [あるぱかくらぶ] | DLsite がるまに"}
+2026-08-03T10:17:56.296Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html/?locale=ja_JP"}
+2026-08-03T10:18:07.636Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:18:07.636Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html/?locale=ja_JP","title":"【50%OFF】ここってヘアサロンですよね!? [あるぱかくらぶ] | DLsite がるまに"}
+2026-08-03T10:18:13.644Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:18:13.651Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","_gat","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:18:13.652Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"たまにはポニテなウマ〇すめ。 [あいすしゃーべっと] | DLsite 同人 - R18","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01614715.html","rjUsed":"RJ01614715","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"ゲイプロレス [東京ミックス] | DLsite がるまに","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","rjUsed":"RJ01630973","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【50%OFF】ここってヘアサロンですよね!? [あるぱかくらぶ] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 T","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01076329.html","rjUsed":"RJ01076329","cookieObtained":true}}
+2026-08-03T10:18:13.665Z [INFO ] [detail] session re-warmup completed, resuming maniax
+2026-08-03T10:18:13.665Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:18:15.725Z [INFO ] [detail] due batch: 500 (total so far: 45000 ) concurrency=3
+2026-08-03T10:19:06.854Z [INFO ] [detail] due batch: 500 (total so far: 45500 ) concurrency=3
+2026-08-03T10:19:15.791Z [INFO ] [detail] price changed {"rj":"RJ01539377","price":1100,"sale_price":660,"point":null,"point_rate":null,"discount_rate":40,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:19:44.824Z [INFO ] [detail] due batch: 500 (total so far: 46000 ) concurrency=3
+2026-08-03T10:19:49.287Z [INFO ] [detail] price changed {"rj":"RJ01556123","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:19:55.539Z [INFO ] [detail] price changed {"rj":"RJ01620832","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:20:20.850Z [INFO ] [detail] due batch: 500 (total so far: 46500 ) concurrency=3
+2026-08-03T10:20:52.792Z [WARN ] [db] slow transaction (transactionNoSave): 384ms {"dbSizeMB":412.1}
+2026-08-03T10:21:00.105Z [INFO ] [detail] price changed {"rj":"RJ01450618","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:21:03.575Z [INFO ] [detail] price changed {"rj":"RJ01244654","price":880,"sale_price":616,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:21:03.665Z [INFO ] [detail] due batch: 500 (total so far: 47000 ) concurrency=3
+2026-08-03T10:21:08.472Z [INFO ] [detail] price changed {"rj":"RJ01530406","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:21:11.709Z [INFO ] [detail] price changed {"rj":"RJ01314328","price":660,"sale_price":462,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:21:11.724Z [INFO ] [detail] price changed {"rj":"RJ01418485","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:21:43.662Z [WARN ] [db] slow transaction (transactionNoSave): 316ms {"dbSizeMB":412.1}
+2026-08-03T10:21:46.830Z [INFO ] [detail] due batch: 500 (total so far: 47500 ) concurrency=3
+2026-08-03T10:22:01.303Z [INFO ] [detail] price changed {"rj":"RJ01675302","price":1650,"sale_price":1237,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:22:01.304Z [INFO ] [detail] circle sale end RG01039230
+2026-08-03T10:22:01.305Z [INFO ] [detail] price changed {"rj":"RJ01674138","price":0,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-08-03T10:22:26.409Z [WARN ] [db] slow transaction (transactionNoSave): 351ms {"dbSizeMB":412.1}
+2026-08-03T10:22:26.453Z [INFO ] [detail] due batch: 500 (total so far: 48000 ) concurrency=3
+2026-08-03T10:22:26.972Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":1,"no_price_field":1}
+2026-08-03T10:22:36.931Z [INFO ] [detail] price changed {"rj":"RJ01598633","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:23:05.216Z [INFO ] [detail] due batch: 500 (total so far: 48500 ) concurrency=3
+2026-08-03T10:23:06.745Z [WARN ] [db] slow transaction (transactionNoSave): 345ms {"dbSizeMB":412.1}
+2026-08-03T10:23:16.886Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":17}
+2026-08-03T10:23:27.545Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":13}
+2026-08-03T10:23:34.062Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":18}
+2026-08-03T10:23:38.227Z [INFO ] [detail] due batch: 500 (total so far: 49000 ) concurrency=3
+2026-08-03T10:23:41.268Z [INFO ] [detail] price changed {"rj":"RJ328251","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:23:44.253Z [WARN ] [db] slow transaction (transactionNoSave): 351ms {"dbSizeMB":412.1}
+2026-08-03T10:23:45.694Z [INFO ] [detail] due batch: 500 (total so far: 49500 ) concurrency=3
+2026-08-03T10:23:49.490Z [INFO ] [detail] price changed {"rj":"RJ027952","price":1540,"sale_price":308,"point":null,"point_rate":null,"discount_rate":80,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:23:50.336Z [INFO ] [detail] price changed {"rj":"RJ01669770","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-08-03T10:23:51.403Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50
+2026-08-03T10:23:52.129Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50
+2026-08-03T10:23:52.130Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:23:52.744Z [WARN ] [detail] API returned partial data maniax got 16 / requested 48
+2026-08-03T10:23:52.945Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 2 / requested 25
+2026-08-03T10:23:54.677Z [INFO ] [detail] due batch: 500 (total so far: 50000 ) concurrency=3
+2026-08-03T10:23:55.823Z [INFO ] [detail] price changed {"rj":"RJ01653686","price":990,"sale_price":495,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-03T10:23:55.913Z [WARN ] [detail] API returned partial data maniax got 22 / requested 50
+2026-08-03T10:23:57.602Z [INFO ] [detail] circle sale end RG01066466
+2026-08-03T10:23:58.202Z [WARN ] [detail] API returned partial data maniax got 11 / requested 50
+2026-08-03T10:23:58.539Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:23:59.134Z [WARN ] (集約) 同種メッセージが直近42秒で18回発生（15件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":17}
+2026-08-03T10:23:59.134Z [WARN ] (集約) 同種メッセージが直近8秒で6回発生（3件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 3 / requested 50
+2026-08-03T10:23:59.251Z [WARN ] [detail] API returned empty object maniax requested 25件 sample: RJ01611503,RJ01608497
+2026-08-03T10:23:59.341Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:23:59.943Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 5 / requested 50
+2026-08-03T10:24:00.072Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:24:00.072Z [WARN ] [detail] maniax: 空応答が5回連続 — セッション再確立を試みます
+2026-08-03T10:24:00.073Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-08-03T10:24:00.678Z [WARN ] [detail] batch fail, splitting 50
+2026-08-03T10:24:04.908Z [INFO ] [api] stop requested for turbo (abort flags: detail,discovery)
+2026-08-03T10:24:16.400Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/home/","title":"同人誌・同人ゲーム・同人ボイス・ASMRのダウンロードなら「DLsite 同人」","readyState":"complete","bodyLen":642845,"isLoading":false}
+2026-08-03T10:24:16.424Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:24:16.424Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html","title":"同人誌・同人ゲーム・同人ボイス・ASMRのダウンロードなら「DLsite 同人」"}
+2026-08-03T10:24:16.438Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html"}
+2026-08-03T10:24:27.476Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:24:27.477Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html","title":"たまにはポニテなウマ〇すめ。 [あいすしゃーべっと] | DLsite 同人 - R18"}
+2026-08-03T10:24:33.483Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:24:33.486Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_gat","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:24:42.737Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:24:42.737Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","title":"ゲイプロレス [東京ミックス] | DLsite がるまに"}
+2026-08-03T10:24:42.746Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP"}
+2026-08-03T10:24:49.118Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:24:49.118Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","title":"ゲイプロレス [東京ミックス] | DLsite がるまに"}
+2026-08-03T10:24:55.126Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:24:55.127Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_gat","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:24:59.139Z [WARN ] (集約) 同種メッセージが直近60秒で5回発生（2件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) maniax got 7 / requested 50
+2026-08-03T10:25:02.055Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html","clicked":false,"clickedInfo":null}
+2026-08-03T10:25:02.055Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html","title":"【25%OFF】【強○連続クリ絶頂♡】あまあまS♡後輩彼氏のあやせくん [ドメスティックうさちゃんズ] | DLsite がるまに"}
+2026-08-03T10:25:02.056Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP"}
+2026-08-03T10:25:08.309Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-08-03T10:25:08.309Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP","title":"【25%OFF】【強○連続クリ絶頂♡】あまあまS♡後輩彼氏のあやせくん [ドメスティックうさちゃんズ] | DLsite がるまに"}
+2026-08-03T10:25:14.314Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-08-03T10:25:14.315Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["_vwo_uuid_v2","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_fbp","_gaid","_im_vid","_tt_enable_cookie","_ttp","_unv_aid","recommend_device_id","__DLsite_SID","_vwo_uuid","_vwo_ds","_vis_opt_s","adultchecked","lamp_cookie_synced_flag","2026721_julycoupon_home","2026724_julycoupon_home","2026727_set_home","2026731_julycoupon_home","_gid","rtg_bfp","locale","_ga_sid","_unv_id","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G"]}
+2026-08-03T10:25:14.316Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"たまにはポニテなウマ〇すめ。 [あいすしゃーべっと] | DLsite 同人 - R18","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01657221.html","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01611503.html","rjUsed":"RJ01611503","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"ゲイプロレス [東京ミックス] | DLsite がるまに","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコ","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01630973.html","rjUsed":"RJ01630973","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【25%OFF】【強○連続クリ絶頂♡】あまあまS♡後輩彼氏のあやせくん [ドメスティックうさちゃんズ] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt Internet Explorerでは作品を購入することができません。 お使いのブラウザは非対応です。DLsiteをご利用いただくため、推奨ブラウザをご利用ください。 詳細はこちら 閉じる 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 T","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01609999.html","rjUsed":"RJ01609999","cookieObtained":true}}
+2026-08-03T10:25:14.318Z [INFO ] [detail] session re-warmup completed, resuming maniax
+2026-08-03T10:25:14.318Z [WARN ] [detail] maniax: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-08-03T10:25:14.318Z [INFO ] [detail] aborted by external request (before fetching due works)
+2026-08-03T10:25:14.318Z [INFO ] [detail] done {"processed":36673,"priceChanges":960,"errors":13277,"total":50000,"apiMissing":3088,"contaminated":0,"fetchFail":10189,"storeError":0,"verifiedAlive":5,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0.266,"highErrorRate":true}
+2026-08-03T10:25:25.985Z [INFO ] [pushDebugBundle] pushed {"job":"turbo","files":12,"branch":"debug"}
+2026-08-03T10:25:25.986Z [WARN ] [api] turbo: エラー率が高水準です(26.6% — 13277/49950件)。turboConcurrency/turboRateLimit(config.fetch)の負荷設定見直しを検討してください。
+2026-08-04T00:00:01.004Z [INFO ] [detail] due batch: 500 (total so far: 500 ) concurrency=3
+2026-08-04T00:00:02.545Z [WARN ] [detail] API returned empty object bl requested 1件 sample: RJ01628879
+2026-08-04T00:00:02.583Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 15
+2026-08-04T00:00:03.521Z [INFO ] [detail] price changed {"rj":"RJ01457799","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:03.894Z [INFO ] [detail] price changed {"rj":"RJ01603552","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:04.198Z [WARN ] [detail] API returned empty object bl requested 1件 sample: RJ01628879
+2026-08-04T00:00:04.207Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 15
+2026-08-04T00:00:04.209Z [WARN ] [detail] batch fail, splitting 15
+2026-08-04T00:00:04.528Z [WARN ] [detail] API returned empty object girls requested 8件 sample: RJ01550271,RJ01622400
+2026-08-04T00:00:06.201Z [INFO ] [detail] price changed {"rj":"RJ01564886","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.204Z [INFO ] [detail] price changed {"rj":"RJ01564074","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.208Z [INFO ] [detail] price changed {"rj":"RJ01559300","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.214Z [INFO ] [detail] price changed {"rj":"RJ01557999","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.216Z [INFO ] [detail] price changed {"rj":"RJ01554530","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.220Z [INFO ] [detail] price changed {"rj":"RJ01553353","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.226Z [INFO ] [detail] price changed {"rj":"RJ01551798","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.231Z [INFO ] [detail] price changed {"rj":"RJ01551126","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.234Z [INFO ] [detail] price changed {"rj":"RJ01548662","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.238Z [INFO ] [detail] price changed {"rj":"RJ01547654","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.330Z [INFO ] [detail] price changed {"rj":"RJ01552562","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:06.346Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 7
+2026-08-04T00:00:07.680Z [INFO ] [detail] price changed {"rj":"RJ01622223","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:07.684Z [INFO ] [detail] price changed {"rj":"RJ01505582","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:07.698Z [INFO ] [detail] price changed {"rj":"RJ01528646","price":1320,"sale_price":198,"point":null,"point_rate":null,"discount_rate":85,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:07.699Z [INFO ] [detail] price changed {"rj":"RJ01528648","price":1320,"sale_price":198,"point":null,"point_rate":null,"discount_rate":85,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:07.704Z [INFO ] [detail] price changed {"rj":"RJ01528658","price":1320,"sale_price":198,"point":null,"point_rate":null,"discount_rate":85,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:08.720Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"verify_rescued":9}
+2026-08-04T00:00:09.856Z [INFO ] [detail] price changed {"rj":"RJ01545390","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:09.859Z [INFO ] [detail] price changed {"rj":"RJ01528654","price":1320,"sale_price":198,"point":null,"point_rate":null,"discount_rate":85,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:09.865Z [INFO ] [detail] price changed {"rj":"RJ01528657","price":1320,"sale_price":198,"point":null,"point_rate":null,"discount_rate":85,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:00:10.925Z [WARN ] [db] slow transaction (transactionNoSave): 959ms {"dbSizeMB":412.1}
+2026-08-04T00:00:10.994Z [INFO ] [detail] limit reached: 500
+2026-08-04T00:00:10.995Z [INFO ] [detail] done {"processed":475,"priceChanges":21,"errors":25,"total":500,"apiMissing":0,"contaminated":0,"fetchFail":25,"storeError":0,"verifiedAlive":9,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0.05,"highErrorRate":false}
+2026-08-04T00:00:32.128Z [INFO ] [pushDebugBundle] pushed {"job":"detail","files":12,"branch":"debug"}
+2026-08-04T00:10:00.625Z [INFO ] [detail] due batch: 500 (total so far: 500 ) concurrency=3
+2026-08-04T00:10:19.771Z [INFO ] [detail] price changed {"rj":"RJ01473247","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:10:20.063Z [INFO ] [detail] price changed {"rj":"RJ01489192","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:10:22.280Z [INFO ] [detail] price changed {"rj":"RJ01637675","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-08-04T00:10:25.186Z [WARN ] [db] slow transaction (transactionNoSave): 869ms {"dbSizeMB":412.1}
+2026-08-04T00:10:25.217Z [INFO ] [detail] price changed {"rj":"RJ01647634","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
