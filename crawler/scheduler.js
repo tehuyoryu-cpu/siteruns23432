@@ -219,6 +219,22 @@ function _startIntegrityCheckJob() {
 // 遅延していた。拡張のTTL既定値と揃えて6時間おきに配信することで、末端の反映遅延を縮める。
 function _startExportShardsJob() {
   const _run = async () => {
+    // バグ修正(競合リスク): この6時間毎の自動push と apiServer.js の手動
+    // 「pushdata」ボタンは、同じ runExportShards()(data-export/への書き込み)
+    // と同じ push-data-shards.js の main()(同じGitHub dataブランチへのpush)を
+    // 何のロックもなく叩けてしまっていた。片方の実行中にもう片方が始まると、
+    // ①出力ディレクトリへの同時書き込みで内容が混ざる、②差分push化
+    // (push-data-shards.js)がリモートtree shaを取得してからforce-update
+    // するまでの間に他方のpushが割り込み、その変更を巻き戻す、
+    // という2つの実害がありうる。apiServer.js の handleRun() 側にも同じ
+    // global._crawlerRunning.pushdata を見させ(sharedKeys.pushdata)、
+    // 双方が同じ排他ロックを共有する。
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.pushdata) {
+      log.warn('[scheduler] exportShards/push skipped (pushdata already running — 手動pushボタン等と競合中の可能性)');
+      return;
+    }
+    global._crawlerRunning.pushdata = true;
     try {
       const result = await runExportShards();
       log.info('[scheduler] exportShards done', result);
@@ -230,6 +246,8 @@ function _startExportShardsJob() {
       }
     } catch (err) {
       log.error('[scheduler] exportShards error', err.message);
+    } finally {
+      global._crawlerRunning.pushdata = false;
     }
   };
   cron.schedule('30 */6 * * *', _run);

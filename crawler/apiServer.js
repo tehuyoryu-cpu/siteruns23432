@@ -201,7 +201,15 @@ async function handleRun(job, res) {
   // schedulerと共有フラグを確認（schedulerが実行中なら HTTP API からも起動しない）
   if (!global._crawlerRunning) global._crawlerRunning = {};
   const shared     = global._crawlerRunning;
-  const sharedKeys = { discover: 'discovery', fetch: 'detail', turbo: 'detail', comp_listing: 'compListing', comp_detail: 'compDetail' };
+  // バグ修正(競合リスク): 'pushdata' はこれまで sharedKeys に含まれておらず、
+  // scheduler.js の6時間毎の自動push(_startExportShardsJob)と、この手動push
+  // ボタンが排他されないまま同じ data-export/ ディレクトリへ書き込み・同じ
+  // GitHub dataブランチへ push できてしまっていた。差分push化(push-data-shards.js)
+  // で base_tree に取得直後のリモートtree shaを使うため、2つの実行が競合すると
+  // 片方のforce-update refがもう片方の変更を巻き戻す可能性がある。
+  // 'pushdata' 自身を共有ロックキーとして登録し、scheduler.js 側にも同じ
+  // global._crawlerRunning.pushdata を見させることで排他する。
+  const sharedKeys = { discover: 'discovery', fetch: 'detail', turbo: 'detail', comp_listing: 'compListing', comp_detail: 'compDetail', pushdata: 'pushdata' };
   const sharedKey  = sharedKeys[job];
   // detail / discovery ロックの所有者トークン。自分が確保した場合のみ
   // this 関数内の finally で解放する。

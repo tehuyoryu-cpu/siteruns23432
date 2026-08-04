@@ -739,7 +739,14 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // いきなり半分に分割する(=リクエスト数を2倍に増やす)前に、depth 0 に
   // 限り同一バッチのまま1回だけ素朴にリトライする。これで復帰すれば
   // 分割による無駄な追加リクエストを避けられる。
-  if (!body && depth === 0 && !getAbortSignal('detail').aborted) {
+  //
+  // バグ修正: _isInRateLimitBackoff(site) を確認せずに実行していたため、
+  // 既に負荷を絞りたくてバックオフ中であるにもかかわらず、このリトライだけは
+  // 素通りして必ず追加リクエストを1本送ってしまっていた(バックオフの意図と
+  // 矛盾)。バックオフ中は素朴リトライをスキップし、そのまま分割判定
+  // (そちらは_isInRateLimitBackoff次第でログレベルのみ調整、追加送信はしない)
+  // か recordFetchError 側へ倒す。
+  if (!body && depth === 0 && !_isInRateLimitBackoff(site) && !getAbortSignal('detail').aborted) {
     await sleep(Math.max(rateLimit ?? 0, 300));
     if (!getAbortSignal('detail').aborted) {
       body = await _apiFetch(works, site);
