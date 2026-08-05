@@ -10,7 +10,21 @@ const cheerio = require('cheerio');
 const log     = require('./logger');
 const config  = require('../config');
 
-const VALID_SITE_IDS = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
+// バグ修正(構造的問題#2): 以前は config.dlsite.validSiteIds（DLsiteが実際に
+// 使う site_id の語彙5種: maniax/girls/home/bl/pro）をそのまま「書き込んで
+// よいsite_id」の判定に使っていた。しかし electron-main.js の warmUpSession()
+// が年齢確認セッションを確立するのは config.dlsite.sites（3種:
+// maniax/bl/girls）だけで、home/proは一度もウォームアップされない。
+// APIがsite_id='home'/'pro'を返した作品をそのままDBへ書き込むと、以後
+// detailFetcher.js がその作品を home/pro のURLへ向けて延々fetchし続け、
+// 未ウォームアップセッションによる恒常的な空応答→recordApiMissingの誤爆
+// →delisted化、というサイレントな不具合を招く(circleGapScanのmaker_idが
+// 同じ問題を抱えていたのと同根、あちらは discovery.js 側で個別に対策済み)。
+// ここでは「DLsiteの語彙として妥当か」ではなく「このクローラーが実際に
+// 巡回できるサイトか」を基準にする。診断ツール(apiServer.js/main.jsの
+// 手動RJ確認)は home/pro も含めて調査できる方が有用なため、そちらは
+// 引き続き config.dlsite.validSiteIds(5種)を使う — ここだけを変更する。
+const VALID_SITE_IDS = new Set(config.dlsite.sites ?? ['maniax', 'bl', 'girls']);
 
 // ログ削減: 以前はここのpriceIssue判定分岐すべてでlog.warnを個別発火しており、
 // due作品を大量処理する巡回(all/turbo)では1回の実行で数千〜数万行のWARNが

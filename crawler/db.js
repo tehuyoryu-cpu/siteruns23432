@@ -454,7 +454,22 @@ function _applySchema() {
         log.info('[db] backfilled next_check_at for existing works');
       }
     }
-    catch (_) { /* already exists */ }
+    catch (e) {
+      // バグ修正(構造的問題#3): 以前は catch (_) {} で全エラーを無条件に
+      // 握りつぶしていた。ここで本来想定しているのは「カラムが既に存在する」
+      // (2回目以降の起動で毎回発生する正常系)だけだが、それ以外の本物の
+      // SQL構文ミス・存在しないテーブル参照等の新規マイグレーション追加ミスも
+      // 無音で無視されてしまい、気づかず「カラムが追加されていないまま」の
+      // 状態でリリースされうる(そのカラムに依存するクエリが後で初めて
+      // "no such column" として表面化する、原因追跡が困難な形で)。
+      // better-sqlite3は既存カラムへの重複ALTERで "duplicate column name"
+      // という決まった文言のエラーを返すため、それだけを既知の正常系として
+      // 無視し、それ以外はエラーとして明示的にログへ残す(起動は継続する —
+      // 1件の不良マイグレーションで全体を落とすと復旧しづらいため)。
+      if (!/duplicate column name/i.test(e.message ?? '')) {
+        log.error('[db] migration failed (not a duplicate-column skip):', sql, '—', e.message);
+      }
+    }
   }
 
   // next_check_at カラムが(新規作成 or 上のALTERで)確実に存在する状態になった後でindexを作る。
@@ -482,8 +497,17 @@ function _applySchema() {
   console.log('[db] _applySchema: running migrations...');
   // データマイグレーション: 旧バージョンが書き込んだ無効な site_id を maniax に統一
   // 'aix'/'appx' は廃止済みの DLsite サブドメイン。RJ コードは maniax API で取得可能。
+  //
+  // バグ修正(構造的問題#2): 以前は config.dlsite.validSiteIds(5種、home/pro含む)を
+  // 「有効」の基準にしていたが、home/proはwarmUpSession()が一度もウォームアップ
+  // しないサイトファミリーであり、この2つのsite_idを持つ既存作品は今後も
+  // 恒常的に空応答→誤delisted化が続く。ここは「DLsiteの語彙として妥当か」ではなく
+  // 「このクローラーが実際にfetchできるサイトか」(config.dlsite.sites、3種)を
+  // 基準にし、既にDBに紛れ込んでいるhome/pro行も遡及的にmaniaxへ寄せる
+  // (parser.js/detailFetcher.jsの同時修正で、今後新たにhome/proが書き込まれる
+  //  ことも防止済み)。
   {
-    const VALID = ['maniax', 'girls', 'home', 'bl', 'pro'];
+    const VALID = config.dlsite.sites ?? ['maniax', 'bl', 'girls'];
     const ph    = VALID.map(() => '?').join(',');
     const result = _db.prepare(`UPDATE works SET site_id = 'maniax' WHERE site_id NOT IN (${ph})`).run(...VALID);
     if (result.changes > 0) { log.info('[db] fixed invalid site_id -> maniax:', result.changes, '件'); changed = true; }

@@ -447,9 +447,16 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
   const result = { processed: 0, priceChanges: 0, errors: 0, total: 0, apiMissing: 0, contaminated: 0, fetchFail: 0, storeError: 0, verifiedAlive: 0, autoThrottled: throttle.autoThrottled, rateLimit: effRateLimit, concurrency: effConcurrency };
 
   // サイト別グループ
-  // DLsite product/info/ajax が受け付けるサイト識別子のみ許可。
-  // 旧DBに残存する 'aix' 等の廃止サイト名は 'maniax' にフォールバック。
-  const VALID_SITES = new Set(config.dlsite.validSiteIds ?? ['maniax', 'girls', 'home', 'bl', 'pro']);
+  // DLsite product/info/ajax が受け付けるサイト識別子のうち、実際に
+  // warmUpSession()でウォームアップ済みのサイトのみ許可する。
+  // バグ修正(構造的問題#2): 以前は config.dlsite.validSiteIds(5種、home/pro
+  // 含む)を許可リストにしていたが、home/proは年齢確認セッションが一度も
+  // 確立されないため、その2サイトへ向けたfetchは恒常的に空応答になる
+  // (parser.jsの同種修正・discovery.jsのcircleGapScanの対策と同根)。
+  // 旧DBに残存する 'aix' 等の廃止サイト名だけでなく、home/proも
+  // (このクローラーが実際に処理できないという意味で)maniaxへフォールバック
+  // させる対象に含める。
+  const VALID_SITES = new Set(config.dlsite.sites ?? ['maniax', 'bl', 'girls']);
 
   // バグ修正: 以前は SAVE_EVERY_N_BATCHES バッチごとに db.save() を挟んで
   // いたが、better-sqlite3移行後 db.save() は各文/トランザクションの実行と
