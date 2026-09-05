@@ -52,13 +52,28 @@ const REWARM_COOLDOWN_MS     = 60_000; // 再ウォームアップの最短間�
 // 並列度を落とし待機時間を増やすバックオフをかけ、DLsite側の警戒が
 // 収まるのを待つ。_lastRewarmAt 同様、runDetailFetch()の呼び出しをまたいで
 // 維持する(1回の巡回内だけでなく、次回の巡回でも抑制を継続させるため)。
-const RATE_LIMIT_BACKOFF_MS     = 5 * 60_000; // 疑わしい場合の抑制継続時間
+const RATE_LIMIT_BACKOFF_MS     = 5 * 60_000; // 疑わしい場合の抑制継続時間(基準値、エスカレーションの初段)
 const RATE_LIMIT_BACKOFF_EXTRA  = 1500;       // バックオフ中に追加する待機(ms)
+
+// バグ修正(2026-08-04 実運用で確認): 固定5分のバックオフが解除された直後に、
+// 同一サイト(実例: maniax)で再び空応答streakが閾値に到達し、7分間隔程度で
+// 「再ウォーム→健全判定→5分抑制」のサイクルが繰り返し再発する事象が
+// debugブランチのログで確認された(10:16→10:23、7分間隔)。これはDLsite側の
+// 実際のレート制限解除時間が5分より長いにもかかわらず、こちらが固定5分で
+// 楽観的にリクエストを再開してしまい、まだ警戒が解けていない状態へ
+// リクエストを送って即座に再度劣化させている可能性が高い。
+// 直前のバックオフ終了から短時間(ESCALATION_WINDOW_MS)以内に同じサイトで
+// 再度バックオフが必要になった場合、単純な固定時間ではなく指数的に
+// 抑制時間を延ばす(5分→10分→20分→30分で頭打ち)。十分な間隔が空けば
+// レベルは初段(5分)にリセットされる。
+const RATE_LIMIT_BACKOFF_MAX_MS = 30 * 60_000;
+const RATE_LIMIT_BACKOFF_ESCALATION_WINDOW_MS = 15 * 60_000;
 
 const _siteEmptyStreak       = {};  // site -> 連続空応答回数
 const _circuitOpenBySite     = {};  // site -> このrunDetailFetch()呼び出し中は打ち切り中か
 const _rewarmInProgressBySite = {}; // site -> 再ウォームアップ実行中か(重複起動防止)
 const _siteBackoffUntil      = {};  // site -> レート制限疑いによる抑制の終了時刻(epoch ms)
+const _siteBackoffLevel      = {};  // site -> 直近の連続バックオフエスカレーション段数(0=まだ発動なし)
 let   _lastRewarmAt          = 0;   // runDetailFetch()をまたいでもクールダウンを維持する
 
 // バグ修正(根本原因): 従来はサーキットが一度開くと、_shouldSkipRequest() が
@@ -335,9 +350,20 @@ async function _recordApiEmptyAndMaybeRecover(site) {
     // レート制限を疑い、このサイトへのリクエストを一定時間だけ抑制する。
     const diag = global._lastWarmUpDiag?.results?.[site];
     if (diag?.cookieObtained && diag?.gateAbsent) {
-      _siteBackoffUntil[site] = Date.now() + RATE_LIMIT_BACKOFF_MS;
+      // エスカレーション判定: 直前のバックオフ終了予定時刻から
+      // ESCALATION_WINDOW_MS 以内に再度ここへ到達した場合は「まだ警戒が
+      // 解けていないのに解除してしまった」とみなしレベルを上げる。
+      // 十分に間隔が空いていれば(=前回のバックオフが本当に効いていた)
+      // レベルを初段に戻す。
+      const prevBackoffEnd = _siteBackoffUntil[site] ?? 0;
+      const isRecurrence   = prevBackoffEnd > 0 && (now - prevBackoffEnd) < RATE_LIMIT_BACKOFF_ESCALATION_WINDOW_MS;
+      _siteBackoffLevel[site] = isRecurrence ? (_siteBackoffLevel[site] ?? 0) + 1 : 1;
+      const level    = _siteBackoffLevel[site];
+      const backoffMs = Math.min(RATE_LIMIT_BACKOFF_MS * 2 ** (level - 1), RATE_LIMIT_BACKOFF_MAX_MS);
+      _siteBackoffUntil[site] = now + backoffMs;
       log.warn(`[detail] ${site}: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — ` +
-        `セッション切れではなくレート制限の可能性が高いため、${Math.round(RATE_LIMIT_BACKOFF_MS / 60000)}分間このサイトへの並列度を抑制します`);
+        `セッション切れではなくレート制限の可能性が高いため、${Math.round(backoffMs / 60000)}分間このサイトへの並列度を抑制します` +
+        (level > 1 ? `(エスカレーションレベル${level}、前回の抑制解除から短時間で再発したため延長)` : ''));
     }
   } catch (e) {
     log.error('[detail] session re-warmup failed', site, e.message);
@@ -378,6 +404,7 @@ function getHealthSnapshot() {
       circuitOpen:       !!_circuitOpenBySite[site],
       rewarmInProgress:  !!_rewarmInProgressBySite[site],
       rateLimitBackoffRemainingSec: Math.round(remainMs(_siteBackoffUntil[site]) / 1000),
+      rateLimitBackoffLevel: _siteBackoffLevel[site] ?? 0,
     };
   }
 
