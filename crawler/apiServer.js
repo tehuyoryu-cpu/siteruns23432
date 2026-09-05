@@ -12,6 +12,8 @@
  *   GET  /api/sales                → works currently on sale
  *   GET  /api/export/json          → full price_history JSON download
  *   GET  /api/export/csv           → full price_history CSV download
+ *   GET  /api/export/works-json    → works list JSON (1 row/work, xlsx export用)
+ *   POST /api/import/works         → { works:[...] } をupsert (xlsx import用)
  *   GET  /api/run/status           → job running flags + progress
  *   GET  /api/settings             → github token config status (masked)
  *   POST /api/settings/github-token   → save github token (writes .github-token)
@@ -1117,6 +1119,25 @@ function handleExportCsv() {
   return header + rows.join('\n');
 }
 
+// ─── Excel(.xlsx) インポート/エクスポート ────────────────────────────────────
+// xlsx⇄JSON変換自体はブラウザ側(SheetJS CDN, server/public/index.html)が行う。
+// ここではJSON(作品一覧、1行=1作品)のやり取りのみを担当する
+// (構造的問題#7で復元・再実装。詳細はcrawler/db.jsのexportWorks/importWorksの
+// コメント参照)。
+function handleExportWorksJson() { return db.exportWorks(); }
+
+function handleImportWorks({ works }) {
+  if (!Array.isArray(works)) return { ok: false, error: 'works must be array' };
+  try {
+    const result = db.importWorks(works);
+    log.info('[api] import/works:', result);
+    return { ok: true, ...result };
+  } catch (e) {
+    log.error('[api] import/works error:', e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
 // ─── HTTP サーバー ────────────────────────────────────────────────────────────
 
 function createServer() {
@@ -1288,6 +1309,21 @@ function createServer() {
           'Content-Disposition': 'attachment; filename="dlsite-history.json"',
         });
         res.end(JSON.stringify(handleExportJson(), null, 2));
+        return;
+      }
+
+      if (pathname === '/api/export/works-json') {
+        return _json(res, handleExportWorksJson());
+      }
+
+      if (pathname === '/api/import/works' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => { body += c; });
+        req.on('end', () => {
+          let parsed = {};
+          try { parsed = JSON.parse(body); } catch { /* keep {} */ }
+          _json(res, handleImportWorks(parsed));
+        });
         return;
       }
 

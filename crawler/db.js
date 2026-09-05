@@ -1856,6 +1856,98 @@ function exportAllHistory() {
   `);
 }
 
+// ─── Excel(.xlsx) インポート/エクスポート ────────────────────────────────────
+// 実際の xlsx ⇄ JSON 変換はブラウザ側(SheetJS CDN, server/public/index.html)
+// が担当する。better-sqlite3プロセス(Electronメイン)側にxlsxパース用の
+// npm依存を追加せずに済むよう、ここではJSON(作品一覧、1行=1作品)の
+// export/importのみを提供する。
+//
+// 復元(構造的問題#7): 元の実装(コミットa8cdbbe, 2026-06-25)はsql.js時代の
+// _run()/_save()を使っておりsql.js→better-sqlite3移行時に(他の同era実装
+// 同様)引き継がれずリポジトリの主系列から外れていた。better-sqlite3の
+// prepared statement + transaction()、および後から追加されたsite_id_unverified
+// (CSV/JSONインポートと同じ「site_idの出どころが信頼できないインポートは
+// フラグを立てて次回detail実行時に全サイト試行で確定させる」仕組み、
+// データ汚染対策③)・config.dlsite.sites基準のsite_id妥当性判定(#2修正)を
+// 反映して再実装する。
+
+/**
+ * Export works (1行=1作品、works表の非正規化された最新価格カラムを使用)。
+ * xlsxエクスポート用フォーマット。
+ */
+function exportWorks() {
+  return _all(`
+    SELECT
+      w.rj_code, w.title, w.circle, w.maker_id, w.work_type, w.site_id,
+      w.release_date,
+      w.cur_price AS price, w.cur_sale_price AS sale_price,
+      w.cur_discount_rate AS discount_rate, w.is_on_sale,
+      datetime(w.last_checked, 'unixepoch', 'localtime') AS last_checked_at
+    FROM works w
+    ORDER BY w.rj_code ASC
+  `);
+}
+
+/**
+ * xlsxインポート: 作品行をupsertし、即時フェッチキューに入れる(next_check_at=now)。
+ * CSV/JSONインポート(importHistoryRows)と同じ理由で、site_idは信頼せず
+ * site_id_unverified=1を立てる(手動編集されたExcelや、別サイトの作品が
+ * 混在した一覧を再インポートするケースを想定した安全側の設計)。
+ * @param {Array<{rj_code,title,circle,maker_id,work_type,site_id,release_date}>} rows
+ * @returns {{ imported: number, errors: number }}
+ */
+function importWorks(rows) {
+  const VALID_SITES = new Set(config.dlsite.sites ?? ['maniax', 'bl', 'girls']);
+  const now = unixNow();
+  let imported = 0, errors = 0;
+
+  const workStmt = _db.prepare(`
+    INSERT INTO works
+      (rj_code, title, circle, maker_id, work_type, site_id, release_date,
+       dl_count, first_seen, site_id_unverified, next_check_at)
+    VALUES (?,?,?,?,?,?,?,0,?,1,?)
+    ON CONFLICT(rj_code) DO UPDATE SET
+      title         = COALESCE(excluded.title,        works.title),
+      circle        = COALESCE(excluded.circle,       works.circle),
+      maker_id      = COALESCE(excluded.maker_id,     works.maker_id),
+      work_type     = COALESCE(excluded.work_type,    works.work_type),
+      release_date  = COALESCE(excluded.release_date, works.release_date),
+      next_check_at = ?
+  `);
+
+  const runAll = _db.transaction((list) => {
+    for (const r of list) {
+      const rj = String(r.rj_code ?? '').trim().toUpperCase();
+      if (!/^RJ\d{4,}$/.test(rj)) { errors++; continue; }
+      try {
+        // site_idは「信頼できる出どころか」に関わらずconfig.dlsite.sites
+        // (実際にwarmUpSession()済みの3サイト)の範囲に丸めるだけにし、
+        // 真の確定はsite_id_unverifiedフラグ経由のdetailFetcher.js側に委ねる。
+        const siteId = VALID_SITES.has(r.site_id) ? r.site_id : 'maniax';
+        workStmt.run(
+          rj,
+          r.title      ? String(r.title).trim()      : null,
+          r.circle     ? String(r.circle).trim()      : null,
+          r.maker_id   ? String(r.maker_id).trim()    : null,
+          r.work_type  ? String(r.work_type).trim()   : null,
+          siteId,
+          r.release_date ? String(r.release_date) : null,
+          now,   // first_seen (INSERT時のみ)
+          now,   // next_check_at (INSERT時)
+          now,   // next_check_at (ON CONFLICT UPDATE時)
+        );
+        imported++;
+      } catch (e) {
+        log.error('[db] importWorks row error:', rj, e.message);
+        errors++;
+      }
+    }
+  });
+  runAll(rows);
+
+  return { imported, errors };
+}
+
 // ─── UI query helpers ──────────────────────────────────────────────────────────
 
 /**
@@ -2198,6 +2290,8 @@ module.exports = {
   transactionNoSave,
   save: _save,
   exportAllHistory,
+  exportWorks,
+  importWorks,
   searchWorks,
   getSaleWorks,
   getAllRjCodes,

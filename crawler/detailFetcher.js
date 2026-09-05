@@ -998,15 +998,45 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
   // 呼び出し元で 'unknown' は recordFetchError（priority維持）に、
   // 確認できた 'gone' のみ recordApiMissing に倒せるようにする。
   const verifyStatus = new Map(); // rjCode -> 'exists' | 'gone' | 'unknown'
+  // resolvedSite: rj_code -> { site, body }。site_id_unverified(インポート由来)の
+  // 他サイト解決と、下記verifyRjExists弱点④対策の他サイト解決の両方で
+  // 共有する（unresolvedImportedブロックより先に使うため、ここで宣言する）。
+  const resolvedSite = new Map();
+  // バグ修正(verifyRjExists弱点④「単一サイトのみの確認」): _verifyRjExists は
+  // works に記録されている site_id のURL(例: maniax)しか見ておらず、
+  // DLsite側のカテゴリ再分類等でDB上のsite_idが実際とズレていた場合、
+  // 本当は girls/bl に存在する作品でも「(記録されたsiteでは)確認できた消滅」
+  // としてdelisted化してしまう。site_id_unverified(インポート由来)作品に
+  // 既に行っている「他サイトを_apiFetchで試してから確定させる」処理と同じ
+  // ロジックを、'gone'確定した通常作品にも適用する。verify対象自体が
+  // 「delisted化目前の作品のみ」に絞られているため追加コストは限定的。
+  // (HTMLの詳細ページではなくJSON APIで確認するのは、unresolvedImportedと
+  //  同じ経路にしてresolvedSite以降の合流処理をそのまま再利用するため)
+  const altSitesForVerify = (config.dlsite.sites ?? ['maniax', 'bl', 'girls']).filter(s => s !== site);
   if (toVerify.length) {
     const VERIFY_CONCURRENCY = 3;
     let vi = 0;
     const verifyWorker = async () => {
       while (vi < toVerify.length) {
         const rjCode = toVerify[vi++];
-        const status = await _verifyRjExists(rjCode, site);
+        let status = await _verifyRjExists(rjCode, site);
+
+        if (status === 'gone' && altSitesForVerify.length) {
+          for (const altSite of altSitesForVerify) {
+            const altBody = await _apiFetch([{ rj_code: rjCode }], altSite);
+            if (altBody && Object.keys(altBody).length > 0) {
+              resolvedSite.set(rjCode, { site: altSite, body: altBody });
+              _tally('verify_site_id_corrected');
+              log.trace('[detail] verifyRjExists: gone on recorded site but exists via API on alternate site — correcting site_id', rjCode, site, '->', altSite);
+              status = 'exists'; // 下流のcontinue分岐でresolvedSiteが優先されるため、ここは主にログ・集計用
+              break;
+            }
+            await sleep(200);
+          }
+        }
+
         verifyStatus.set(rjCode, status);
-        if (status === 'exists') {
+        if (status === 'exists' && !resolvedSite.has(rjCode)) {
           verifiedAlive.add(rjCode);
           _tally('verify_rescued');
           log.trace('[detail] API missing but detail page confirms existence — rescuing from delisting', rjCode);
@@ -1032,11 +1062,14 @@ async function _processBatch(works, site, depth = 0, rateLimit = config.fetch.ra
     if (w.site_id_unverified) unresolvedImported.push(w);
   }
 
-  const resolvedSite = new Map(); // rj_code -> { site, body }
+  // resolvedSite はverify(弱点④対策)ブロックで既に宣言済み(このブロックの
+  // unresolvedImported解決でも同じMapに追記して合流させる)。
   const confirmedNotFound = new Set(); // 全サイト試行しても見つからなかった rj_code
   if (unresolvedImported.length) {
     const altSites = (config.dlsite.sites ?? ['maniax', 'bl', 'girls']).filter(s => s !== site);
     for (const w of unresolvedImported) {
+      // verify(弱点④対策)ブロックで既に他サイト解決済みなら二重に_apiFetchしない
+      if (resolvedSite.has(w.rj_code)) continue;
       let found = false;
       for (const altSite of altSites) {
         const body = await _apiFetch([{ rj_code: w.rj_code }], altSite);
