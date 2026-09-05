@@ -187,6 +187,23 @@ function parseProductInfo(rjCode, body) {
         salePrice = null;
         priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, discount: discObj, price_work: d.price_work, price: d.price } };
         log.trace('[parser] price_work/price欠損だがofficial_price等から代替', rjCode, priceIssue.raw);
+      } else if (d.is_ana === true) {
+        // データ分類改善(2026-09-05 debugブランチのapi-trace実データで確認):
+        // girls/bl側のprice_issuesの大半(直近サンプル50件中36件、すべて
+        // is_ana:true)が、price/price_work/official_priceを一切持たず
+        // price_str:"0"・upgrade_min_price:110という判で押したように同じ
+        // 形のレスポンスだった。is_ana は「アップグレード購入」形式の商品
+        // (親作品の差額購入等)を示すフラグで、この形式はそもそも単体の
+        // 定価という概念がAPI応答に存在しない(price_strはプレースホルダ
+        // で実売価格ではない)。従来はこれも汎用の'no_price_field'として
+        // 記録していたため、「原因不明の定価取得失敗」として調査対象に
+        // 紛れ込み続けていた。既知のDLsite仕様上の欠落として型を分け、
+        // 今後の調査ノイズを減らす(保存側の扱い自体は従来通り: priceは
+        // 書き込まず既存値を維持する)。
+        price     = 0;
+        salePrice = null;
+        priceIssue = { type: 'ana_no_standalone_price', raw: { is_ana: true, price_str: d.price_str, upgrade_min_price: d.upgrade_min_price } };
+        log.trace('[parser] is_ana work has no standalone price (known DLsite upgrade-purchase format)', rjCode, priceIssue.raw);
       } else {
         price     = 0;
         salePrice = null;
