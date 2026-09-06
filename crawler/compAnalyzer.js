@@ -81,21 +81,46 @@ function isCandAfterComp(compDate, candDate) {
 
 // ─── ページ数組合せ探索 ─────────────────────────────────────────────────────────
 
+// 構造的問題#5対策: workCount<=8 && valid.length<=20 の条件下でも
+// 最悪 C(20,8)=125,970 通りの組合せを同期探索しうり、イベントループを
+// 一時的にブロックしていた。組合せ数を事前に見積もり、閾値を超える場合は
+// 厳密探索そのものをスキップして貪欲法へ即フォールバックする。
+// (見積もりが外れた場合に備え、ループ内にも安全弁のイテレーション上限を設ける)
+const MAX_EXHAUSTIVE_COMBOS = 5000;
+
 function* _combos(arr, k) {
   if (k === 0) { yield []; return; }
   for (let i = 0; i <= arr.length - k; i++)
     for (const r of _combos(arr.slice(i + 1), k - 1)) yield [arr[i], ...r];
 }
 
+/** nCr の概算値（浮動小数点でよい。組合せ数の閾値判定にのみ使用） */
+function _nCr(n, k) {
+  if (k < 0 || k > n) return 0;
+  let r = 1;
+  for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1);
+  return r;
+}
+
 function findPageSubset(total, workCount, candidates) {
   const valid = candidates.filter(c => c.pageCount > 0);
   if (!total || !valid.length) return null;
   const tol = Math.max(5, Math.ceil(total * 0.05));
-  if (workCount > 0 && workCount <= 8 && valid.length <= 20) {
-    for (const combo of _combos(valid, Math.min(workCount, valid.length))) {
+  const k = Math.min(workCount, valid.length);
+
+  if (
+    workCount > 0 && workCount <= 8 && valid.length <= 20 &&
+    _nCr(valid.length, k) <= MAX_EXHAUSTIVE_COMBOS
+  ) {
+    let iterations = 0;
+    for (const combo of _combos(valid, k)) {
+      // 安全弁: 見積もりがずれて想定より多く回ってしまった場合も打ち切り、
+      // 下の貪欲法フォールバックに委ねる。
+      if (++iterations > MAX_EXHAUSTIVE_COMBOS) break;
       if (Math.abs(combo.reduce((s, c) => s + c.pageCount, 0) - total) <= tol) return combo;
     }
   }
+
   const sorted = [...valid].sort((a, b) => b.pageCount - a.pageCount);
   const res = []; let rem = total;
   for (const c of sorted) {
