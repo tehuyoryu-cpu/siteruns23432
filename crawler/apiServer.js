@@ -44,7 +44,12 @@ const detailFetcher = require('./detailFetcher');
 const importData = require('./importData');
 const compScan = require('./compScan');
 const { runExportShards } = require('./exportShards');
-const { abortNow, resetAbortFlag, getAllAbortStates } = require('./abortSignals');
+const { resetAbortFlag, getAllAbortStates } = require('./abortSignals');
+// #1 apiServer分割 ステップ1: 共有ロック(global._crawlerRunning)と中断フラグ
+// (global._crawlerAbort)の操作を集約したモジュール。内部的には従来と同じ
+// グローバル変数を読み書きするため、scheduler.js/electron-main.js側の直接
+// アクセスとは引き続き互換性がある(挙動を変えず重複コードのみ整理する)。
+const lockManager = require('./lockManager');
 const priceIssueMonitor = require('./priceIssueMonitor');
 const apiTrace = require('./apiTrace');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
@@ -185,19 +190,15 @@ function handleStop(job, res) {
     return _json(res, { ok: false, message: (_JOB_LABELS[job] ?? job) + 'は短時間で完了するため停止操作は不要です' });
   }
   const schedKey = _SCHEDULER_RUNNING_KEY_BY_JOB[job];
-  const busy = _jobRunning[job] || (schedKey && !!global._crawlerRunning?.[schedKey]);
+  const busy = _jobRunning[job] || (schedKey && lockManager.isBusy(schedKey));
   if (!busy) {
     return _json(res, { ok: false, message: '実行中の' + (_JOB_LABELS[job] ?? job) + 'はありません' });
   }
-  if (!global._crawlerAbort) global._crawlerAbort = {};
-  for (const abortFlag of abortFlags) {
-    global._crawlerAbort[abortFlag] = true;
-    // バグ修正: 真偽値フラグだけではループの合間（次のバッチ/次のfetch開始時）
-    // にしかチェックされず、進行中のfetchやリトライ待機（最大60秒超）が
-    // 終わるまで停止が反映されなかった。abortSignals経由で該当ジョブ系統の
-    // fetch・バックオフ待機を即座に中断させる。
-    abortNow(abortFlag);
-  }
+  // バグ修正: 真偽値フラグだけではループの合間（次のバッチ/次のfetch開始時）
+  // にしかチェックされず、進行中のfetchやリトライ待機（最大60秒超）が
+  // 終わるまで停止が反映されなかった。abortSignals経由で該当ジョブ系統の
+  // fetch・バックオフ待機を即座に中断させる(lockManager.requestAbortが内部で行う)。
+  lockManager.requestAbort(abortFlags);
   log.info('[api] stop requested for', job, '(abort flags:', abortFlags.join(',') + ')');
   return _json(res, { ok: true, message: (_JOB_LABELS[job] ?? job) + 'の停止を要求しました' });
 }
@@ -206,8 +207,9 @@ function handleStop(job, res) {
 
 async function handleRun(job, res) {
   // schedulerと共有フラグを確認（schedulerが実行中なら HTTP API からも起動しない）
-  if (!global._crawlerRunning) global._crawlerRunning = {};
-  const shared     = global._crawlerRunning;
+  // shared は scheduler.js/electron-main.js との後方互換のため残す
+  // (lockManager内部も同じ global._crawlerRunning を参照している)。
+  const shared     = global._crawlerRunning ?? (global._crawlerRunning = {});
   // バグ修正(競合リスク): 'pushdata' はこれまで sharedKeys に含まれておらず、
   // scheduler.js の6時間毎の自動push(_startExportShardsJob)と、この手動push
   // ボタンが排他されないまま同じ data-export/ ディレクトリへ書き込み・同じ
@@ -237,7 +239,7 @@ async function handleRun(job, res) {
     return _json(res, { ok: false, message: (_JOB_LABELS?.[job] ?? job) + ' はすでに実行中です' });
   }
   // 'all'/'turbo' 以外で共有ロックが取れない場合はブロック
-  if (job !== 'all' && job !== 'turbo' && sharedKey && shared[sharedKey]) {
+  if (job !== 'all' && job !== 'turbo' && sharedKey && lockManager.isBusy(sharedKey)) {
     return _json(res, { ok: false, message: '他の巡回処理が実行中です。完了後にお試しください' });
   }
   // バグ修正: 以前は中止フラグ(global._crawlerAbort.*)を一度trueにした後、
@@ -252,25 +254,17 @@ async function handleRun(job, res) {
   const _abortFlagsForThisJob = job === 'turbo'
     ? ['detail', 'discovery']
     : [_ABORT_FLAG_BY_JOB[job]].filter(Boolean);
-  if (_abortFlagsForThisJob.length) {
-    if (!global._crawlerAbort) global._crawlerAbort = {};
-    for (const f of _abortFlagsForThisJob) {
-      global._crawlerAbort[f] = false;
-      // 前回中止時に abort() 済みの AbortController を使い回すと、fetch側の
-      // 中断チェックが新規実行の初回リクエストから即座にtrueになってしまうため、
-      // 真偽値フラグと同様にこちらも新しい実行のたびにリセットする。
-      resetAbortFlag(f);
-    }
-  }
+  if (_abortFlagsForThisJob.length) lockManager.resetAbort(_abortFlagsForThisJob);
   _jobRunning[job] = true;
   if (sharedKey) {
-    shared[sharedKey] = true;
     if (sharedKey === 'detail') {
-      myDetailToken = Symbol('api-' + job);
-      shared._detailOwner = myDetailToken;
+      myDetailToken = lockManager.acquire('detail', job);
     } else if (sharedKey === 'discovery') {
-      myDiscoveryToken = Symbol('api-' + job);
-      shared._discoveryOwner = myDiscoveryToken;
+      myDiscoveryToken = lockManager.acquire('discovery', job);
+    } else {
+      // compListing/compDetail/pushdata: 所有者トークンを使わない単純フラグ
+      // (旧実装と同じ挙動。releaseも finally 側で releaseUnconditional を使う)
+      shared[sharedKey] = true;
     }
   }
   // 'discover' の discovery ロックはここで事前確保（スケジューラーとの競合防止）。
@@ -329,27 +323,11 @@ async function handleRun(job, res) {
       Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
 
       // ── Phase 0: 実行中の価格更新を中断して detail ロックを取得 ──
-      if (shared['detail']) {
-        if (!global._crawlerAbort) global._crawlerAbort = {};
-        global._crawlerAbort.detail = true;
-        abortNow('detail');   // 進行中のfetch/バックオフ待機も即座に中断する
-        _sseSend('log', '価格更新を中断して全て巡回を優先します...');
-        log.info('[api] all: aborting running detail fetch...');
-        const abortStart = Date.now();
-        await new Promise(resolve => {
-          const t = setInterval(() => {
-            if (!shared['detail'] || Date.now() - abortStart > 15_000) {
-              clearInterval(t); resolve();
-            }
-          }, 150);
-        });
-        global._crawlerAbort.detail = false;
-        resetAbortFlag('detail');
-        log.info('[api] all: detail fetch stopped');
-      }
-      shared['detail'] = true;   // detail ロック確保
-      myDetailToken = Symbol('api-all');
-      shared._detailOwner = myDetailToken;
+      log.info('[api] all: acquiring detail lock (aborting running fetch if any)...');
+      myDetailToken = await lockManager.abortAndTakeover('detail', {
+        label: '価格更新', sseSend: _sseSend, timeoutMs: 15_000,
+      });
+      log.info('[api] all: detail lock acquired');
 
       // ── Phase 1: RJ収集（失敗しても Phase2 へ進む）──
       // 以前は handleRun 冒頭で 'all' 自身が discovery ロックを確保してしまっており、
@@ -357,28 +335,16 @@ async function handleRun(job, res) {
       // 自分の discovery を一度も実行せず「スキップ」していたバグがあった。
       // (check → claim を await を挟まず同期的に行うことでスケジューラーとの競合も防ぐ)
       let discR = { discovered: 0 };
-      if (global._crawlerRunning?.discovery) {
+      if (lockManager.isBusy('discovery')) {
         log.info('[api] all: waiting for ongoing discovery...');
         _sseSend('log', 'RJ収集が実行中のため完了を待っています...');
-        const waitStart = Date.now();
-        await new Promise(resolve => {
-          const t = setInterval(() => {
-            if (!global._crawlerRunning?.discovery || Date.now() - waitStart > 120_000) {
-              clearInterval(t); resolve();
-            }
-          }, 1000);
-        });
-        if (global._crawlerRunning?.discovery) {
-          _sseSend('log', 'RJ収集の完了待ちがタイムアウトしました。スキップして価格更新へ進みます');
-        } else {
-          _sseSend('log', 'RJ収集スキップ（他のジョブで実行済み）');
-        }
+        const released = await lockManager.waitForRelease('discovery', { timeoutMs: 120_000, pollMs: 1000 });
+        _sseSend('log', released
+          ? 'RJ収集スキップ（他のジョブで実行済み）'
+          : 'RJ収集の完了待ちがタイムアウトしました。スキップして価格更新へ進みます');
       } else {
         // ここまで await を挟んでいないため、このチェック→確保は他から横取りされない
-        if (!global._crawlerRunning) global._crawlerRunning = {};
-        const myAllDiscoveryToken = Symbol('api-all-discovery');
-        global._crawlerRunning.discovery = true;
-        global._crawlerRunning._discoveryOwner = myAllDiscoveryToken;
+        const myAllDiscoveryToken = lockManager.acquire('discovery', 'all-discovery');
         myDiscoveryToken = myAllDiscoveryToken;
         try {
           discR = await runDiscovery() ?? discR;
@@ -388,10 +354,7 @@ async function handleRun(job, res) {
           _sseSend('log', `⚠ RJ収集エラー: ${discErr.message} — 価格更新は続行します`);
         } finally {
           // Phase 2(価格更新)は discovery ロックを必要としないため、ここで早めに解放する
-          if (global._crawlerRunning?._discoveryOwner === myAllDiscoveryToken) {
-            global._crawlerRunning.discovery = false;
-            global._crawlerRunning._discoveryOwner = null;
-          }
+          lockManager.releaseOwned('discovery', myAllDiscoveryToken);
         }
       }
 
@@ -449,33 +412,12 @@ async function handleRun(job, res) {
       // detail は 'detail' ロック、newrelease/endingsoon は 'discovery' ロックを使う
       // （discover/fullscan等と同じ系統）。turbo開始時にどちらかが既に実行中なら、
       // 既存の detail 中断ロジックと同じパターンでいったん中断してから引き継ぐ。
-      const _abortAndTakeLock = async (lockKey, label) => {
-        if (shared[lockKey]) {
-          if (!global._crawlerAbort) global._crawlerAbort = {};
-          global._crawlerAbort[lockKey] = true;
-          abortNow(lockKey);   // 進行中のfetch/バックオフ待機も即座に中断する
-          _sseSend('log', `${label}を中断してぶっ飛ばしに合流します...`);
-          const abortStart = Date.now();
-          await new Promise(resolve => {
-            const t = setInterval(() => {
-              if (!shared[lockKey] || Date.now() - abortStart > 15_000) {
-                clearInterval(t); resolve();
-              }
-            }, 150);
-          });
-          global._crawlerAbort[lockKey] = false;
-          resetAbortFlag(lockKey);
-        }
-        shared[lockKey] = true;
-      };
-
-      await _abortAndTakeLock('detail', '価格更新');
-      myDetailToken = Symbol('api-turbo');
-      shared._detailOwner = myDetailToken;
-
-      await _abortAndTakeLock('discovery', '収集系ジョブ');
-      myDiscoveryToken = Symbol('api-turbo-discovery');
-      shared._discoveryOwner = myDiscoveryToken;
+      myDetailToken = await lockManager.abortAndTakeover('detail', {
+        label: '価格更新', sseSend: _sseSend, timeoutMs: 15_000,
+      });
+      myDiscoveryToken = await lockManager.abortAndTakeover('discovery', {
+        label: '収集系ジョブ', sseSend: _sseSend, timeoutMs: 15_000,
+      });
 
       _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 価格更新・新作収集・終了間近収集を並列実行します');
       // subJobs: newrelease/endingsoon の進捗はダッシュボードのメイン進捗バー
@@ -728,33 +670,23 @@ async function handleRun(job, res) {
   } finally {
     _jobRunning[job] = false;
     const sk = sharedKeys[job];
-    // 自分が確保した detail ロックの場合のみ解放する（横取りされていたら何もしない）
-    const releaseDetail = () => {
-      if (global._crawlerRunning && global._crawlerRunning._detailOwner === myDetailToken) {
-        global._crawlerRunning.detail = false;
-        global._crawlerRunning._detailOwner = null;
-      }
-    };
-    const releaseDiscovery = () => {
-      if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myDiscoveryToken) {
-        global._crawlerRunning.discovery = false;
-        global._crawlerRunning._discoveryOwner = null;
-      }
-    };
+    // 自分が確保したロックの場合のみ解放する（横取りされていたら何もしない。
+    // releaseOwnedは所有者トークンが既にnull/別物になっていても安全に何もしない
+    // ため、Phase1で早期解放済みのdiscoveryロックに対する下の再呼び出しも無害）。
     if (sk === 'detail') {
-      releaseDetail();
+      lockManager.releaseOwned('detail', myDetailToken);
     } else if (sk === 'discovery') {
-      releaseDiscovery();
-    } else if (sk && global._crawlerRunning) {
-      global._crawlerRunning[sk] = false;
+      lockManager.releaseOwned('discovery', myDiscoveryToken);
+    } else if (sk) {
+      lockManager.releaseUnconditional(sk);
     }
     // 'all' は detail ロックを保持したまま Phase2/3 を実行するため最後に解放する。
     // discovery ロックは Phase 1 内で既に解放済みのはずだが、例外発生時の保険として
     // ここでも自分のトークンが残っていれば解放する。
     // 'turbo' は detail(価格更新) と discovery(新作収集/終了間近収集) の両方を
     // Promise.all で並列保持したまま実行するため、両方ともここで解放する。
-    if (job === 'all' || job === 'turbo') releaseDetail();
-    if (job === 'all' || job === 'turbo') releaseDiscovery();
+    if (job === 'all' || job === 'turbo') lockManager.releaseOwned('detail', myDetailToken);
+    if (job === 'all' || job === 'turbo') lockManager.releaseOwned('discovery', myDiscoveryToken);
     _progress.done = true;
 
     // ジョブ単位のサマリを digest.log / events.jsonl に記録する。
