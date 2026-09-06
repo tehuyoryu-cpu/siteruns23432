@@ -978,4 +978,8 @@ module.exports = {
   runEndingSoonScan: _withDebugPush('endingsoon',  runEndingSoonScan),
   runNewReleaseScan: _withDebugPush('newrelease',  runNewReleaseScan),
   runCircleGapScan:  _withDebugPush('circlegap',   runCircleGapScan),
+  // 構造的問題#4対応: テスト専用エクスポート。既存動作は変更していない。
+  // サークルプロフィールURL(過去に一度実機で修正が入った箇所)・月初日付
+  // 計算等の純粋関数をtest/discovery.test.jsから直接検証するために公開する。
+  __testHooks: { _circleProfileUrl, _monthStart, _isMonthRollover },
 };

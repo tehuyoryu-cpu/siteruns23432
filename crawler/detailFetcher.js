@@ -1518,8 +1518,17 @@ function _schedule(work, price, noChange) {
 }
 
 function _ageDays(d) {
-  try { return Math.floor((Date.now() - new Date(d).getTime()) / 86400000); }
-  catch { return 9999; }
+  // バグ修正(構造的問題#4のテスト作成中に発見): JSの `new Date(invalid)` は
+  // 例外を投げず Invalid Date(getTime()がNaN)を返すだけのため、旧実装の
+  // try/catchは「不正な日付文字列→9999」という意図したフォールバックに
+  // 実質到達できていなかった(NaNがそのまま返っていた)。_scheduleでの
+  // `days < 7`/`days < 30` 比較はNaNだと常にfalseになるため偶然実害は
+  // 無かったが、exportWorks()等でこの値をそのままログ・表示に使う経路が
+  // 増えると"NaN"がそのまま漏れ出す。d==null(release_date未取得のimport
+  // 直後の作品等)も含め、明示的にNaN/null判定してから9999にフォールバックする。
+  if (d == null) return 9999;
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? 9999 : Math.floor((Date.now() - t) / 86400000);
 }
 
 // ─── 完了ごとの自動デバッグpush ─────────────────────────────────────────────────
@@ -1547,4 +1556,17 @@ async function _runDetailFetchWithPush(limit, opts = {}) {
   }
 }
 
-module.exports = { runDetailFetch: _runDetailFetchWithPush, fetchAndStore, saveDiscoveredPrice, getHealthSnapshot };
+module.exports = {
+  runDetailFetch: _runDetailFetchWithPush, fetchAndStore, saveDiscoveredPrice, getHealthSnapshot,
+  // 構造的問題#4対応: テスト専用エクスポート。scheduler.js/apiServer.js等の
+  // 本番コードからは使用しないこと(挙動の追加公開であり、既存の動作は
+  // 一切変更していない)。サーキットブレーカー・優先度スケジューリング等、
+  // 最も頻繁にバグ修正されてきた内部状態機械をtest/detailFetcher.test.jsから
+  // 直接駆動・検証するためだけに公開する。
+  __testHooks: {
+    _schedule, _ageDays,
+    _recordApiSuccess, _recordApiEmptyAndMaybeRecover, _resetSessionHealthState,
+    _shouldSkipRequest, _isInRateLimitBackoff, _isInGlobalBackoff,
+    EMPTY_STREAK_THRESHOLD, GLOBAL_CIRCUIT_MIN_SITES,
+  },
+};

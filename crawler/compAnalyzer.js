@@ -396,4 +396,5 @@ module.exports = {
   estimateContents,
   normalizeTitle,
   ngramSim,
+  findPageSubset,
 };
