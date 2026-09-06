@@ -238,9 +238,14 @@ async function main({ onProgress } = {}) {
   };
 
   // 差分計算: リモートの現在のtreeと比較し、内容が変わった(またはリモートに
-  // 存在しない)ファイルだけをアップロード対象にする。shard数が増減して
-  // ローカルに存在しなくなったパス(shards/ index/ 配下のみ)は明示的に削除する
-  // (manifest.json/README.mdは常に変化するため削除判定の対象外)。
+  // 存在しない)ファイルだけをアップロード対象にする。
+  // 削除判定は shards/ index/ 配下限定だった(旧実装)。このブランチは本スクリプトの
+  // 専有物(README.mdにも「手動編集しないでください」と明記)であり、リモートに
+  // 残っているがローカル(files)に存在しないパスは、ディレクトリ構成に関わらず
+  // 「もう配信すべきでなくなったファイル」とみなしてよい。manifest.json自体の
+  // スキーマが変わって配信構成が変化するケース(例: 新ディレクトリの追加・廃止)も
+  // shards/index限定だと検出できなかったため、対象を全ファイルに一般化する。
+  // (manifest.json/README.mdは常にfilesに含まれるため、通常運用では削除対象にならない)
   const remoteInfo = await _getRemoteTreeInfo(headers);
   let changedFiles = files;
   let deletePaths  = [];
@@ -248,7 +253,7 @@ async function main({ onProgress } = {}) {
     changedFiles = files.filter(f => remoteInfo.blobShaByPath.get(f.path) !== f.sha);
     const localPaths = new Set(files.map(f => f.path));
     for (const remotePath of remoteInfo.blobShaByPath.keys()) {
-      if ((remotePath.startsWith('shards/') || remotePath.startsWith('index/')) && !localPaths.has(remotePath)) {
+      if (!localPaths.has(remotePath)) {
         deletePaths.push(remotePath);
       }
     }

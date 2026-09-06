@@ -87,6 +87,20 @@ module.exports = {
     maxDurationMs: 20 * 60 * 1000,   // 1回の実行あたり最大20分
   },
 
+  // 通常discovery(_collectCircles、6時間毎cron)のサークルローテーション設定。
+  // 詳細はcrawler/discovery.jsの_collectCircles()コメント参照。
+  // 以前はROTATION_RUNS=8/バッチ上限200がハードコードされており、
+  // 「約48時間で全サークルを一巡」を変更するにはコード修正が必要だった。
+  // サークル数が増えるほど一巡にかかる時間も伸び続けるため、外部から
+  // 調整できるようにconfig化し、目標を8回(48h)→4回(24h)に短縮した
+  // (ここは運用上の希望する巡回頻度に応じて再調整してよい値)。
+  discovery: {
+    circleRotationRuns:  4,     // 6h毎cron×N回でサークル一巡させる目標
+    circleBatchCapMin:   30,    // 1回あたり最小バッチサイズ
+    circleBatchCapMax:   200,   // 1回あたり最大バッチサイズ(負荷上限)
+    circleConcurrency:   5,     // サークル巡回の同時リクエスト数
+  },
+
   cron: {
     discovery: '0 */6 * * *',
     detail:    '*/10 * * * *',

@@ -289,12 +289,18 @@ async function _collectCircles(knownRjs, delistedRjs = null) {
   // 下限30(従来値、小規模DBでの過走査防止)・上限200(1回あたりの負荷上限)で
   // クランプする。
   const totalCircles = db.getStats().totalCircles ?? 0;
-  const ROTATION_RUNS = 8; // 6h毎cron×8回 ≈ 48時間で一巡させる目標
-  const batchSize = Math.max(30, Math.min(200, Math.ceil(totalCircles / ROTATION_RUNS) || 30));
+  // config.discovery参照。以前はROTATION_RUNS=8(48h)/上限200/CONC=5が
+  // ハードコードされており、サークル数増加に伴う一巡時間の伸びを
+  // config変更だけで調整できなかった(item7-⑤)。
+  const dCfg = config.discovery ?? {};
+  const ROTATION_RUNS = dCfg.circleRotationRuns ?? 4;
+  const BATCH_MIN     = dCfg.circleBatchCapMin  ?? 30;
+  const BATCH_MAX     = dCfg.circleBatchCapMax  ?? 200;
+  const batchSize = Math.max(BATCH_MIN, Math.min(BATCH_MAX, Math.ceil(totalCircles / ROTATION_RUNS) || BATCH_MIN));
 
   // セール中を優先し、最も長くチェックされていないサークルをローテーション
   const toCheck = db.getCirclesForDiscovery(batchSize);
-  const CONC    = 5;  // 同時リクエスト数
+  const CONC    = dCfg.circleConcurrency ?? 5;  // 同時リクエスト数
 
   let count = 0;
   // CONC 件ずつ並列フェッチ
