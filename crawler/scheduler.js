@@ -15,7 +15,7 @@ const cron   = require('node-cron');
 const config = require('../config');
 const db     = require('./db');
 const log    = require('./logger');
-const { runDiscovery, runMonthlyScan } = require('./discovery');
+const { runDiscovery, runMonthlyScan, runCircleGapScan } = require('./discovery');
 const { runDetailFetch } = require('./detailFetcher');
 const { runExportShards } = require('./exportShards');
 const compScan = require('./compScan');
@@ -393,6 +393,50 @@ function _startPriceIssueResampleJob() {
   log.info('[scheduler] priceIssueResample job scheduled (daily 03:45, 150件)');
 }
 
+// ─── サークル欠落診断の定期実行 ─────────────────────────────────────────────────
+// バグ修正(2026-09-05 debugブランチで確認): circleGapScanはこれまでダッシュボードの
+// 「サークル欠落診断」ボタンを手動で押した時にしか実行されず、schedulerには
+// 一切登録されていなかった。1回の実行はtime-box(既定20分)で約370サークル
+// しか進まないため(totalCircles:5160に対しchecked:370)、人手でクリックし
+// 続けない限り全サークルの一巡に何ヶ月もかかる計算になり、「ローテーションが
+// 遅い」という実態は診断ロジック自体ではなく「自動実行経路が存在しない」
+// ことが根本原因だった。discovery系(6時間毎cron)と同じ 'discovery' ロック・
+// abortフラグを共有させることで、他のdiscovery系ジョブと衝突しないように
+// しつつ毎日自動で少しずつ進めるようにする。
+// prevMonthScan(毎月2日04:00)とは意図的に時刻をずらし、月初のみ発生しうる
+// ロック競合(片方が'discovery'ロックを取っていればもう片方は自然にskipして
+// 次回に持ち越されるだけで実害はないが、極力避ける)を減らす。
+function _startCircleGapJob() {
+  cron.schedule('10 4 * * *', async () => {
+    if (!global._crawlerRunning) global._crawlerRunning = {};
+    if (global._crawlerRunning.discovery) {
+      log.warn('[scheduler] circleGap skipped (discovery系ジョブが実行中、次回に持ち越します)');
+      return;
+    }
+    const myToken = Symbol('scheduler-circlegap');
+    global._crawlerRunning.discovery = true;
+    global._crawlerRunning._discoveryOwner = myToken;
+    // 他のdiscovery系cronと同様、前回の中止操作が残っていないようにリセットする
+    global._crawlerAbort && (global._crawlerAbort.discovery = false);
+    resetAbortFlag('discovery');
+    const _t0 = Date.now();
+    try {
+      const r = await runCircleGapScan({});
+      log.digest('circlegap', { trigger: 'cron', ...r, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
+    } catch (err) {
+      log.error('[scheduler] circleGap error', err.message);
+      log.digest('circlegap', { trigger: 'cron', ok: false, error: err.message, duration: ((Date.now() - _t0) / 1000).toFixed(1) + 's' });
+    } finally {
+      if (global._crawlerRunning && global._crawlerRunning._discoveryOwner === myToken) {
+        global._crawlerRunning.discovery = false;
+        global._crawlerRunning._discoveryOwner = null;
+      }
+      log.flush();
+    }
+  });
+  log.info('[scheduler] circleGap job scheduled (daily 04:10)');
+}
+
 // ─── public API ──────────────────────────────────────────────────────────────
 
 async function start() {
@@ -409,6 +453,7 @@ async function start() {
   _startCompScanJob();
   _startQuarantineResampleJob();
   _startPriceIssueResampleJob();
+  _startCircleGapJob();
 
   log.info('[scheduler] running initial passes on startup');
 

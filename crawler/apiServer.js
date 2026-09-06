@@ -140,6 +140,11 @@ const _ABORT_FLAG_BY_JOB = {
 const _SCHEDULER_RUNNING_KEY_BY_JOB = {
   discover: 'discovery', fetch: 'detail', all: 'detail', turbo: 'detail',
   comp_listing: 'compListing', comp_detail: 'compDetail',
+  // バグ修正(2026-09-05): circleGapScanをscheduler.jsに新規登録(毎日04:10、
+  // 'discovery'ロック共有)したのに合わせ、ダッシュボードの停止ボタンが
+  // cron起動分も「実行中」として検知できるようにする(以前はcirclegapが
+  // scheduler側に一切存在しなかったため、このマッピングも不要だった)。
+  circlegap: 'discovery',
 };
 
 // ─── turbo/all の高負荷起因エラー率の自動検知 ────────────────────────────────
@@ -211,7 +216,16 @@ async function handleRun(job, res) {
   // 片方のforce-update refがもう片方の変更を巻き戻す可能性がある。
   // 'pushdata' 自身を共有ロックキーとして登録し、scheduler.js 側にも同じ
   // global._crawlerRunning.pushdata を見させることで排他する。
-  const sharedKeys = { discover: 'discovery', fetch: 'detail', turbo: 'detail', comp_listing: 'compListing', comp_detail: 'compDetail', pushdata: 'pushdata' };
+  const sharedKeys = {
+    discover: 'discovery', fetch: 'detail', turbo: 'detail',
+    comp_listing: 'compListing', comp_detail: 'compDetail', pushdata: 'pushdata',
+    // バグ修正(2026-09-05): circleGapScanをscheduler.jsに新規登録した(daily 04:10、
+    // 'discovery'ロック共有)ことで、手動ボタン起動とcron起動が二重に走る余地が
+    // 生まれた(以前はcirclegapがどのロックも取得・確認していなかったため実害は
+    // 無かったが、cron追加後はそのままだと衝突しうる)。discover等と同じ
+    // 'discovery'ロックを共有させ、片方が実行中はもう片方が待機/skipするようにする。
+    circlegap: 'discovery',
+  };
   const sharedKey  = sharedKeys[job];
   // detail / discovery ロックの所有者トークン。自分が確保した場合のみ
   // this 関数内の finally で解放する。
