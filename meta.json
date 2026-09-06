@@ -1,0 +1,116 @@
+{
+  "pushedAt": "2026-09-06T13:40:02.811Z",
+  "job": "detail",
+  "resultSummary": {
+    "processed": 0,
+    "priceChanges": 0,
+    "errors": 2,
+    "total": 2,
+    "apiMissing": 0,
+    "contaminated": 0,
+    "fetchFail": 2,
+    "storeError": 0,
+    "verifiedAlive": 0,
+    "autoThrottled": false,
+    "rateLimit": 700,
+    "concurrency": 3,
+    "errorRate": null,
+    "highErrorRate": false
+  },
+  "dbStats": {
+    "totalWorks": 59554,
+    "onSale": 58508,
+    "priceChanges": 103247,
+    "totalCircles": 6576,
+    "circlesOnSale": 6492,
+    "dueNow": 0,
+    "slowTransactions": {
+      "count": 5,
+      "maxMs": 475,
+      "lastMs": 442,
+      "lastAt": "2026-09-06T13:29:18.432Z",
+      "lastLabel": "transactionNoSave",
+      "thresholdMs": 300
+    }
+  },
+  "priceIssuesCount": 381,
+  "integrityHistory": [],
+  "health": {
+    "perSite": {
+      "girls": {
+        "emptyStreak": 2,
+        "circuitOpen": false,
+        "rewarmInProgress": false,
+        "rateLimitBackoffRemainingSec": 0,
+        "rateLimitBackoffLevel": 0
+      },
+      "maniax": {
+        "emptyStreak": 2,
+        "circuitOpen": false,
+        "rewarmInProgress": false,
+        "rateLimitBackoffRemainingSec": 0,
+        "rateLimitBackoffLevel": 0
+      }
+    },
+    "global": {
+      "backoffActive": false,
+      "backoffRemainingSec": 0,
+      "lastTriggeredAt": null
+    },
+    "globalConcurrency": {
+      "active": 0,
+      "waiting": 0,
+      "max": 5
+    },
+    "rewarm": {
+      "lastRewarmAt": null,
+      "cooldownRemainingSec": 0
+    },
+    "autoThrottle": {
+      "all": {
+        "consecutiveHighErrorRuns": 0,
+        "active": false,
+        "lastRunFinishedAt": "2026-09-06T13:29:30.163Z"
+      }
+    }
+  },
+  "warmUpHistory": [
+    {
+      "ts": "2026-09-06T13:24:50.563Z",
+      "trigger": "startup",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    }
+  ],
+  "buildInfo": {
+    "sha": "46b670a66df77d72541ed6cea5a2e5fcb4f389dc",
+    "builtAt": "2026-09-06T12:47:02Z",
+    "runNumber": 376
+  },
+  "env": {
+    "appVersion": "1.0.0",
+    "node": "v20.18.0",
+    "electron": "31.7.7",
+    "platform": "win32",
+    "arch": "x64"
+  }
+}

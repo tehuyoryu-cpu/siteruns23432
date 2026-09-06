@@ -1,0 +1,80 @@
+2026-09-04T23:23:56.720Z [fetch] trigger:startup processed:500 priceChanges:486 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:6.3s
+2026-09-04T23:25:14.674Z [discover] trigger:startup discovered:1128 duration:89.2s
+2026-09-04T23:30:09.006Z [fetch] trigger:cron processed:499 priceChanges:499 errors:1 total:500 apiMissing:1 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0.002 highErrorRate:false duration:8.7s
+2026-09-04T23:40:08.616Z [fetch] trigger:cron processed:500 priceChanges:500 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:8.1s
+2026-09-04T23:41:18.296Z [fullscan] duration:1096.3s ok:true grandTotal:54616 sites:{"maniax":396,"girls":54220}
+2026-09-05T00:10:09.119Z [fetch] trigger:cron processed:500 priceChanges:500 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:8.2s
+2026-09-05T00:20:05.336Z [fetch] trigger:cron processed:500 priceChanges:500 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:4.5s
+2026-09-05T00:25:07.476Z [circlegap] duration:1204.4s ok:true checked:370 totalMissing:647 missingByCircle:{"RG01000310":2,"RG01000418":3,"RG01000457":1,"RG01000772":6,"RG01000875":17,"RG01000937":20,"RG01001049":3,"RG01001128":3,"RG01001187":1,"RG01001209":2,"RG01001328":3,"RG01001631":4,"RG01001994":20,"RG01002054":3,"RG01002181":1,"RG01002381":1,"RG01002545":4,"RG01002873":3,"RG01002894":1,"RG01003004":1,"RG01003110":1,"RG01003303":3,"RG01003406":1,"RG01003486":1,"RG01003541":15,"RG01003621":2,"RG01003846":1,"RG01004049":5,"RG01004104":106,"RG01004208":6,"RG01004464":3,"RG01004534":2,"RG01004557":12,"RG01004617":20,"RG01004668":3,"RG01004777":3,"RG01005234":2,"RG01005383":1,"RG01005392":8,"RG01005421":1,"RG01005772":3,"RG01005861":3,"RG01005886":1,"RG01005939":1,"RG01005945":4,"RG01006015":1,"RG01006110":165,"RG01006146":1,"RG01006148":1,"RG01006213":8,"RG01006291":1,"RG01006300":2,"RG01006496":1,"RG01006499":1,"RG01006582":5,"RG01007156":6,"RG01007299":2,"RG01007680":16,"RG01007694":1,"RG01007939":23,"RG01007940":2,"RG01008314":1,"RG01008451":1,"RG01008542":3,"RG01008767":1,"RG01008799":1,"RG01008964":4,"RG01009019":57,"RG01009140":32,"RG01009160":1,"RG01009376":2,"RG01009393":1} skippedInvalidSite:0 totalCircles:5160 resumedFromPrevious:false timedOut:true stopped:false
+2026-09-05T00:30:07.811Z [fetch] trigger:cron processed:500 priceChanges:500 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:7.5s
+2026-09-05T01:14:46.216Z [all] duration:2163.9s ok:true discovered:333 processed:52858 priceChanges:52519 errors:866 total:53724 apiMissing:866 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0.016 highErrorRate:false stopped:false
+2026-09-05T01:23:21.579Z [pushdata] duration:6.0s ok:false error:tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:23:25.168Z [pushdebug] duration:1.1s ok:false skipped:false error:blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:23:30.312Z [pushdebug] duration:0.9s ok:false skipped:false error:blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:30:07.579Z [fetch] trigger:cron processed:484 priceChanges:0 errors:0 total:484 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:6.7s
+2026-09-05T01:50:06.390Z [fetch] trigger:cron processed:500 priceChanges:1 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:6.0s
+2026-09-05T01:54:46.479Z [pushdebug] duration:0.9s ok:false skipped:false error:blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:54:53.720Z [pushdata] duration:4.4s ok:false error:tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:00:06.285Z [fetch] trigger:cron processed:467 priceChanges:8 errors:0 total:467 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:5.7s
+2026-09-05T02:04:19.360Z [pushdata] duration:4.2s ok:false error:tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:04:30.906Z [pushdata] duration:3.6s ok:false error:tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:20:06.688Z [fetch] trigger:cron processed:497 priceChanges:3 errors:0 total:497 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:5.8s
+2026-09-05T02:28:23.838Z [pushdata] duration:4.0s ok:false error:tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:30:05.634Z [fetch] trigger:cron processed:500 priceChanges:6 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:4.8s
+2026-09-05T02:32:13.461Z [discover] trigger:cron discovered:113 duration:132.6s
+2026-09-05T02:33:14.040Z [pushdata] duration:23.1s ok:true files:1088 changed:1089 commit:79a01811b9e2f4ffb3dc7b6ba40f204061fcee74 branch:data exportResult:{"works":55609,"dataShardFiles":1022,"idxShardFiles":64,"ms":3091}
+2026-09-05T02:33:32.265Z [pushdebug] duration:11.9s ok:true files:12
+2026-09-05T02:50:16.403Z [fetch] trigger:cron processed:500 priceChanges:110 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:15.8s
+2026-09-05T03:47:55.495Z [all] duration:575.3s ok:true discovered:2 processed:52537 priceChanges:87 errors:0 total:52537 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false stopped:false
+2026-09-05T05:20:19.039Z [fetch] trigger:cron processed:500 priceChanges:0 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:18.0s
+2026-09-05T06:30:16.143Z [fetch] trigger:cron processed:500 priceChanges:0 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:15.4s
+2026-09-05T07:00:16.998Z [fetch] trigger:cron processed:500 priceChanges:0 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:16.1s
+2026-09-05T07:20:15.641Z [fetch] trigger:cron processed:500 priceChanges:0 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:14.7s
+2026-09-05T07:30:15.048Z [fetch] trigger:cron processed:500 priceChanges:0 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:15.0s
+2026-09-06T01:30:18.717Z [fetch] trigger:cron processed:500 priceChanges:3 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:17.8s
+2026-09-06T01:40:18.339Z [fetch] trigger:cron processed:500 priceChanges:1 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:17.9s
+2026-09-06T02:10:18.229Z [fetch] trigger:cron processed:500 priceChanges:0 errors:0 total:500 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false duration:17.2s
+2026-09-06T13:12:36.244Z [endingsoon] duration:42.9s ok:true grandTotal:568 newCount:540 boostedCount:568 sites:{"maniax":528,"girls":23,"bl":17}
+2026-09-06T13:13:19.242Z [newrelease] duration:33.6s ok:true grandTotal:204 sites:{"maniax":5,"girls":51,"bl":148}
+2026-09-06T13:13:24.969Z [fetch] trigger:startup processed:499 priceChanges:499 errors:1 total:500 apiMissing:1 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0.002 highErrorRate:false duration:7.6s
+2026-09-06T13:13:41.285Z [discover] trigger:startup discovered:265 duration:28.9s
+2026-09-06T13:15:56.248Z [turbo] duration:150.7s ok:true processed:13747 priceChanges:567 errors:3 total:14000 apiMissing:0 contaminated:0 fetchFail:3 storeError:0 verifiedAlive:3 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false newRelease:{"grandTotal":0,"sites":{"maniax":0,"girls":0,"bl":0}} endingSoon:{"grandTotal":568,"newCount":0,"boostedCount":568,"sites":{"maniax":528,"girls":23,"bl":17}} stopped:true
+2026-09-06T13:17:56.841Z [discover] duration:113.6s ok:true discovered:1096 stopped:false
+2026-09-06T13:18:01.259Z [all] duration:113.8s ok:true discovered:0 processed:0 priceChanges:0 errors:0 total:0 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:null highErrorRate:false stopped:true
+2026-09-06T13:19:18.767Z [pushdata] duration:14.7s ok:true files:1089 changed:350 commit:499c0c7b37862c9995ce8e509707d506be8d443d branch:data exportResult:{"works":57560,"dataShardFiles":1023,"idxShardFiles":64,"ms":4812}
+2026-09-06T13:19:21.194Z [pushdebug] duration:11.7s ok:true files:12
+2026-09-06T13:22:56.771Z [all] duration:246.9s ok:true discovered:0 processed:20796 priceChanges:1402 errors:0 total:21000 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false stopped:true
+2026-09-06T13:29:43.594Z [all] duration:361.5s ok:true discovered:610 processed:24183 priceChanges:799 errors:3 total:24186 apiMissing:3 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:0 highErrorRate:false stopped:false
+2026-09-06T13:30:00.757Z [fetch] trigger:cron processed:0 priceChanges:0 errors:0 total:0 apiMissing:0 contaminated:0 fetchFail:0 storeError:0 verifiedAlive:0 autoThrottled:false rateLimit:700 concurrency:3 errorRate:null highErrorRate:false duration:0.0s

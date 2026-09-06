@@ -1,0 +1,299 @@
+2026-09-05T01:14:15.707Z [WARN ] [db] slow transaction (transactionNoSave): 553ms {"dbSizeMB":26.6}
+2026-09-05T01:14:15.707Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2}
+2026-09-05T01:14:17.277Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1,"key_not_in_response":2}
+2026-09-05T01:14:17.727Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":3}
+2026-09-05T01:14:20.047Z [WARN ] [db] slow transaction (transactionNoSave): 473ms {"dbSizeMB":26.7}
+2026-09-05T01:14:23.777Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":2}
+2026-09-05T01:14:25.302Z [WARN ] [db] slow transaction (transactionNoSave): 782ms {"dbSizeMB":26.7}
+2026-09-05T01:14:29.970Z [WARN ] [db] slow transaction (transactionNoSave): 551ms {"dbSizeMB":26.8}
+2026-09-05T01:14:35.149Z [WARN ] [db] slow transaction (transactionNoSave): 621ms {"dbSizeMB":26.9}
+2026-09-05T01:14:35.149Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1,"key_not_in_response":2}
+2026-09-05T01:14:41.055Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2,"no_price_field":1}
+2026-09-05T01:14:41.264Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":43,"no_price_field":1}
+2026-09-05T01:14:42.686Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":12,"no_price_field":2}
+2026-09-05T01:14:44.261Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:14:46.217Z [WARN ] (集約) 同種メッセージが直近31秒で19回発生（16件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2}
+2026-09-05T01:14:46.217Z [WARN ] [priceIssueMonitor] spike detected {"job":"all","before":14,"after":353,"delta":339}
+2026-09-05T01:23:19.946Z [WARN ] [push-data-shards] ref取得失敗、diff無しの全アップロードにフォールバック 401
+2026-09-05T01:23:21.578Z [ERROR] [api] run error pushdata tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:23:25.167Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:23:25.168Z [WARN ] [api] pushdebug skipped/failed {"ok":false,"error":"blob create failed (latest.log): HTTP 401 {\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}"}
+2026-09-05T01:23:30.311Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:23:30.311Z [WARN ] [api] pushdebug skipped/failed {"ok":false,"error":"blob create failed (latest.log): HTTP 401 {\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}"}
+2026-09-05T01:30:02.073Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":2}
+2026-09-05T01:30:02.111Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":3}
+2026-09-05T01:30:02.423Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":39,"no_price_field":1}
+2026-09-05T01:30:02.477Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":2}
+2026-09-05T01:30:07.578Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:30:07.579Z [WARN ] (集約) 同種メッセージが直近6秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":2}
+2026-09-05T01:50:06.390Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:54:29.464Z [WARN ] [api] settings: token format looks unusual, saving anyway
+2026-09-05T01:54:40.775Z [WARN ] [api] settings: token format looks unusual, saving anyway
+2026-09-05T01:54:46.477Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T01:54:46.479Z [WARN ] [api] pushdebug skipped/failed {"ok":false,"error":"blob create failed (latest.log): HTTP 401 {\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}"}
+2026-09-05T01:54:52.192Z [WARN ] [push-data-shards] ref取得失敗、diff無しの全アップロードにフォールバック 401
+2026-09-05T01:54:53.720Z [ERROR] [api] run error pushdata tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:00:06.285Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:04:17.842Z [WARN ] [push-data-shards] ref取得失敗、diff無しの全アップロードにフォールバック 401
+2026-09-05T02:04:19.360Z [ERROR] [api] run error pushdata tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:04:29.383Z [WARN ] [push-data-shards] ref取得失敗、diff無しの全アップロードにフォールバック 401
+2026-09-05T02:04:30.905Z [ERROR] [api] run error pushdata tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:20:06.688Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:28:22.371Z [WARN ] [push-data-shards] ref取得失敗、diff無しの全アップロードにフォールバック 401
+2026-09-05T02:28:23.838Z [ERROR] [api] run error pushdata tree create failed (chunk 0〜149件目): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:30:04.578Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-05T02:30:05.633Z [ERROR] [pushDebugBundle] failed blob create failed (latest.log): HTTP 401 {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}
+2026-09-05T02:30:12.078Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":98}
+2026-09-05T02:30:18.930Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-05T02:30:28.126Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-08-01","page":1,"parsed":99}
+2026-09-05T02:30:35.020Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-08-01","page":1,"parsed":98}
+2026-09-05T02:30:42.013Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":1,"parsed":99}
+2026-09-05T02:31:12.471Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG55008","site":"maniax","mismatched":1,"totalOnPage":1}
+2026-09-05T02:32:13.191Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG66716","site":"girls","mismatched":6,"totalOnPage":9}
+2026-09-05T02:45:00.924Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-05T02:45:19.433Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01123480.html","title":"【50%OFF】【オホ声】爆乳女上司の甘サド射精管理days! ～お付き合いはオナ禁してから～ [かずたまそふと] | DLsite 同人 - R18","readyState":"complete","bodyLen":431039,"isLoading":false}
+2026-09-05T02:45:35.731Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01123480.html/?locale=ja_JP","title":"【50%OFF】【オホ声】爆乳女上司の甘サド射精管理days! ～お付き合いはオナ禁してから～ [かずたまそふと] | DLsite 同人 - R18","readyState":"complete","bodyLen":390015,"isLoading":false}
+2026-09-05T03:38:20.705Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-05T03:38:21.728Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":98}
+2026-09-05T03:38:22.781Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-05T03:38:24.607Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-08-01","page":1,"parsed":99}
+2026-09-05T03:38:25.591Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-08-01","page":1,"parsed":98}
+2026-09-05T03:38:26.577Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":1,"parsed":99}
+2026-09-05T03:38:47.771Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG55008","site":"maniax","mismatched":1,"totalOnPage":1}
+2026-09-05T03:39:24.291Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG66716","site":"girls","mismatched":6,"totalOnPage":9}
+2026-09-05T03:41:45.387Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":21,"no_price_field":11}
+2026-09-05T03:41:47.281Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":45,"no_price_field":1}
+2026-09-05T03:41:54.081Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":34}
+2026-09-05T03:41:55.530Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":15}
+2026-09-05T03:41:55.925Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":11}
+2026-09-05T03:41:55.990Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":11}
+2026-09-05T03:41:56.314Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":9,"no_price_field":8}
+2026-09-05T03:42:05.548Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":40,"no_price_field":1}
+2026-09-05T03:42:08.043Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":17}
+2026-09-05T03:42:23.966Z [WARN ] (集約) 同種メッセージが直近39秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":21,"no_price_field":11}
+2026-09-05T03:42:23.967Z [WARN ] (集約) 同種メッセージが直近37秒で9回発生（6件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":45,"no_price_field":1}
+2026-09-05T03:42:27.042Z [WARN ] [db] slow transaction (transactionNoSave): 340ms {"dbSizeMB":27.1}
+2026-09-05T03:42:27.042Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":8}
+2026-09-05T03:42:27.469Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":18}
+2026-09-05T03:43:00.799Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":2,"no_price_field":2}
+2026-09-05T03:43:07.369Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:43:10.324Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":4,"no_price_field":1}
+2026-09-05T03:43:11.475Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":16,"no_price_field":1}
+2026-09-05T03:43:24.391Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:43:33.627Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:43:34.460Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:43:41.568Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:43:43.337Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":2}
+2026-09-05T03:44:02.244Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":11,"no_price_field":1}
+2026-09-05T03:44:24.116Z [WARN ] (集約) 同種メッセージが直近60秒で10回発生（7件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:44:24.429Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:44:27.655Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:44:29.434Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:44:49.593Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:44:51.413Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:44:57.137Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:24.132Z [WARN ] (集約) 同種メッセージが直近60秒で9回発生（6件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:24.133Z [WARN ] (集約) 同種メッセージが直近56秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:33.661Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:40.569Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:45.618Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:47.747Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:45:48.686Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:46:08.578Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:46:24.142Z [WARN ] (集約) 同種メッセージが直近50秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:46:30.431Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:46:35.773Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:46:50.967Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:46:52.640Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":25,"no_price_field":1}
+2026-09-05T03:46:56.248Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":2}
+2026-09-05T03:46:58.910Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:24.149Z [WARN ] (集約) 同種メッセージが直近54秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:24.149Z [WARN ] (集約) 同種メッセージが直近48秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:25.909Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:26.375Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:32.173Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:32.919Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":42,"no_price_field":1}
+2026-09-05T03:47:35.614Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":18,"no_price_field":1}
+2026-09-05T03:47:37.523Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":26,"no_price_field":1}
+2026-09-05T03:47:38.192Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":2}
+2026-09-05T03:47:38.628Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"no_price_field":3}
+2026-09-05T03:47:41.899Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":3,"no_price_field":2}
+2026-09-05T03:47:55.495Z [WARN ] (集約) 同種メッセージが直近30秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"no_price_field":1}
+2026-09-05T03:47:55.495Z [WARN ] (集約) 同種メッセージが直近23秒で9回発生（6件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":42,"no_price_field":1}
+2026-09-06T01:40:03.509Z [WARN ] [db] slow transaction (transactionNoSave): 308ms {"dbSizeMB":27.1}
+2026-09-06T13:12:03.816Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"maniax","page":5,"parsed":88}
+2026-09-06T13:12:07.737Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01244508.html/?locale=ja_JP","title":"【50%OFF】ゆみこ先生は生ハメ本気セックスがしたい [さくらぷりん] | DLsite 同人 - R18","readyState":"complete","bodyLen":342262,"isLoading":false}
+2026-09-06T13:12:11.319Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"girls","page":1,"parsed":23}
+2026-09-06T13:12:19.632Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"bl","page":1,"parsed":17}
+2026-09-06T13:12:49.453Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"maniax","page":1,"parsed":99}
+2026-09-06T13:12:56.336Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"girls","page":1,"parsed":99}
+2026-09-06T13:13:05.268Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"girls","page":4,"parsed":82}
+2026-09-06T13:13:09.686Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"girls","page":6,"parsed":30}
+2026-09-06T13:13:15.991Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:13:16.871Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"bl","page":2,"parsed":92}
+2026-09-06T13:13:22.710Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-06T13:13:22.924Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":98}
+2026-09-06T13:13:30.926Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:13:41.283Z [WARN ] [discovery] collectCircles aborted {"processed":5,"total":200}
+2026-09-06T13:13:42.570Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"maniax","page":1,"parsed":99}
+2026-09-06T13:13:43.799Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"girls","page":1,"parsed":99}
+2026-09-06T13:13:44.138Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"verify_rescued":1}
+2026-09-06T13:13:46.749Z [WARN ] [discovery] newReleaseScan: 疑わしい短ページを検出、次ページで確認します {"site":"bl","page":2,"parsed":92}
+2026-09-06T13:13:47.287Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"maniax","page":5,"parsed":88}
+2026-09-06T13:13:49.548Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"verify_rescued":1}
+2026-09-06T13:13:52.175Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:13:54.382Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"girls","page":1,"parsed":23}
+2026-09-06T13:13:57.182Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"verify_rescued":1}
+2026-09-06T13:14:01.477Z [WARN ] [discovery] endingSoonScan: 疑わしい短ページ、次ページで確認します {"site":"bl","page":1,"parsed":17}
+2026-09-06T13:15:39.855Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":21,"ana_no_standalone_price":11}
+2026-09-06T13:15:42.889Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:16:03.589Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:16:04.927Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":98}
+2026-09-06T13:16:06.283Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:16:48.571Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG01076028","site":"girls","mismatched":69,"totalOnPage":73}
+2026-09-06T13:16:53.163Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG57196","site":"maniax","mismatched":2,"totalOnPage":2}
+2026-09-06T13:18:50.367Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:18:51.496Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":98}
+2026-09-06T13:18:52.631Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:19:20.072Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG01076028","site":"girls","mismatched":69,"totalOnPage":73}
+2026-09-06T13:19:21.162Z [ERROR] [discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします {"makerId":"RG57196","site":"maniax","mismatched":2,"totalOnPage":2}
+2026-09-06T13:20:00.688Z [WARN ] [scheduler] detail still running, skip
+2026-09-06T13:20:09.453Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":34}
+2026-09-06T13:20:11.027Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":33,"ana_no_standalone_price":1}
+2026-09-06T13:20:12.055Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":4}
+2026-09-06T13:20:12.264Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":11}
+2026-09-06T13:20:12.835Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":11}
+2026-09-06T13:20:12.843Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":9,"ana_no_standalone_price":4}
+2026-09-06T13:20:13.844Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":32}
+2026-09-06T13:20:21.333Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:20:22.059Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":2}
+2026-09-06T13:20:30.648Z [WARN ] (集約) 同種メッセージが直近21秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":34}
+2026-09-06T13:20:30.650Z [WARN ] (集約) 同種メッセージが直近20秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":33,"ana_no_standalone_price":1}
+2026-09-06T13:20:30.650Z [WARN ] (集約) 同種メッセージが直近18秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":11}
+2026-09-06T13:20:37.367Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":3}
+2026-09-06T13:20:38.863Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":27}
+2026-09-06T13:20:43.285Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":7}
+2026-09-06T13:21:15.485Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":2,"ana_no_standalone_price":2}
+2026-09-06T13:21:27.417Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:21:27.489Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":4,"ana_no_standalone_price":1}
+2026-09-06T13:21:30.655Z [WARN ] (集約) 同種メッセージが直近53秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":3}
+2026-09-06T13:21:40.785Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:21:44.203Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:21:48.488Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:21:55.368Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:21:57.731Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-06T13:22:15.231Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:22:30.661Z [WARN ] (集約) 同種メッセージが直近50秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:22:35.829Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:22:35.886Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:22:36.113Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:22:40.422Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:22:56.772Z [WARN ] (集約) 同種メッセージが直近21秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:23:42.460Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:23:44.070Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":98}
+2026-09-06T13:23:45.131Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-06T13:24:30.570Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ405853.html/?translation=RJ405854","title":"【55%OFF】【簡体中文版】片端の桜 [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":324185,"isLoading":false}
+2026-09-06T13:24:50.634Z [WARN ] [scheduler] initial discovery skipped (already running)
+2026-09-06T13:24:55.645Z [WARN ] [scheduler] initial detail run skipped (already running)
+2026-09-06T13:25:47.471Z [WARN ] [db] slow transaction (transactionNoSave): 375ms {"dbSizeMB":28.4}
+2026-09-06T13:25:57.398Z [WARN ] [db] slow transaction (transactionNoSave): 322ms {"dbSizeMB":28.4}
+2026-09-06T13:26:00.459Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:03.367Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:06.977Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:07.907Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:09.493Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:18.373Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:28.235Z [WARN ] (集約) 同種メッセージが直近28秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:28.236Z [WARN ] (集約) 同種メッセージが直近25秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:32.983Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:47.259Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:26:52.191Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:00.484Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:01.423Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:28.240Z [WARN ] (集約) 同種メッセージが直近55秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:28.963Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:30.764Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:40.840Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:45.907Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:27:48.347Z [WARN ] [db] slow transaction (transactionNoSave): 356ms {"dbSizeMB":28.4}
+2026-09-06T13:27:59.258Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:00.834Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":25,"ana_no_standalone_price":1}
+2026-09-06T13:28:28.247Z [WARN ] (集約) 同種メッセージが直近59秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:28.249Z [WARN ] (集約) 同種メッセージが直近42秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:29.070Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:29.343Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:35.554Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:35.613Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":42,"ana_no_standalone_price":1}
+2026-09-06T13:28:36.185Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:38.672Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":2}
+2026-09-06T13:28:38.849Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:28:39.213Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-06T13:28:43.513Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:29:15.628Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1,"ana_no_standalone_price":3}
+2026-09-06T13:29:16.912Z [WARN ] [db] slow transaction (transactionNoSave): 475ms {"dbSizeMB":28.5}
+2026-09-06T13:29:17.227Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1,"key_not_in_response":2}
+2026-09-06T13:29:18.433Z [WARN ] [db] slow transaction (transactionNoSave): 442ms {"dbSizeMB":28.5}
+2026-09-06T13:29:28.252Z [WARN ] (集約) 同種メッセージが直近59秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:29:28.252Z [WARN ] (集約) 同種メッセージが直近59秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-06T13:29:28.253Z [WARN ] (集約) 同種メッセージが直近53秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":42,"ana_no_standalone_price":1}
+2026-09-06T13:29:29.385Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-06T13:40:01.246Z [WARN ] [detail] API returned empty object girls requested 1件 sample: RJ01693390
+2026-09-06T13:40:01.614Z [WARN ] [detail] API returned empty object maniax requested 1件 sample: RJ01688730
+2026-09-06T13:40:01.995Z [WARN ] [detail] API returned empty object girls requested 1件 sample: RJ01693390
+2026-09-06T13:40:02.347Z [WARN ] [detail] API returned empty object maniax requested 1件 sample: RJ01688730

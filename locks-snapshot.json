@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-09-06T13:40:02.810Z",
+  "crawlerRunning": {
+    "discovery": false,
+    "detail": true,
+    "saleBoost": false,
+    "compListing": false,
+    "compDetail": false,
+    "schedulerDetailRunning": true
+  },
+  "crawlerAbort": {
+    "detail": false
+  },
+  "abortSignals": {
+    "detail": {
+      "aborted": false
+    },
+    "discovery": {
+      "aborted": false
+    }
+  }
+}
