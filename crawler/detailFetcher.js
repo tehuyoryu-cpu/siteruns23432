@@ -213,6 +213,18 @@ function _updateAutoThrottleStreak(jobName, result) {
   }
 }
 
+/**
+ * サーキット開放中のため getDueWorks() から除外されているサイト群に、
+ * 本当にまだ手つかずのdue作品が残っているかを安価に確認する
+ * (LIMIT 1 の indexed lookup なので、除外サイトが無い/空の場合も含めて
+ * ホットループで毎回呼んでもコストはごく小さい)。
+ * runDetailFetch() の「due枯渇」誤判定バグの修正のため追加。
+ */
+function _hasPendingBacklogInExcludedSites(excludeSites) {
+  if (!excludeSites?.length) return false;
+  return db.getDueWorks(1, { onlySites: excludeSites }).length > 0;
+}
+
 /** レート制限疑いによる抑制期間中かどうか（サイト単位のバックオフ、またはグローバル抑制中） */
 function _isInRateLimitBackoff(site) {
   return (_siteBackoffUntil[site] ?? 0) > Date.now() || _isInGlobalBackoff();
@@ -611,6 +623,22 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     }
 
     if (!due.length) {
+      // バグ修正(2026-09-08 実運用で確認: 「全て巡回」が実際のdue件数
+      // (5〜6万件規模)よりはるかに少ない件数で早期終了する事象): due.length
+      // が0でも、それは「本当にdueが尽きた」とは限らない。circuitOpenかつ
+      // まだ半開プローブの時刻でないサイト(excludeSites)は上のgetDueWorks()
+      // から丸ごと除外されているため、そのサイトに数万件のdueが残っていても
+      // ここでは見えない。特に働く作品の大半が単一サイト(例: girls)に偏って
+      // いる場合、そのサイトの循環ブレーカーが開いた瞬間に他サイトのdueが
+      // 先に尽きて「due作品なし」と誤判定し、実際には手つかずの巨大な
+      // バックログを残したまま実行全体が終了していた
+      // (digest.logでtotalが実行ごとに2万〜5万件台とばらつく主因)。
+      // 除外中のサイトに本当にバックログが残っているかを安価な1件チェックで
+      // 確認し、残っていれば「枯渇」とみなさず少し待って再評価する。
+      if (_hasPendingBacklogInExcludedSites(excludeSites)) {
+        await sleep(1000);
+        continue;
+      }
       if (result.total === 0) log.info('[detail] no due works');
       break;
     }
@@ -685,7 +713,15 @@ async function runDetailFetch(limit = 300, { onProgress, rateLimit, concurrency,
     }
 
     // 取得件数が batchSize 未満 → due 作品が枯渇、終了
-    if (due.length < batchSize) break;
+    // ただし上と同じ理由で、除外中サイトにバックログが残っていれば
+    // 「枯渇」と誤判定しない(詳細は !due.length 側のコメント参照)。
+    if (due.length < batchSize) {
+      if (_hasPendingBacklogInExcludedSites(excludeSites)) {
+        await sleep(1000);
+        continue;
+      }
+      break;
+    }
   }
 
   _updateAutoThrottleStreak(jobName, result);
