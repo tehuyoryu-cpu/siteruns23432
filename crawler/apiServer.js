@@ -50,6 +50,7 @@ const { resetAbortFlag, getAllAbortStates } = require('./abortSignals');
 // グローバル変数を読み書きするため、scheduler.js/electron-main.js側の直接
 // アクセスとは引き続き互換性がある(挙動を変えず重複コードのみ整理する)。
 const lockManager = require('./lockManager');
+const jobs = require('./jobs');
 const priceIssueMonitor = require('./priceIssueMonitor');
 const apiTrace = require('./apiTrace');
 // バグ修正(起動不能の真因): 以前はここで push-data-shards.js をモジュール読み込み時に
@@ -178,6 +179,25 @@ function _checkHighErrorRate(job, result) {
   return { highErrorRate, errorRate };
 }
 
+// #1 apiServer分割 ステップ2: 各ジョブ(crawler/jobs/*.js)へ渡す共有コンテキスト。
+// sseSend/progressは module 内で常に同一インスタンスを指すため、呼び出しの
+// たびに作り直す必要はなく、モジュール読み込み時に一度だけ組み立てる。
+const _jobCtx = {
+  sseSend:  _sseSend,
+  progress: _progress,
+  log,
+  config,
+  db,
+  lockManager,
+  resetAbortFlag,
+  checkHighErrorRate: _checkHighErrorRate,
+  notifyPriceChange: (n) => { if (global._notifyPriceChange) global._notifyPriceChange(n); },
+  discovery: { runDiscovery, runFullScan, runEndingSoonScan, runNewReleaseScan, runCircleGapScan },
+  detailFetcher,
+  compScan,
+  runExportShards,
+};
+
 function handleStop(job, res) {
   // バグ修正/機能追加: 'turbo' は detail(価格更新) と discovery(新作収集/終了間近収集)を
   // 同時並行で実行するようになったため、停止操作も両方のabortフラグを立てる必要がある。
@@ -219,7 +239,7 @@ async function handleRun(job, res) {
   // 'pushdata' 自身を共有ロックキーとして登録し、scheduler.js 側にも同じ
   // global._crawlerRunning.pushdata を見させることで排他する。
   const sharedKeys = {
-    discover: 'discovery', fetch: 'detail', turbo: 'detail',
+    discover: 'discovery', fetch: 'detail',
     comp_listing: 'compListing', comp_detail: 'compDetail', pushdata: 'pushdata',
     // バグ修正(2026-09-05): circleGapScanをscheduler.jsに新規登録した(daily 04:10、
     // 'discovery'ロック共有)ことで、手動ボタン起動とcron起動が二重に走る余地が
@@ -227,6 +247,18 @@ async function handleRun(job, res) {
     // 無かったが、cron追加後はそのままだと衝突しうる)。discover等と同じ
     // 'discovery'ロックを共有させ、片方が実行中はもう片方が待機/skipするようにする。
     circlegap: 'discovery',
+    // 'all'/'turbo' はここに登録しない: ジョブ本体(crawler/jobs/all.js,
+    // crawler/jobs/turbo.js)が abortAndTakeover() で detail/discovery を
+    // 自前で取得・解放するため。
+    //
+    // バグ修正(#1ジョブ分割時に発見): かつて 'turbo' がここに 'detail' として
+    // 登録されており、その結果ジョブ本体が実行される"前"にこのpreambleが
+    // 先にdetailロックを確保してしまっていた。すると turbo.js 内の
+    // abortAndTakeover('detail', ...) が「今まさに自分自身が確保したロック」を
+    // 実行中の他ジョブと誤認し、誰も解放しないロックの解放を最大15秒間
+    // (timeoutMs)無駄に待ってからようやく再取得する、という遅延が
+    // ぶっ飛ばし実行のたびに毎回発生していた('all'は元々ここに未登録で
+    // この問題が無かったため、非対称な扱いから発覚した)。
   };
   const sharedKey  = sharedKeys[job];
   // detail / discovery ロックの所有者トークン。自分が確保した場合のみ
@@ -277,393 +309,14 @@ async function handleRun(job, res) {
   _json(res, { ok: true, message: `${job} started` });
 
   try {
-    if (job === 'discover') {
-      Object.assign(_progress, { job, page: 0, found: 0, site: 'maniax', startedAt: Math.floor(Date.now() / 1000), done: false });
-      const r = await runDiscovery();
-      // バグ修正: 停止ボタンで中断された実行も ok:true のまま digest.log に
-      // 記録されており、あとからログを見ても「意図的に停止したのか、
-      // 単に完了したのか」が区別できなかった。完了時点の中止フラグを見て
-      // stopped を明示する（他のジョブと同じパターン、詳細は下のturbo/fetch参照）。
-      const stoppedDiscover = !!global._crawlerAbort?.discovery;
-      _lastResult[job] = { ok: true, discovered: r?.discovered ?? 0, stopped: stoppedDiscover, finishedAt: Date.now() };
-      _sseSend('log', (stoppedDiscover ? 'RJ収集を停止しました — ' : 'discovery完了 — ') + `新規: ${r?.discovered ?? 0}件`);
-
-    } else if (job === 'fetch') {
-      const startedAt = Math.floor(Date.now() / 1000);
-      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt, done: false });
-      const r = await detailFetcher.runDetailFetch(300, {
-        jobName: 'fetch',
-        onProgress: ({ processed, priceChanges, total }) => {
-          Object.assign(_progress, { found: processed, total });
-          _sseSend('progress', { processed, priceChanges, total });
-          if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
-        },
-      });
-      // バグ修正: 停止ボタンによる中断か、単なる正常完了かを digest.log から
-      // 判別できるようにする（同上）。
-      const stoppedFetch = !!global._crawlerAbort?.detail;
-      _lastResult[job] = { ok: true, ...r, stopped: stoppedFetch, finishedAt: Date.now() };
-      _sseSend(r?.priceChanges > 0 ? 'change' : 'log',
-        (stoppedFetch ? '価格更新を停止しました — ' : '価格更新完了 — ') + `処理:${r?.processed ?? 0}件 変動:${r?.priceChanges ?? 0}件`);
-      if (r?.priceChanges > 0 && global._notifyPriceChange) {
-        global._notifyPriceChange(r.priceChanges);
-      }
-
-    } else if (job === 'saleboost') {
-      const circles = db.getCirclesOnSale();
-      // バグ修正: 以前はサークル毎に1文ずつUPDATEを発行し、それら数万件を
-      // 1本の巨大なdb.transaction()で包んでいたため、WAL単一ライターロックを
-      // 数秒〜数十秒も占有し続け、並行する価格更新の書き込みを止めていた
-      // ([db] slow transaction の主因)。json_each()による一括UPDATEに変更。
-      db.boostCirclesBulk(circles.map(c => c.maker_id), 100, 7200);
-      db.syncCircleWorksCounts();
-      log.info('[api] saleboost done, circles:', circles.length);
-
-    } else if (job === 'all') {
-      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-
-      // ── Phase 0: 実行中の価格更新を中断して detail ロックを取得 ──
-      log.info('[api] all: acquiring detail lock (aborting running fetch if any)...');
-      myDetailToken = await lockManager.abortAndTakeover('detail', {
-        label: '価格更新', sseSend: _sseSend, timeoutMs: 15_000,
-      });
-      log.info('[api] all: detail lock acquired');
-
-      // ── Phase 1: RJ収集（失敗しても Phase2 へ進む）──
-      // 以前は handleRun 冒頭で 'all' 自身が discovery ロックを確保してしまっており、
-      // このチェックが常に自分自身を指して true になるため、'all' は毎回120秒待った末に
-      // 自分の discovery を一度も実行せず「スキップ」していたバグがあった。
-      // (check → claim を await を挟まず同期的に行うことでスケジューラーとの競合も防ぐ)
-      let discR = { discovered: 0 };
-      if (lockManager.isBusy('discovery')) {
-        log.info('[api] all: waiting for ongoing discovery...');
-        _sseSend('log', 'RJ収集が実行中のため完了を待っています...');
-        const released = await lockManager.waitForRelease('discovery', { timeoutMs: 120_000, pollMs: 1000 });
-        _sseSend('log', released
-          ? 'RJ収集スキップ（他のジョブで実行済み）'
-          : 'RJ収集の完了待ちがタイムアウトしました。スキップして価格更新へ進みます');
-      } else {
-        // ここまで await を挟んでいないため、このチェック→確保は他から横取りされない
-        const myAllDiscoveryToken = lockManager.acquire('discovery', 'all-discovery');
-        myDiscoveryToken = myAllDiscoveryToken;
-        try {
-          discR = await runDiscovery() ?? discR;
-          _sseSend('log', `RJ収集完了 — 新規: ${discR.discovered}件`);
-        } catch (discErr) {
-          log.error('[api] all: discovery error (continuing to detail fetch)', discErr.message);
-          _sseSend('log', `⚠ RJ収集エラー: ${discErr.message} — 価格更新は続行します`);
-        } finally {
-          // Phase 2(価格更新)は discovery ロックを必要としないため、ここで早めに解放する
-          lockManager.releaseOwned('discovery', myAllDiscoveryToken);
-        }
-      }
-
-      // ── Phase 2: 価格更新（全 due 作品を処理）──
-      // バグ修正: 99_999 は「実質無制限」のつもりの値だったが、実装上は
-      // ハードキャップとして扱われるため、due作品数がこれを超えると
-      // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
-      // Infinity にすることで、真に due が枯渇するまで処理を続ける。
-      //
-      // 'turbo' と同じ concurrency/rateLimit ブーストを適用する。
-      // 以前は 'all' の Phase2 だけ素の設定(concurrency=3, rateLimit=700ms)のまま
-      // 実行されており、'turbo' で動作確認済み(concurrency=6, rateLimit=200ms)の
-      // 速度が「全て巡回」には反映されていなかった。
-      _sseSend('log', '価格更新を開始します...');
-      // バグ修正: 以前は config.fetch.rateLimit/concurrency をグローバルに
-      // 一時上書きしてから finally で戻していたが、これはモジュール全体で
-      // 共有される状態のため、ブースト中に他の処理(scheduler の定期detail等)
-      // が同じ config を参照するとレース状態になりうる。runDetailFetch に
-      // 直接オーバーライド値を渡し、グローバルは一切変更しない。
-      const fetchR = await detailFetcher.runDetailFetch(Infinity, {
-        jobName:     'all',
-        rateLimit:   config.fetch.turboRateLimit,
-        concurrency: Math.max(config.fetch.concurrency ?? 1, config.fetch.turboConcurrency),
-        onProgress: ({ processed, priceChanges, total }) => {
-          Object.assign(_progress, { found: processed, total });
-          _sseSend('progress', { processed, priceChanges, total });
-          if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
-        },
-      });
-      // Phase 2 完了。detail ロックの解放は finally の releaseDetail()（トークン一致チェックあり）に任せる。
-      // ここで直接 shared['detail'] = false をしていた旧コードはトークン保護を素通りするバグがあった。
-
-      // ── Phase 3: セールブースト ──
-      // バグ修正: saleboostジョブと同じ理由で一括UPDATEに変更
-      // ([db] slow transaction の主因、詳細はdb.boostCirclesBulk()コメント参照)。
-      const circles = db.getCirclesOnSale();
-      db.boostCirclesBulk(circles.map(c => c.maker_id), 100, 7200);
-
-      const summary = `新規:${discR.discovered}件 / 価格更新:${fetchR?.processed ?? 0}件 / 変動:${fetchR?.priceChanges ?? 0}件 / エラー:${fetchR?.errors ?? 0}件`;
-      // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
-      const stoppedAll = !!global._crawlerAbort?.detail || !!global._crawlerAbort?.discovery;
-      const errRateAll = _checkHighErrorRate(job, fetchR);
-      _lastResult[job] = { ok: true, discovered: discR.discovered, ...fetchR, stopped: stoppedAll, ...errRateAll, finishedAt: Date.now() };
-      _sseSend(fetchR?.priceChanges > 0 ? 'change' : 'log', (stoppedAll ? '全て巡回を停止しました — ' : '全て巡回完了 — ') + summary);
-      // バックグラウンド通知（価格変動時）
-      if (fetchR?.priceChanges > 0 && global._notifyPriceChange) {
-        global._notifyPriceChange(fetchR.priceChanges);
-      }
-
-    } else if (job === 'turbo') {
-      // ぶっ飛ばしモード: 価格更新(detail)・新作収集(newrelease)・終了間近収集(endingsoon)を
-      // 同時並行で実行する。3つは互いに別々のFSR/APIエンドポイントを叩く独立した処理のため、
-      // 直列(discover→…→fetch)で回すより1周あたりの所要時間を大きく短縮できる。
-      //
-      // detail は 'detail' ロック、newrelease/endingsoon は 'discovery' ロックを使う
-      // （discover/fullscan等と同じ系統）。turbo開始時にどちらかが既に実行中なら、
-      // 既存の detail 中断ロジックと同じパターンでいったん中断してから引き継ぐ。
-      myDetailToken = await lockManager.abortAndTakeover('detail', {
-        label: '価格更新', sseSend: _sseSend, timeoutMs: 15_000,
-      });
-      myDiscoveryToken = await lockManager.abortAndTakeover('discovery', {
-        label: '収集系ジョブ', sseSend: _sseSend, timeoutMs: 15_000,
-      });
-
-      _sseSend('log', '🚀 ぶっ飛ばしモード開始 — 価格更新・新作収集・終了間近収集を並列実行します');
-      // subJobs: newrelease/endingsoon の進捗はダッシュボードのメイン進捗バー
-      // (found/total)には反映しない（価格更新の件数と混ざって意味不明になるため）。
-      // ログパネルへは既存の [discovery] ログ転送(SSE 'log')でそのまま流れる。
-      Object.assign(_progress, {
-        job, found: 0, total: 0,
-        startedAt: Math.floor(Date.now() / 1000), done: false,
-        subJobs: { newrelease: {}, endingsoon: {} },
-      });
-
-      // バグ修正: 99999 は「実質無制限」のつもりの値だったが、実装上は
-      // ハードキャップとして扱われるため、due作品数がこれを超えると
-      // 残りが未処理のまま打ち切られていた（カタログ増加で顕在化）。
-      // Infinity にすることで、真に due が枯渇するまで処理を続ける。
-      //
-      // 3つとも Promise.all で並列起動する。newrelease/endingsoon側で例外が
-      // 起きても .catch() で握りつぶし、価格更新(detail)の結果は必ず持ち帰る
-      // （収集系がエラーで落ちただけで「ぶっ飛ばし全体が失敗」にはしたくない）。
-      const [detailR, newReleaseR, endingSoonR] = await Promise.all([
-        detailFetcher.runDetailFetch(Infinity, {
-          jobName:     'turbo',
-          rateLimit:   config.fetch.turboRateLimit,
-          concurrency: Math.max(config.fetch.concurrency ?? 1, config.fetch.turboConcurrency),
-          onProgress: ({ processed, priceChanges, total }) => {
-            Object.assign(_progress, { found: processed, total });
-            _sseSend('progress', { processed, priceChanges, total });
-            if (priceChanges > 0) _sseSend('change', `価格変動: ${priceChanges}件`);
-          },
-        }),
-        runNewReleaseScan({
-          onProgress: ({ site, page, found, total }) => {
-            _progress.subJobs.newrelease = { site, page, found: total };
-            _sseSend('progress', { job: 'newrelease', site, page, found: total });
-          },
-        }).catch(e => {
-          log.error('[api] turbo: newReleaseScan error (continuing)', e.message);
-          _sseSend('warn', `新作収集エラー: ${e.message} — 価格更新・終了間近収集は続行します`);
-          return { grandTotal: 0, error: e.message };
-        }),
-        runEndingSoonScan({
-          onProgress: ({ site, page, found, total }) => {
-            _progress.subJobs.endingsoon = { site, page, found: total };
-            _sseSend('progress', { job: 'endingsoon', site, page, found: total });
-          },
-        }).catch(e => {
-          log.error('[api] turbo: endingSoonScan error (continuing)', e.message);
-          _sseSend('warn', `終了間近収集エラー: ${e.message} — 価格更新・新作収集は続行します`);
-          return { grandTotal: 0, newCount: 0, boostedCount: 0, error: e.message };
-        }),
-      ]);
-
-      // バグ修正: 停止ボタンによる中断か正常完了かを digest.log から判別できるようにする。
-      const stoppedTurbo = !!global._crawlerAbort?.detail || !!global._crawlerAbort?.discovery;
-      const errRateTurbo = _checkHighErrorRate(job, detailR);
-      _lastResult[job] = {
-        ok: true, ...detailR,
-        newRelease: newReleaseR, endingSoon: endingSoonR,
-        stopped: stoppedTurbo, ...errRateTurbo, finishedAt: Date.now(),
-      };
-      const msg =
-        (stoppedTurbo ? '🚀 ぶっ飛ばしを停止しました — ' : 'ぶっ飛ばし完了 — ') +
-        `価格更新:${detailR?.processed ?? 0}件 変動:${detailR?.priceChanges ?? 0}件` +
-        ` / 新作収集:新規${newReleaseR?.grandTotal ?? 0}件` +
-        ` / 終了間近:新規${endingSoonR?.newCount ?? 0}件・優先度UP${endingSoonR?.boostedCount ?? 0}件`;
-      _sseSend(detailR?.priceChanges > 0 ? 'change' : 'log', msg);
-      if (detailR?.priceChanges > 0 && global._notifyPriceChange) global._notifyPriceChange(detailR.priceChanges);
-
-    } else if (job === 'endingsoon') {
-      // 割引終了まで24時間以内(soon/1)の作品を優先度最優先で収集する
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const result = await runEndingSoonScan({
-        onProgress: ({ site, page, found, total }) => {
-          Object.assign(_progress, { site, page, found: total, totalPages: null });
-          _sseSend('progress', { site, page, found: total });
-        },
-      });
-      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
-      Object.assign(_progress, { done: true });
-      _sseSend('log', `終了間近収集完了 — 新規:${result?.newCount ?? 0}件 優先度UP:${result?.boostedCount ?? 0}件`);
-      log.info('[api] endingSoonScan done', result);
-
-    } else if (job === 'newrelease') {
-      // 過去1年以内に発売された全作品を、割引の有無を問わずFSR全ページ走査で収集する
-      // (終了間近収集から割引条件と24時間以内終了条件を外したもの)
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const result = await runNewReleaseScan({
-        onProgress: ({ site, page, found, total }) => {
-          Object.assign(_progress, { site, page, found: total, totalPages: null });
-          _sseSend('progress', { site, page, found: total });
-        },
-      });
-      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
-      Object.assign(_progress, { done: true });
-      _sseSend('log', `新作収集完了 — 新規:${result?.grandTotal ?? 0}件`);
-      log.info('[api] newReleaseScan done', result);
-
-    } else if (job === 'circlegap') {
-      // サークル単位の欠落診断: 既知の全サークルについてDLsite上の全作品ページを
-      // 走査し、DBに存在しないRJコードを検出・登録する。
-      // 未チェック/最も古くチェックされたサークルから優先するため、中止しても
-      // 次回実行時は続きから再開される（同じサークルを何度もなぞらない）。
-      Object.assign(_progress, { job, page: 0, found: 0, totalPages: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const result = await runCircleGapScan({
-        onProgress: ({ checked, total, totalMissing, makerId, page }) => {
-          Object.assign(_progress, { found: checked, totalPages: total, site: makerId, page: page ?? 0 });
-          _sseSend('progress', { checked, total, totalMissing, makerId, page });
-        },
-      });
-      const stopped = !!global._crawlerAbort?.discovery;
-      _lastResult[job] = { ok: true, ...result, stopped, finishedAt: Date.now() };
-      Object.assign(_progress, { done: true });
-      const gapSummary = `チェック:${result.checked}/${result.totalCircles}サークル` +
-        (result.resumedFromPrevious ? '（前回の続きから再開）' : '') +
-        ` / 発見した欠落:${result.totalMissing}件` +
-        (result.totalMissing > 0 ? ` (${Object.keys(result.missingByCircle).length}サークルで検出)` : '') +
-        (result.skippedInvalidSite > 0 ? ` / site_id不明で除外:${result.skippedInvalidSite}サークル` : '');
-      const suffix = stopped ? '（続きは次回実行時に再開されます）'
-        : result.timedOut ? '（1回の実行あたりの時間上限に到達 — 続きは次回実行時に再開されます）'
-        : '';
-      _sseSend(result.totalMissing > 0 ? 'change' : 'log',
-        (stopped ? 'サークル欠落診断を停止しました — ' : 'サークル欠落診断完了 — ') + gapSummary + suffix);
-      log.info('[api] circleGapScan done', { ...result, stopped });
-
-    } else if (job === 'comp_listing') {
-      // 総集編マーク Phase A: ジャンル515一覧を巡回し、総集編“作品”RJを収集する
-      if (!global._crawlerAbort) global._crawlerAbort = {};
-      global._crawlerAbort.comp = false;   // 停止ボタンからの中断要求フラグをリセット
-      resetAbortFlag('comp');
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const result = await compScan.runListingScan({
-        shouldContinue: () => !global._crawlerAbort?.comp,
-        onProgress: ({ page, found, added, totalAdded }) => {
-          Object.assign(_progress, { page, found: totalAdded });
-          _sseSend('progress', { page, found: totalAdded });
-        },
-      });
-      const stopped = !!global._crawlerAbort?.comp;
-      _lastResult[job] = { ok: true, ...result, stopped, finishedAt: Date.now() };
-      Object.assign(_progress, { done: true });
-      _sseSend('log', stopped
-        ? `総集編一覧走査を停止しました — 新規候補:${result.added ?? 0}件（続きから再開可能）`
-        : result.alreadyDone
-          ? '総集編一覧走査は完了済みです（再走査するには要リセット）'
-          : `総集編一覧走査完了 — 新規候補:${result.added ?? 0}件`);
-      log.info('[api] compListingScan done', { ...result, stopped });
-
-    } else if (job === 'comp_detail') {
-      // 総集編マーク Phase B: 候補の詳細解析（直接抽出→サークル推定）
-      if (!global._crawlerAbort) global._crawlerAbort = {};
-      global._crawlerAbort.comp = false;   // 停止ボタンからの中断要求フラグをリセット
-      resetAbortFlag('comp');
-      Object.assign(_progress, { job, page: 0, found: 0, total: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const result = await compScan.runDetailScan({
-        limit: 200,
-        shouldContinue: () => !global._crawlerAbort?.comp,
-        onProgress: ({ processed, total, direct, confirmed, pending }) => {
-          Object.assign(_progress, { found: processed, total });
-          _sseSend('progress', { processed, total });
-        },
-      });
-      const stopped = !!global._crawlerAbort?.comp;
-      _lastResult[job] = { ok: true, ...result, stopped, finishedAt: Date.now() };
-      Object.assign(_progress, { done: true });
-      _sseSend(result.confirmed > 0 || result.direct > 0 ? 'change' : 'log',
-        (stopped ? '総集編詳細解析を停止しました — ' : '総集編詳細解析完了 — ') +
-        `処理:${result.processed}件 / 直接抽出:${result.direct}件 / 推定確定:${result.confirmed}件 / 要確認:${result.pending}件 / エラー:${result.errors}件`);
-      log.info('[api] compDetailScan done', { ...result, stopped });
-
-    } else if (job === 'pushdata') {
-      // 手動pushボタン: 日次04:30スケジューラー(runExportShards → push-data-shards.main())
-      // と全く同じパイプラインをオンデマンドで実行する。
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-
-      _sseSend('log', '配信データを生成中...');
-      const exportResult = await runExportShards();
-      _sseSend('log',
-        `エクスポート完了 — ${exportResult?.works ?? 0}作品 / shard:${exportResult?.dataShardFiles ?? 0}件 / index:${exportResult?.idxShardFiles ?? 0}件`);
-      Object.assign(_progress, { found: exportResult?.works ?? 0 });
-
-      _sseSend('log', 'GitHub dataブランチへpush中...');
-      const { main: pushDataShards } = require('../scripts/push-data-shards');
-      const pushResult = await pushDataShards({
-        onProgress: ({ done, total }) => {
-          Object.assign(_progress, { page: done, totalPages: total });
-          _sseSend('progress', { page: done, total, phase: 'push' });
-        },
-      });
-
-      if (pushResult?.ok && pushResult?.skipped && pushResult?.reason === 'no-changes') {
-        // 効率化(差分push): 前回pushから内容が一切変わっていない場合、
-        // push-data-shards.js はコミット自体を作らずに正常終了する。
-        // ok:true だが commit は存在しないため、他の成功時と分岐して案内する。
-        _lastResult[job] = { ok: true, ...pushResult, exportResult, finishedAt: Date.now() };
-        _sseSend('log', `GitHub push完了 — 変更なし(前回pushと同一のため${pushResult.files}ファイル中0件のみ確認)`);
-        log.info('[api] pushdata done (no changes)', { exportResult, pushResult });
-      } else if (pushResult?.ok) {
-        _lastResult[job] = { ok: true, ...pushResult, exportResult, finishedAt: Date.now() };
-        const changedInfo = pushResult.changed != null ? ` (うち変更:${pushResult.changed}件)` : '';
-        _sseSend('change', `GitHub push完了 — ${pushResult.files}ファイル${changedInfo} / commit:${(pushResult.commit ?? '').slice(0, 7)}`);
-        log.info('[api] pushdata done', { exportResult, pushResult });
-      } else {
-        // トークン未設定・出力なし等の意図的なスキップは「失敗」ではないが、
-        // 手動ボタンから押した以上はユーザーに理由が見えないと意味がないため
-        // 明示的に warn として可視化する（従来のスケジューラー任せの
-        // log.info()化バグの再発防止）。
-        _lastResult[job] = { ok: false, skipped: !!pushResult?.skipped, error: pushResult?.message ?? 'push失敗', exportResult, finishedAt: Date.now() };
-        _sseSend('warn', `GitHub pushスキップ/失敗 — ${pushResult?.message ?? '不明なエラー'}`);
-        log.warn('[api] pushdata skipped/failed', pushResult);
-      }
-      Object.assign(_progress, { done: true });
-
-    } else if (job === 'pushdebug') {
-      // 手動デバッグPushボタン: ジョブ完了を待たず、いま現在のログ/DB統計を
-      // debugブランチへ即時pushする（不具合調査でAI/開発者が即座に参照したい時用）。
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      _sseSend('log', 'デバッグ情報(ログ・DB統計)をGitHub debugブランチへpush中...');
-      const { pushDebugBundle } = require('../scripts/pushDebugBundle');
-      const pushResult = await pushDebugBundle({ job: 'manual' });
-
-      if (pushResult?.ok) {
-        _lastResult[job] = { ok: true, ...pushResult, finishedAt: Date.now() };
-        _sseSend('change', `デバッグ情報push完了 — ${pushResult.files}ファイル`);
-        log.info('[api] pushdebug done', pushResult);
-      } else {
-        _lastResult[job] = { ok: false, skipped: !!pushResult?.skipped, error: pushResult?.reason ?? pushResult?.error ?? '不明なエラー', finishedAt: Date.now() };
-        _sseSend('warn', `デバッグ情報pushスキップ/失敗 — ${pushResult?.reason ?? pushResult?.error ?? '不明なエラー'}`);
-        log.warn('[api] pushdebug skipped/failed', pushResult);
-      }
-      Object.assign(_progress, { done: true });
-
-    } else if (job === 'fullscan' || job === 'fullscan_sale') {
-      const sale = job === 'fullscan_sale';
-      Object.assign(_progress, { job, page: 0, found: 0, site: null, startedAt: Math.floor(Date.now() / 1000), done: false });
-      const result = await runFullScan({
-        sale,
-        maxPages: 0,
-        onProgress: ({ site, page, found: pageFound, total }) => {
-          Object.assign(_progress, { site, page, found: total, totalPages: null });
-          _sseSend('progress', { site, page, found: total });
-        },
-      });
-      _lastResult[job] = { ok: true, ...result, finishedAt: Date.now() };
-      Object.assign(_progress, { done: true });
-      log.info('[api] fullScan done', result);
+    const jobFn = jobs[job];
+    if (!jobFn) throw new Error(`unknown job: ${job}`);
+    const { result = null, tokens } = (await jobFn(_jobCtx, { job })) ?? {};
+    if (tokens) {
+      if (tokens.detail    !== undefined) myDetailToken    = tokens.detail;
+      if (tokens.discovery !== undefined) myDiscoveryToken = tokens.discovery;
     }
+    _lastResult[job] = result;
   } catch (err) {
     log.error('[api] run error', job, err.message);
     _lastResult[job] = { ok: false, error: err.message, finishedAt: Date.now() };
