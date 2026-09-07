@@ -303,13 +303,47 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
       if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);
 
       if (res.status === 429 || res.status === 503) {
+        // バグ修正(実運用で確認): 429/503はこれまでネットワーク断ポーズの
+        // 対象外で、各ワーカーが完全に独立して指数バックオフしていた。
+        // 短時間に複数系統(detail+discovery(circleGap)等)が同時にDLsiteへ
+        // アクセスしている状況で503が連発すると、各ワーカーが自分だけの
+        // 判断でバラバラのタイミングでリトライを再送し続け、既に503を
+        // 返し始めているDLsite側への負荷をかえって増やす自己増幅
+        // パターンになっていた(実測: 12秒間で50件超の503が複数系統から
+        // 同時多発)。ネットワーク断と同じ系統別+グローバル昇格ポーズの
+        // 仕組みに乗せ、複数系統が同時に503/429を検知した場合は
+        // 全系統が足並みを揃えて待つようにする。
+        const now = Date.now();
+        const key = _systemKey(abortFlagName);
+        const alreadyThrottlePaused =
+          (_pauseUntilBySystem.get(key) ?? 0) > now || _globalPauseUntilMs > now;
+
         const retryAfter = parseInt(res.headers.get('Retry-After') ?? '0', 10);
         // サーバー明示の Retry-After はそのまま尊重する（ジッターを足さない）。
         // こちら側の指数バックオフのみキャップ+ジッターを適用する。
         const wait = retryAfter > 0
           ? retryAfter * 1000
           : _cappedBackoff(baseDelay * 2 ** i);
-        log.warn(`[fetch] ${res.status} throttle – wait ${wait}ms`, url);
+
+        if (alreadyThrottlePaused) {
+          log.trace(`[fetch] ${res.status} throttle — pause already active, suppressing duplicate warn`, url);
+        } else {
+          log.warn(`[fetch] ${res.status} throttle – wait ${wait}ms`, url);
+          _pauseUntilBySystem.set(key, now + Math.max(wait, _PAUSE_DURATION));
+          _pauseAnnouncedSystem.delete(key);
+
+          const activeSystems = _countActivePausedSystems(now);
+          if (activeSystems >= GLOBAL_ESCALATION_MIN_SYSTEMS && _globalPauseUntilMs <= now) {
+            _globalPauseUntilMs   = now + _PAUSE_DURATION;
+            _globalPauseAnnounced = false;
+            const pausedList = [..._pauseUntilBySystem.entries()]
+              .filter(([, until]) => until > now)
+              .map(([k]) => String(k === _UNSCOPED_KEY ? 'unscoped' : k))
+              .join(',');
+            log.warn(`[fetch] グローバルスロットリングエスカレーション — ${activeSystems}系統(${pausedList})が同時に429/503を検知。全系統を${_PAUSE_DURATION/1000}s停止します`);
+          }
+        }
+
         last = new Error(`HTTP ${res.status}`);
         await _abortableSleep(wait, abortFlagName);
         if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);

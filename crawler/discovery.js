@@ -199,8 +199,70 @@ async function runMonthlyScan(dateStr, { onProgress = null } = {}) {
 
 // ─── 全収集 (FSR) ────────────────────────────────────────────────────────────
 
+// バグ修正(重要・実測で確認): order/trend でソートした単一クエリの全ページ走査は
+// DLsite側の検索結果深度制限(概ね500ページ=per_page100×500=5万件付近より先は
+// 空/異常ページになる仕様)に引っかかり、母数の大きいサイト(実測: girlsサイトの
+// 全収集が54,220件でぴったり頭打ちになっていた)で本来まだ存在する古い作品を
+// 取りこぼしたまま「完了」扱いになっていた。100件未満2回連続=最終ページという
+// 判定ロジック自体は正常に機能しているが、そもそもDLsite側が有効なページを
+// 返せる範囲を超えているため、このロジックだけでは検出できない。
+// セール対象外の通常全収集(sale=false)は、単一のtrend順ソートに頼らず、
+// _scanFsrMonthly()と同じ「月単位(regist_date_start + release_term=month)」の
+// ウィンドウで過去へ遡って収集する方式に切り替える。各月の件数は深度制限を
+// 大きく下回るため、月単位でスキャンする限り取りこぼしが起きない。
+// (fullscan_sale(sale=true)は対象母数が少なく深度制限に到達しにくいため、
+//  従来のtrend順ロジックのまま維持する)
+const FULLSCAN_MAX_CONSECUTIVE_EMPTY_MONTHS = 24; // これだけ連続で新規0件ならその月間隔でのカタログ起点到達とみなす
+const FULLSCAN_MAX_MONTHS_PER_SITE          = 300; // 安全弁(25年分、通常はconsecutiveEmptyで先に打ち切られる)
+
+async function _runFullScanByMonth({ maxPages = 0, onProgress = null } = {}) {
+  const knownRjs    = _loadKnown();
+  const delistedRjs = _loadDelisted();
+  const sites       = {};
+  let   grandTotal  = 0;
+  const maxMonths   = maxPages > 0 ? maxPages : FULLSCAN_MAX_MONTHS_PER_SITE;
+
+  for (const site of Object.keys(DISCOVERY_FSR)) {
+    if (_discoveryAborted()) { log.warn('[discovery] fullScan(monthly) aborted (before site)', { site }); break; }
+
+    const cursor = new Date();
+    cursor.setDate(1);
+    let siteTotal = 0, consecutiveEmpty = 0, monthsScanned = 0;
+
+    while (monthsScanned < maxMonths && consecutiveEmpty < FULLSCAN_MAX_CONSECUTIVE_EMPTY_MONTHS) {
+      if (_discoveryAborted()) { log.warn('[discovery] fullScan(monthly) aborted', { site, monthsScanned }); break; }
+
+      const dateStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-01`;
+      const added   = await _scanFsrMonthly(site, knownRjs, delistedRjs, dateStr);
+      siteTotal    += added;
+      grandTotal   += added;
+      monthsScanned++;
+
+      if (onProgress) onProgress({ site, page: monthsScanned, found: added, total: siteTotal });
+      log.info('[discovery] fullScan(monthly)', { site, dateStr, added, siteTotal, monthsScanned });
+
+      // 新規0件はこの月に本当に何も無かった場合と、既に全件既知だった場合の
+      // どちらもありうるが、どちらにせよこれ以上遡る価値が薄いことに変わりはない。
+      // ただし単発の0件で即座に打ち切ると偶発的な空月で古いデータを取りこぼす
+      // ため、連続FULLSCAN_MAX_CONSECUTIVE_EMPTY_MONTHS回に達するまでは遡り続ける。
+      consecutiveEmpty = added === 0 ? consecutiveEmpty + 1 : 0;
+
+      cursor.setMonth(cursor.getMonth() - 1);
+      await sleep(RL);
+    }
+
+    sites[site] = siteTotal;
+    log.info('[discovery] fullScan(monthly) site done', { site, siteTotal, monthsScanned, consecutiveEmpty });
+  }
+
+  log.info('[discovery] fullScan(monthly) done', { grandTotal, ...sites });
+  return { grandTotal, sites };
+}
+
 async function runFullScan({ sale = false, maxPages = 0, onProgress = null } = {}) {
   log.info('[discovery] fullScan start', { sale, maxPages });
+
+  if (!sale) return _runFullScanByMonth({ maxPages, onProgress });
 
   const knownRjs    = _loadKnown();   // ページをまたいで使い回す
   const delistedRjs = _loadDelisted();
