@@ -66,13 +66,24 @@ function _isMonthRollover() {
   return new Date().getDate() <= 5;
 }
 
-/** FSR URL を指定日付(月初)から全ページスキャンして新着RJを収集 */
+/**
+ * FSR URL を指定日付(月初)から全ページスキャンして新着RJを収集する。
+ *
+ * 戻り値: { added, hadItems }
+ *   added    : 新規に追加したRJ件数（従来の戻り値と同じ意味）
+ *   hadItems : このFSR月次ウィンドウに1件でも作品が存在したか
+ *              (既知/新規を問わない)。「本当にその月には何も無かった」
+ *              (=カタログの起点に到達した)か、「単に前回までに全部
+ *              既知だっただけ」かを呼び出し側(_runFullScanByMonth)が
+ *              区別するために追加した。
+ */
 async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = null) {
   const date = dateStr ?? _monthStart();
   const tmpl = DISCOVERY_FSR[site];
-  if (!tmpl) return 0;
+  if (!tmpl) return { added: 0, hadItems: false };
 
   let page = 1, count = 0, consecutiveShort = 0, failCount = 0, consecutiveKnown = 0;
+  let hadItems = false;
   while (true) {
     if (_discoveryAborted()) { log.warn('[discovery] monthly aborted', { site, date, page }); break; }
     const pagePart = page === 1 ? '' : `/page/${page}`;
@@ -94,6 +105,7 @@ async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = nul
       break;
     }
     failCount = 0;
+    hadItems = true;
 
     // 効率化: このFSRは order/release_d（新しい順）でソートされているため、
     // ページを跨ぐほど古い作品になる。1ページ丸ごと(100件)が既に既知のRJだけで
@@ -131,7 +143,7 @@ async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = nul
     page++;
     await sleep(config.fetch.rateLimit);
   }
-  return count;
+  return { added: count, hadItems };
 }
 
 async function runDiscovery() {
@@ -143,18 +155,18 @@ async function runDiscovery() {
     const delistedRjs = _loadDelisted();
     const results  = {};
 
-    // 今月分を収集
-    results.maniax = await _scanFsrMonthly('maniax', knownRjs, delistedRjs);
-    results.bl     = await _scanFsrMonthly('bl',     knownRjs, delistedRjs);
-    results.girls  = await _scanFsrMonthly('girls',  knownRjs, delistedRjs);
+    // 今月分を収集（_scanFsrMonthly は {added, hadItems} を返すため .added のみ使う）
+    results.maniax = (await _scanFsrMonthly('maniax', knownRjs, delistedRjs)).added;
+    results.bl     = (await _scanFsrMonthly('bl',     knownRjs, delistedRjs)).added;
+    results.girls  = (await _scanFsrMonthly('girls',  knownRjs, delistedRjs)).added;
 
     // 月が変わったばかり(1〜5日)の場合、前月末リリース分の取りこぼしをカバー
     // （月またぎで起動していなかった期間のRJを拾う）
     if (prevMonth) {
       log.info('[discovery] rollover: scanning previous month', prevMonth);
-      results.maniax_prev = await _scanFsrMonthly('maniax', knownRjs, delistedRjs, prevMonth);
-      results.bl_prev     = await _scanFsrMonthly('bl',     knownRjs, delistedRjs, prevMonth);
-      results.girls_prev  = await _scanFsrMonthly('girls',  knownRjs, delistedRjs, prevMonth);
+      results.maniax_prev = (await _scanFsrMonthly('maniax', knownRjs, delistedRjs, prevMonth)).added;
+      results.bl_prev     = (await _scanFsrMonthly('bl',     knownRjs, delistedRjs, prevMonth)).added;
+      results.girls_prev  = (await _scanFsrMonthly('girls',  knownRjs, delistedRjs, prevMonth)).added;
     }
 
     results.circle = await _collectCircles(knownRjs, delistedRjs);
@@ -188,7 +200,7 @@ async function runMonthlyScan(dateStr, { onProgress = null } = {}) {
 
   for (const site of ['maniax', 'bl', 'girls']) {
     if (_discoveryAborted()) { log.warn('[discovery] monthlyScan aborted', { site }); break; }
-    results[site] = await _scanFsrMonthly(site, knownRjs, delistedRjs, dateStr);
+    results[site] = (await _scanFsrMonthly(site, knownRjs, delistedRjs, dateStr)).added;
     onProgress?.({ site, dateStr, found: results[site] });
   }
 
@@ -233,19 +245,26 @@ async function _runFullScanByMonth({ maxPages = 0, onProgress = null } = {}) {
       if (_discoveryAborted()) { log.warn('[discovery] fullScan(monthly) aborted', { site, monthsScanned }); break; }
 
       const dateStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-01`;
-      const added   = await _scanFsrMonthly(site, knownRjs, delistedRjs, dateStr);
+      const { added, hadItems } = await _scanFsrMonthly(site, knownRjs, delistedRjs, dateStr);
       siteTotal    += added;
       grandTotal   += added;
       monthsScanned++;
 
       if (onProgress) onProgress({ site, page: monthsScanned, found: added, total: siteTotal });
-      log.info('[discovery] fullScan(monthly)', { site, dateStr, added, siteTotal, monthsScanned });
+      log.info('[discovery] fullScan(monthly)', { site, dateStr, added, hadItems, siteTotal, monthsScanned });
 
-      // 新規0件はこの月に本当に何も無かった場合と、既に全件既知だった場合の
-      // どちらもありうるが、どちらにせよこれ以上遡る価値が薄いことに変わりはない。
-      // ただし単発の0件で即座に打ち切ると偶発的な空月で古いデータを取りこぼす
-      // ため、連続FULLSCAN_MAX_CONSECUTIVE_EMPTY_MONTHS回に達するまでは遡り続ける。
-      consecutiveEmpty = added === 0 ? consecutiveEmpty + 1 : 0;
+      // バグ修正(重要): 以前は「新規0件(added===0)」だけを見て
+      // consecutiveEmpty を進めていた。しかし2回目以降の「全収集」再実行では
+      // 過去の月がほぼ全件登録済みのため、月に実際は作品が存在する
+      // (hadItems=true)にもかかわらず「新規に追加した件数」は0になり、
+      // これがFULLSCAN_MAX_CONSECUTIVE_EMPTY_MONTHS回連続するとすぐに
+      // 「カタログの起点に到達した」と誤判定して打ち切ってしまい、再実行の
+      // たびに直近2年分程度しか遡らなくなっていた(UIの「全作品を網羅収集」
+      // という説明と実態が乖離するバグ)。
+      // 「これ以上遡る価値が薄い」と判断すべきなのは、あくまでその月に
+      // 本当に作品が1件も存在しなかった(hadItems=false)場合であり、
+      // 単に全部既知だっただけ(hadItems=true, added=0)の月は遡りを継続する。
+      consecutiveEmpty = hadItems ? 0 : consecutiveEmpty + 1;
 
       cursor.setMonth(cursor.getMonth() - 1);
       await sleep(RL);

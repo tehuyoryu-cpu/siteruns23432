@@ -344,9 +344,14 @@ async function fetchWithRetry(url, opts = {}, abortFlagName = null) {
           }
         }
 
+        // バグ修正: ここで _abortableSleep(wait, ...) によりローカル待機を
+        // 行った上で continue すると、次ループ先頭の _waitForNetwork() が
+        // 直前に設定した _pauseUntilBySystem(= now + max(wait, _PAUSE_DURATION))
+        // の残り時間をさらに待つため、二重待機になっていた
+        // (例: wait=1.3s でも実質 1.3s + 残り約28.7s ≈ 30s 待たされる)。
+        // ネットワーク断側の既存実装と同じく、待機は _waitForNetwork() の
+        // 一本化されたポーズ機構に任せ、ここではポーズ登録のみ行う。
         last = new Error(`HTTP ${res.status}`);
-        await _abortableSleep(wait, abortFlagName);
-        if (_isAborted(abortFlagName)) throw new Error(`aborted: ${url}`);
         throttledWait = true;
         continue;
       }
