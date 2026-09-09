@@ -222,6 +222,21 @@ function parseProductInfo(rjCode, body) {
     // 最終安全チェック: price が null/undefined のときは 0 にする（APIが価格を返さなかった場合）
     if (price == null) price = 0;
 
+    // バグ修正: salePrice が null(=実際のセール価格を裏付けられなかった)のに
+    // disc(APIのdiscount_rateフィールドをそのまま引き継いだ値)だけが非0で
+    // 残るケースがあった(例: official_price分岐でofficial_priceとpriceCurが
+    // 同額だった場合。discRateが100未満だとpriceIssueにもならず素通りする)。
+    // これをそのままDBへ保存すると、定価88円・割引率98%なのにsale_priceは
+    // 空で実売価格は88円のまま、という矛盾した表示(拡張機能/ダッシュボード
+    // 両方で「定価と同額なのに98%オフ」に見える)になっていた。
+    // 割引率は必ず実際のsale_priceと対でなければ意味を持たないため、
+    // salePriceが無い場合はdiscも無効化する(=ポイント還元等の非価格キャン
+    // ペーン扱いに統一。official_price分岐の既存コメントにある「実際の
+    // 値引きは無いポイント還元キャンペーン」という設計意図とも整合する)。
+    if (salePrice == null && disc) {
+      disc = null;
+    }
+
     // ── 体質的な安全網 ───────────────────────────────────────────────────────
     // 上のブランチロジックがどの経路を通っても、最終的なprice/salePriceの
     // 組み合わせが物理的にありえない場合は、個別ブランチを都度直すのではなく

@@ -186,6 +186,21 @@ test('未知のsite_idはnullを返す(detailFetcher側でのフォールバッ�
   assert.strictEqual(r.work.site_id, null);
 });
 
+// ── バグ修正回帰テスト: salePriceが取れないのにdiscount_rateだけ残る問題 ──────
+// (official_price と price(現在価格) が同額 = 実際の値引きは無いのに、
+//  discount_rate フィールドだけAPIの生値(例: 98)が残ってしまい、
+//  「定価88円・割引98%なのにセール価格は88円のまま」という矛盾した
+//  表示になっていた不具合の再発防止)
+test('official_priceのみ・priceフィールド欠損でもdiscount_rateだけ残っていたら無効化する', () => {
+  const r = parse('RJ000019', {
+    is_sale: 1, official_price: 88, discount_rate: 98,
+  });
+  assert.strictEqual(r.price.price, 88);
+  assert.strictEqual(r.price.sale_price, null);
+  assert.strictEqual(r.price.discount_rate, null, 'sale_priceが無いのにdiscount_rateが残ってはいけない');
+  assert.strictEqual(r.price.is_point_only, 1, 'salePrice不明なので価格割引ではなくポイント還元扱いになる');
+});
+
 test('既知のsite_idはそのまま採用される', () => {
   const r = parse('RJ000018', { is_sale: 0, price_work: 1000, site_id: 'girls' });
   assert.strictEqual(r.work.site_id, 'girls');
