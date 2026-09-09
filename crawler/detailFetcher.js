@@ -1454,6 +1454,12 @@ function _store(rjCode, body, site = null, issueTally = null) {
       kind: 'price-issue', site, rjCode, issueType: priceIssue.type,
       raw: rawBody,
     });
+    // データ汚染対策: priceIssueはDB(price_issues)とapiTrace(メモリのみ、
+    // 直近50件)にしか残らず、能動的に/api/debug/を見に行かない限り気づけ
+    // なかった。デバッグサマリのWARN/ERROR集計に載るよう、ここでも
+    // ログへ出す（実害の大きさに応じて後段のpriceUnreliable分岐で
+    // さらにlog.errorへ格上げする）。
+    log.warn('[detail] price issue detected', rjCode, priceIssue.type, priceIssue.raw);
   } else if (!staleSalePriceSuspected) {
     // 過去にissueが記録されていて今回は正常に取れた場合はクリアする
     db.clearPriceIssue(rjCode);
@@ -1467,11 +1473,29 @@ function _store(rjCode, body, site = null, issueTally = null) {
   // 確認済み)。この場合は価格の書き込み自体をスキップし、既存の価格を
   // そのまま保持する(在庫/優先度スケジューリングは is_on_sale フラグだけで
   // 十分機能するため、work情報・巡回スケジュールの更新は通常通り行う)。
+  //
+  // データ汚染対策バグ修正: 'ambiguous'(price_work/price/discount_rateの
+  // 組み合わせだけでは定価・セール価格を一意に判定できないとparser.jsが
+  // 明示的に判断したケース)が、このpriceUnreliable判定に含まれておらず
+  // 通常どおりDBへ書き込まれてしまっていた。「measured=不確実」と
+  // parser.js側で判定したデータを、その直後で「信頼できる」として保存する
+  // 矛盾した扱いになっており、汚染データがそのまま既存の正しい価格を
+  // 上書きしうる抜け穴だった。ambiguousも他のunreliable系と同じく
+  // 書き込みスキップ対象に統一する。
   const priceUnreliable = priceIssue?.type === 'no_price_field'
     || priceIssue?.type === 'ana_no_standalone_price'
     || priceIssue?.type === 'price_work_missing_high_discount'
     || priceIssue?.type === 'invalid_price_combo'
+    || priceIssue?.type === 'ambiguous'
     || staleSalePriceSuspected;
+
+  // 「測定できなかった(=priceUnreliable、DB書き込みをスキップ)」場合は
+  // 上のlog.warnよりさらに重大(実際にデータ更新を諦めている)ため、
+  // log.errorへ格上げしてデバッグサマリで見落とされないようにする。
+  if (priceUnreliable) {
+    log.error('[detail] price unmeasurable — skipping DB write to avoid contamination',
+      rjCode, { issueType: priceIssue?.type ?? 'stale_sale_price_suspected', raw: priceIssue?.raw ?? null });
+  }
 
   // バグ修正(重大): savePriceIfChanged() は { changed, consecutive_no_change }
   // という「オブジェクト」を返す(changed=falseのときも！)。以前はこれを
