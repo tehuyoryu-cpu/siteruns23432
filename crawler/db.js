@@ -112,6 +112,84 @@ async function init() {
   if (schemaChanged) {
     log.info('[db] schema changed/migrated');
   }
+
+  // ── データ汚染対策①②: 起動時サニティスキャン＋既存汚染レコードの一括修復 ──
+  // 背景: 'ambiguous'書き込みスキップ(parser.js/detailFetcher.js側で対応済み)は
+  // 「今後」の新規汚染を防ぐだけで、過去に既にworksへ書き込まれてしまった
+  // 矛盾データ(sale_price>=price、discount_rateありなのにsale_price無し、
+  // price=0なのにis_on_sale=1等)はそのまま残る。次の自然な再取得(最大数日後)を
+  // 待たずに、起動のたびに検出→件数レポート→修復を行う。
+  // 修復自体はworks.cur_*(非正規化キャッシュ)のみを対象にし、次回の価格更新
+  // パスで正しい値に上書きされる前提の「安全な一時的null化」であり、
+  // price_history(生履歴)や本当の削除・priorityには一切触れない。
+  try {
+    const before = getDataSanityReport();
+    const totalBefore = Object.values(before).reduce((a, b) => a + b, 0);
+    if (totalBefore > 0) {
+      log.warn('[db] 起動時サニティスキャン: 汚染疑いレコードを検出', before);
+      const fixed = repairContaminatedPriceData();
+      log.warn('[db] repairContaminatedPriceData: 修復件数(パターン別合計、重複含む)', fixed);
+    } else {
+      log.info('[db] 起動時サニティスキャン: 汚染疑いレコードなし');
+    }
+  } catch (e) {
+    // サニティスキャン自体の失敗でアプリ起動を止めない
+    log.error('[db] 起動時サニティスキャンに失敗しました', e.message);
+  }
+}
+
+/**
+ * データ汚染対策②: works.cur_*(非正規化価格キャッシュ)に残る
+ * 「物理的にありえない組み合わせ」の件数を検出する。
+ * 起動時ログ・デバッグバンドル(meta.json)の両方から参照される
+ * (pushDebugBundle.js)。件数が増え続けている場合、DLsite側のAPI仕様変更や
+ * CDN/プロキシ汚染が再発している兆候として早期発見できる。
+ */
+function getDataSanityReport() {
+  const row = _get(`
+    SELECT
+      (SELECT COUNT(*) FROM works WHERE cur_price IS NOT NULL AND cur_sale_price IS NOT NULL AND cur_sale_price >= cur_price) AS salePriceNotLower,
+      (SELECT COUNT(*) FROM works WHERE cur_discount_rate IS NOT NULL AND cur_discount_rate > 0 AND cur_sale_price IS NULL) AS discountWithoutSalePrice,
+      (SELECT COUNT(*) FROM works WHERE cur_price = 0 AND is_on_sale = 1) AS zeroPriceOnSale,
+      (SELECT COUNT(*) FROM works WHERE cur_price < 0 OR cur_sale_price < 0) AS negativePrice
+  `);
+  return row ?? { salePriceNotLower: 0, discountWithoutSalePrice: 0, zeroPriceOnSale: 0, negativePrice: 0 };
+}
+
+/**
+ * データ汚染対策①: getDataSanityReport()が検出したパターンを一括修復する。
+ * 修復方針は一貫して「疑わしい値だけをnull化し、is_on_saleは安全側(0)に倒す」
+ * ことで、本当のセール中作品を誤って隠すリスクよりも、汚染データが
+ * 拡張機能配信データ(exportShards.js)やダッシュボードに漏れ出るリスクを
+ * 優先して塞ぐ。次回の価格更新パスで正しい値が来れば自動的に上書きされる。
+ * @returns {number} 修復件数の合計(パターンをまたいで同一行が複数回
+ *   カウントされる可能性があるため、あくまで目安値)
+ */
+function repairContaminatedPriceData() {
+  let totalFixed = 0;
+  runInTransaction(() => {
+    // ① セール価格が定価以上(物理的に矛盾) → 割引情報を破棄
+    totalFixed += _run(`
+      UPDATE works SET cur_sale_price = NULL, cur_discount_rate = NULL, cur_is_point_only = 0, is_on_sale = 0
+      WHERE cur_price IS NOT NULL AND cur_sale_price IS NOT NULL AND cur_sale_price >= cur_price
+    `).changes;
+    // ② discount_rateはあるがsale_priceが無い(割引率だけが宙に浮いている)
+    totalFixed += _run(`
+      UPDATE works SET cur_discount_rate = NULL
+      WHERE cur_discount_rate IS NOT NULL AND cur_discount_rate > 0 AND cur_sale_price IS NULL
+    `).changes;
+    // ③ 定価0円なのにセール中フラグが立っている(信頼できない定価データ)
+    totalFixed += _run(`
+      UPDATE works SET cur_sale_price = NULL, cur_discount_rate = NULL, cur_is_point_only = 0, is_on_sale = 0
+      WHERE cur_price = 0 AND is_on_sale = 1
+    `).changes;
+    // ④ 負の価格(あり得ない値)
+    totalFixed += _run(`
+      UPDATE works SET cur_price = NULL, cur_sale_price = NULL, cur_discount_rate = NULL, cur_is_point_only = 0, is_on_sale = 0
+      WHERE cur_price < 0 OR cur_sale_price < 0
+    `).changes;
+  });
+  return totalFixed;
 }
 
 /** DBをクローズする。呼び出し側の `await db.close()` との互換性のため async のまま維持。 */
@@ -2284,6 +2362,8 @@ module.exports = {
   getCircle,
   getStats,
   getSlowTransactionStats,
+  getDataSanityReport,
+  repairContaminatedPriceData,
   backup,
   verifyBackup,
   transaction,

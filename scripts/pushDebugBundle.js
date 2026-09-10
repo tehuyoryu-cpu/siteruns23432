@@ -97,7 +97,7 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
     if (digestTail != null) files.push({ path: 'digest-recent.log',   content: digestTail });
     if (eventsTail != null) files.push({ path: 'events-recent.jsonl', content: eventsTail });
 
-    let dbStats = null, priceIssuesCount = null, integrityHistory = null;
+    let dbStats = null, priceIssuesCount = null, integrityHistory = null, dataSanity = null;
     try {
       // circular require回避のため呼び出し時に require する
       // (db.js -> ... -> pushDebugBundle.js という循環経路は無いが、
@@ -111,6 +111,11 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       // DB整合性チェックの履歴。破損の予兆（時系列でのng発生）を、実際に
       // クエリが壊れる前にdebug-summary.mdだけで確認できるようにするため。
       integrityHistory = db.getIntegrityCheckHistory?.(20) ?? null;
+      // データ汚染対策②: 起動時サニティスキャン(db.js init()内)と同じ検出クエリを
+      // ここでも呼び、push時点の最新件数をmeta.json/debug-summary.mdに残す。
+      // 「測定できなかった」場合(関数未実装の旧ビルド等)はnullのまま扱い、
+      // debug-summary.md側でその旨を明示する(黙って0件と誤解させない)。
+      dataSanity = db.getDataSanityReport?.() ?? null;
     } catch (e) {
       log.warn('[pushDebugBundle] db read failed', e.message);
     }
@@ -182,6 +187,7 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       dbStats,
       priceIssuesCount,
       integrityHistory,
+      dataSanity,
       health,
       warmUpHistory: warmUpHistoryData,
       buildInfo,
@@ -268,6 +274,29 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
     if (meta.priceIssuesCount != null) L.push(`- 定価取得エラー件数: ${meta.priceIssuesCount}`);
     L.push('');
   }
+
+  // データ汚染対策②: 物理的にありえない価格組み合わせ(sale_price>=price等)が
+  // works.cur_*に残っていないかの件数。db.jsのgetDataSanityReport()が
+  // undefined/nullを返した場合(旧ビルド等で関数が無い)は「測定できなかった」
+  // ことを明示し、黙って0件と誤解させない。
+  L.push('## データ汚染サニティスキャン（works.cur_* の矛盾レコード件数）');
+  if (meta.dataSanity == null) {
+    L.push('⚠ 測定できませんでした（getDataSanityReport()が利用できないビルド、またはDB読み取り失敗）。');
+  } else {
+    const s = meta.dataSanity;
+    const total = Object.values(s).reduce((a, b) => a + (b ?? 0), 0);
+    L.push(`- sale_price >= price（矛盾）: ${s.salePriceNotLower ?? '測定不可'}`);
+    L.push(`- discount_rateありでsale_price無し: ${s.discountWithoutSalePrice ?? '測定不可'}`);
+    L.push(`- price=0なのにis_on_sale=1: ${s.zeroPriceOnSale ?? '測定不可'}`);
+    L.push(`- 価格が負の値: ${s.negativePrice ?? '測定不可'}`);
+    if (total > 0) {
+      L.push(`⚠ 合計${total}件の汚染疑いレコードが残っています。起動時に自動修復(repairContaminatedPriceData)が` +
+        '走るはずなので、直近に再起動していない場合はアプリの再起動を検討してください。');
+    } else {
+      L.push('汚染疑いレコードなし。');
+    }
+  }
+  L.push('');
 
   if (meta.integrityHistory?.length) {
     const hist   = meta.integrityHistory; // 新しい順
