@@ -206,6 +206,23 @@ test('既知のsite_idはそのまま採用される', () => {
   assert.strictEqual(r.work.site_id, 'girls');
 });
 
+// ── データ汚染対策: discount_rateが0-100%の範囲外はフィールドのみ無効化 ──────
+// (price_work/priceの大小関係自体は正常なので、price/salePriceは生かしたまま
+//  discount_rateだけを捨て、正しい実測値から再計算させる)
+test('discount_rateが100%超の異常値でもprice/salePriceは生かし割引率だけ再計算する', () => {
+  const r = parse('RJ000020', { is_sale: 1, price_work: 1000, price: 500, discount_rate: 150 });
+  assert.strictEqual(r.priceIssue, null);
+  assert.strictEqual(r.price.price, 1000);
+  assert.strictEqual(r.price.sale_price, 500);
+  assert.strictEqual(r.price.discount_rate, 50, '異常値150は捨てられ、実際の価格差(50%)から再計算されるべき');
+});
+
+test('discount_rateが負の異常値でもフィールドのみ無効化される', () => {
+  const r = parse('RJ000021', { is_sale: 1, price_work: 1000, price: 500, discount_rate: -10 });
+  assert.strictEqual(r.priceIssue, null);
+  assert.strictEqual(r.price.discount_rate, 50);
+});
+
 // ── ゼロ埋め違い/大文字小文字違いのキーにも対応する ──────────────────────────
 test('ゼロ埋めなしキー(RJ1234567)でも大文字化したRJコードで引ける', () => {
   const r = parser.parseProductInfo('RJ01234567', { RJ1234567: { is_sale: 0, price_work: 500 } });

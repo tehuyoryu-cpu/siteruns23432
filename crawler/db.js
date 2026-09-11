@@ -151,9 +151,10 @@ function getDataSanityReport() {
       (SELECT COUNT(*) FROM works WHERE cur_price IS NOT NULL AND cur_sale_price IS NOT NULL AND cur_sale_price >= cur_price) AS salePriceNotLower,
       (SELECT COUNT(*) FROM works WHERE cur_discount_rate IS NOT NULL AND cur_discount_rate > 0 AND cur_sale_price IS NULL) AS discountWithoutSalePrice,
       (SELECT COUNT(*) FROM works WHERE cur_price = 0 AND is_on_sale = 1) AS zeroPriceOnSale,
-      (SELECT COUNT(*) FROM works WHERE cur_price < 0 OR cur_sale_price < 0) AS negativePrice
+      (SELECT COUNT(*) FROM works WHERE cur_price < 0 OR cur_sale_price < 0) AS negativePrice,
+      (SELECT COUNT(*) FROM works WHERE cur_discount_rate IS NOT NULL AND (cur_discount_rate < 0 OR cur_discount_rate > 100)) AS discountRateOutOfRange
   `);
-  return row ?? { salePriceNotLower: 0, discountWithoutSalePrice: 0, zeroPriceOnSale: 0, negativePrice: 0 };
+  return row ?? { salePriceNotLower: 0, discountWithoutSalePrice: 0, zeroPriceOnSale: 0, negativePrice: 0, discountRateOutOfRange: 0 };
 }
 
 /**
@@ -187,6 +188,13 @@ function repairContaminatedPriceData() {
     totalFixed += _run(`
       UPDATE works SET cur_price = NULL, cur_sale_price = NULL, cur_discount_rate = NULL, cur_is_point_only = 0, is_on_sale = 0
       WHERE cur_price < 0 OR cur_sale_price < 0
+    `).changes;
+    // ⑤ 割引率が0〜100%の範囲外(APIフィールド不備等) → 割引率のみ破棄。
+    // price/sale_priceはパターン①③④のいずれにも該当しなければ物理的に
+    // 矛盾していない(=生きている)可能性が高いため、②と同様に触れない。
+    totalFixed += _run(`
+      UPDATE works SET cur_discount_rate = NULL
+      WHERE cur_discount_rate IS NOT NULL AND (cur_discount_rate < 0 OR cur_discount_rate > 100)
     `).changes;
   });
   return totalFixed;

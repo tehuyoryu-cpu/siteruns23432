@@ -289,6 +289,7 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
     L.push(`- discount_rateありでsale_price無し: ${s.discountWithoutSalePrice ?? '測定不可'}`);
     L.push(`- price=0なのにis_on_sale=1: ${s.zeroPriceOnSale ?? '測定不可'}`);
     L.push(`- 価格が負の値: ${s.negativePrice ?? '測定不可'}`);
+    L.push(`- 割引率が0〜100%の範囲外: ${s.discountRateOutOfRange ?? '測定不可'}`);
     if (total > 0) {
       L.push(`⚠ 合計${total}件の汚染疑いレコードが残っています。起動時に自動修復(repairContaminatedPriceData)が` +
         '走るはずなので、直近に再起動していない場合はアプリの再起動を検討してください。');

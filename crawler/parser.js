@@ -237,6 +237,20 @@ function parseProductInfo(rjCode, body) {
       disc = null;
     }
 
+    // データ汚染対策: discount_rateが0〜100%の範囲外(APIフィールド自体の
+    // 不備、または稀なCDN/プロキシ層でのデータ混入)の場合、値域チェックなしに
+    // そのままDBへ流れていた。price/salePrice自体は別経路(price_work/priceの
+    // 大小関係やofficial_price)で確定しており生きている可能性が高いため、
+    // 「体質的な安全網」のようにprice全体をpriceIssue化(=DB書き込み全体を
+    // スキップ)するのではなく、割引率フィールドだけを無効化する
+    // (discountWithoutSalePriceパターンと同じ「割引率だけが宙に浮いている」
+    // 扱いに統一。null化後は下の「割引率が未設定なら計算」でprice/salePrice
+    // から実際の値が使えるなら再計算される)。
+    if (disc != null && (disc < 0 || disc > 100)) {
+      log.trace('[parser] discount_rate out of valid range (0-100), discarding field only', rjCode, { discount_rate: disc });
+      disc = null;
+    }
+
     // ── 体質的な安全網 ───────────────────────────────────────────────────────
     // 上のブランチロジックがどの経路を通っても、最終的なprice/salePriceの
     // 組み合わせが物理的にありえない場合は、個別ブランチを都度直すのではなく
@@ -477,9 +491,19 @@ function _priceObj(rjCode, price, salePrice) {
   return { rjCode, price, salePrice, discountRate: disc, isOnSale: !!(salePrice) };
 }
 
+// バグ修正(データ汚染対策): 以前は /[^0-9]/g で数字以外を無条件に除去しており、
+// 先頭の負符号(-)まで一緒に剥がされていた。price/price_work/discount_rate等の
+// すべての数値フィールドがこの関数を通るため、万一APIが負の値(コンマ形式の
+// 桁区切りは想定していない当関数の対象フィールドにおいて、異常値・汚染データ
+// の可能性が高い)を返しても「-50」→「50」のように符号だけ消えた正の値へ
+// 静かに化けてしまい、体質的な安全網(price<0等のinvalid_price_combo判定)が
+// 呼び出される前に異常の痕跡自体が消えていた(=安全網が実質到達不能だった)。
+// 桁区切りのカンマ(1,000等)だけを除去してから、先頭の負符号は残して
+// parseIntする。
 function _int(v) {
   if (v == null) return null;
-  const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10);
+  const cleaned = String(v).replace(/,/g, '').replace(/[^0-9-]/g, '');
+  const n = parseInt(cleaned, 10);
   return isNaN(n) ? null : n;
 }
 
