@@ -393,17 +393,20 @@ async function _collectCircles(knownRjs, delistedRjs = null) {
         config.dlsite.sites.map(async site => {
           const url   = _circleProfileUrl(site, mid, 1);
           const items = await _fetchWithPrice(url);
-          // 検証: maker_idフィルタが本当に効いているか確認する(circleGapScanと同じ理由)。
-          // 効いていない場合、要求したサークルと無関係な一般カタログpage相当を
-          // 「このサークルの新着」として誤集計してしまうため、確定次第スキップする。
-          const mismatched = items.filter(it => it.makerId && it.makerId !== mid).length;
-          if (items.length > 0 && mismatched / items.length > 0.5) {
+          // 検証: maker_idフィルタが本当に効いているか確認する(_classifyMakerIdMismatch参照)。
+          const { confirmed, filtered, mismatchedCount } = _classifyMakerIdMismatch(items, mid);
+          if (confirmed) {
             log.error('[discovery] collectCircles: maker_idフィルタが機能していません(確定)。スキップします', {
-              makerId: mid, site, mismatched, totalOnPage: items.length,
+              makerId: mid, site, mismatched: mismatchedCount, totalOnPage: items.length,
             });
             return 0;
           }
-          return _upsert(items, site, knownRjs, delistedRjs);
+          if (mismatchedCount > 0) {
+            log.warn('[discovery] collectCircles: 一部作品でmaker_id不一致を検出(サンプル不足のため確定はせず該当作品のみ除外)', {
+              makerId: mid, site, mismatched: mismatchedCount, totalOnPage: items.length,
+            });
+          }
+          return _upsert(filtered, site, knownRjs, delistedRjs);
         })
       )
     );
@@ -530,6 +533,41 @@ async function _confirm404(url) {
  *   本当に削除済みだった場合でも、次回チェックでAPI不在が確認されれば
  *   recordApiMissing() が再び隔離するだけなので安全。
  */
+/**
+ * maker_id指定のサークル一覧ページで、DLsite側のmaker_idフィルタが実際に
+ * 効いているかを検証する。collectCircles / circleGapScan の両方から使う
+ * 共通ロジック(以前は同じ内容を2箇所に重複させていた)。
+ *
+ * バグ修正: 以前は items.length(サンプル数)を一切考慮せず
+ * 「mismatched件数/総件数 > 0.5」だけで「フィルタ完全崩壊、確定」と
+ * 判定していた。circleGapScanの末尾ページや小規模サークルのように
+ * totalOnPageが1〜数件しかない場面では、1件だけ他サークルの作品が
+ * 混ざっただけで比率が100%になり、n=1というごく弱い証拠で「確定」と
+ * 断定してページ全体(本来正しいはずの残り全件も含む)を丸ごと捨てていた。
+ * 過去に実際に起きたフィルタ完全崩壊は毎回100件規模のページでほぼ全数が
+ * mismatchするケースだったため、「確定」と呼ぶにはそれに見合うサンプル数を
+ * 要求する。サンプル不足の場合は「確定」とはせず、該当する作品だけを
+ * 個別に除外して残りは活かす(安全側: 疑わしい作品自体はどちらにせよ除外)。
+ *
+ * @param {Array<{makerId?: string}>} items
+ * @param {string} expectedMakerId
+ * @param {number} [minSample=5] 「確定」と判定するために必要な最低サンプル数
+ * @returns {{confirmed: boolean, filtered: Array, mismatchedCount: number, sampleOtherMakerId: ?string}}
+ */
+function _classifyMakerIdMismatch(items, expectedMakerId, minSample = 5) {
+  const mismatched = items.filter(it => it.makerId && it.makerId !== expectedMakerId);
+  const confirmed  = items.length >= minSample && mismatched.length / items.length > 0.5;
+  const filtered   = (!confirmed && mismatched.length > 0)
+    ? items.filter(it => !(it.makerId && it.makerId !== expectedMakerId))
+    : items;
+  return {
+    confirmed,
+    filtered,
+    mismatchedCount: mismatched.length,
+    sampleOtherMakerId: mismatched[0]?.makerId ?? null,
+  };
+}
+
 function _upsert(items, siteId, knownRjs, delistedRjs = null) {
   const newItems     = [];
   const salvageItems = [];
@@ -940,25 +978,26 @@ async function runCircleGapScan({ onProgress = null, limit = null } = {}) {
         }
         failCount = 0;
 
-        // 検証: DLsiteのmaker_idフィルタが本当に効いているかを直接確認する。
-        // これまでは「missing件数が異常に多い」という間接的な兆候でしか
-        // フィルタ異常を疑えなかったが、parser.jsは各作品の実際のmakerIdも
-        // 返しているため、要求したmakerIdと実際のmakerIdを直接比較できる。
-        // 半数以上が別サークルの作品であれば、フィルタが機能しておらず
-        // 実質カタログ全体(またはそれに近いもの)を返していると確定できる。
-        const mismatched = items.filter(i => i.makerId && i.makerId !== makerId).length;
-        if (items.length > 0 && mismatched / items.length > 0.5) {
+        // 検証: DLsiteのmaker_idフィルタが本当に効いているかを直接確認する
+        // (_classifyMakerIdMismatch参照。collectCirclesと共通処理)。
+        const { confirmed, filtered: pageItems, mismatchedCount, sampleOtherMakerId } =
+          _classifyMakerIdMismatch(items, makerId);
+        if (confirmed) {
           log.error('[discovery] circleGap: maker_idフィルタが機能していません(確定)。このサークルをスキップします', {
-            makerId, site, page, mismatched, totalOnPage: items.length,
-            sampleOtherMakerId: items.find(i => i.makerId && i.makerId !== makerId)?.makerId,
+            makerId, site, page, mismatched: mismatchedCount, totalOnPage: items.length, sampleOtherMakerId,
           });
           break;
+        }
+        if (mismatchedCount > 0) {
+          log.warn('[discovery] circleGap: 一部作品でmaker_id不一致を検出(サンプル不足のため確定はせず該当作品のみ除外)', {
+            makerId, site, page, mismatched: mismatchedCount, totalOnPage: items.length,
+          });
         }
 
         // バグ修正: 以前はサークル内の全ページを走査し終えてから最後にまとめて
         // _upsert していたため、途中で例外が起きるとそれまでのページ分の欠落発見が
         // 丸ごと失われていた。ページごとに即座に保存するようにする。
-        const missingOnPage = items.filter(item => item.rjCode && !knownRjs.has(item.rjCode));
+        const missingOnPage = pageItems.filter(item => item.rjCode && !knownRjs.has(item.rjCode));
         if (missingOnPage.length) {
           const added = _upsert(missingOnPage, site, knownRjs);
           if (added > 0) {
@@ -1068,5 +1107,5 @@ module.exports = {
   // 構造的問題#4対応: テスト専用エクスポート。既存動作は変更していない。
   // サークルプロフィールURL(過去に一度実機で修正が入った箇所)・月初日付
   // 計算等の純粋関数をtest/discovery.test.jsから直接検証するために公開する。
-  __testHooks: { _circleProfileUrl, _monthStart, _isMonthRollover },
+  __testHooks: { _circleProfileUrl, _monthStart, _isMonthRollover, _classifyMakerIdMismatch },
 };

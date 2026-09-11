@@ -26,7 +26,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dlsite-discovery-test-'));
 process.env.DLSITE_DATA_DIR = tmpDir;
 
 const { __testHooks } = require(path.join(__dirname, '..', 'crawler', 'discovery'));
-const { _circleProfileUrl, _monthStart, _isMonthRollover } = __testHooks;
+const { _circleProfileUrl, _monthStart, _isMonthRollover, _classifyMakerIdMismatch } = __testHooks;
 
 let pass = 0, fail = 0;
 const failures = [];
@@ -107,6 +107,71 @@ test('_monthStart: 1月に-1を渡すと前年12月へ正しく繰り下がる(�
 test('_isMonthRollover: 型はbooleanを返す(現在日付依存のためロジックの健全性のみ検証)', () => {
   const today = new Date().getDate();
   assert.strictEqual(_isMonthRollover(), today <= 5);
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// _classifyMakerIdMismatch() — maker_idフィルタ崩壊の「確定」判定
+//
+// バグ修正回帰テスト: 本番ログで実際に発生した
+// {"makerId":"RG01013422","site":"maniax","mismatched":1,"totalOnPage":1}
+// のような、サンプル数1件で比率100%になり「確定」と誤判定される
+// ケースを防止する。
+// ════════════════════════════════════════════════════════════════════════════
+
+test('サンプル数1件・全件mismatchでも「確定」にはしない(n=1は統計的根拠不足)', () => {
+  const items = [{ makerId: 'RG99999999' }];
+  const r = _classifyMakerIdMismatch(items, 'RG01013422');
+  assert.strictEqual(r.confirmed, false);
+  assert.strictEqual(r.mismatchedCount, 1);
+  assert.deepStrictEqual(r.filtered, [], '疑わしい1件自体は除外されるべき');
+});
+
+test('サンプル数が最低基準未満(4件)なら全件mismatchでも確定にしない', () => {
+  const items = [
+    { makerId: 'RGOTHER1' }, { makerId: 'RGOTHER2' },
+    { makerId: 'RGOTHER3' }, { makerId: 'RGOTHER4' },
+  ];
+  const r = _classifyMakerIdMismatch(items, 'RG01013422', 5);
+  assert.strictEqual(r.confirmed, false);
+  assert.strictEqual(r.filtered.length, 0);
+});
+
+test('サンプル数が最低基準以上(100件)かつ過半数mismatchなら確定してfilteredは元のitemsのまま', () => {
+  const items = Array.from({ length: 100 }, (_, i) =>
+    ({ makerId: i < 80 ? 'RGOTHER' : 'RG01013422' })); // 80件が別サークル = 80%
+  const r = _classifyMakerIdMismatch(items, 'RG01013422', 5);
+  assert.strictEqual(r.confirmed, true);
+  assert.strictEqual(r.mismatchedCount, 80);
+  // 確定時はページ全体を疑わしいとみなし、呼び出し側が丸ごと捨てる想定
+  // (filteredをそのまま使わせない設計だが、値自体はitemsと同一でよい)
+  assert.strictEqual(r.filtered, items);
+});
+
+test('サンプル数は十分だが半数以下のmismatchなら確定せず、該当作品のみ除外する', () => {
+  const items = [
+    { makerId: 'RG01013422' }, { makerId: 'RG01013422' },
+    { makerId: 'RG01013422' }, { makerId: 'RG01013422' },
+    { makerId: 'RGOTHER' }, // 1/5 = 20%
+  ];
+  const r = _classifyMakerIdMismatch(items, 'RG01013422', 5);
+  assert.strictEqual(r.confirmed, false);
+  assert.strictEqual(r.mismatchedCount, 1);
+  assert.strictEqual(r.filtered.length, 4);
+  assert.ok(r.filtered.every(it => it.makerId === 'RG01013422'));
+});
+
+test('makerId情報が無い作品(parser未取得)はmismatch扱いせず残す', () => {
+  const items = [{ makerId: 'RG01013422' }, {}, { makerId: null }];
+  const r = _classifyMakerIdMismatch(items, 'RG01013422');
+  assert.strictEqual(r.mismatchedCount, 0);
+  assert.strictEqual(r.confirmed, false);
+  assert.strictEqual(r.filtered.length, 3);
+});
+
+test('mismatchが0件ならfiltered===items(不要なコピーを作らない)', () => {
+  const items = [{ makerId: 'RG01013422' }];
+  const r = _classifyMakerIdMismatch(items, 'RG01013422');
+  assert.strictEqual(r.filtered, items);
 });
 
 // ── 結果サマリ ───────────────────────────────────────────────────────────────
