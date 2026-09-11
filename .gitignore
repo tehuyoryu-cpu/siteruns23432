@@ -13,5 +13,6 @@ digest.*.log
 events.jsonl
 events.*.jsonl
 data-export/
+api-trace-state.json
 .github-token
 crawler/buildInfo.json

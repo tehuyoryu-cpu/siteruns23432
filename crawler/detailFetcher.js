@@ -1438,6 +1438,50 @@ function _store(rjCode, body, site = null, issueTally = null) {
     }
   }
 
+  // ── 汎用: 任意の急激な価格下落の検知(データ保全③ — 上のstaleSalePrice
+  //     パターンの一般化) ──────────────────────────────────────────────
+  // 背景: staleSalePriceSuspectedは「セール解除直後の定価固定化」という
+  // 特定の1パターンしか検知しない。しかしCDNキャッシュ残留やAPI応答の
+  // 一時的な不整合は、is_on_saleフラグが変化しないまま実質価格(定価または
+  // セール価格)だけが前回比で極端に下落する、という別の形でも起こりうる
+  // (staleSalePriceは1→0のフラグ遷移を伴うケースのみを対象にしているため
+  // 対象外)。同じ「1回目は疑い・2回目で確定」パターン(price_issuesの
+  // raw_fieldsで前回の疑わしい値と比較)を、フラグ変化を伴わない90%以上の
+  // 下落全般に一般化し、未知のパターンに対する汎用の安全網にする。
+  let extremeDropSuspected = false;
+  if (!priceIssue && !staleSalePriceSuspected) {
+    const existingForDropCheck = db.getWorkByRj(rjCode);
+    if (existingForDropCheck) {
+      const prevOnSale   = existingForDropCheck.is_on_sale ? 1 : 0;
+      const newOnSale    = price.is_on_sale ? 1 : 0;
+      const prevEffective = prevOnSale ? existingForDropCheck.cur_sale_price : existingForDropCheck.cur_price;
+      const newEffective  = newOnSale  ? price.sale_price                   : price.price;
+      if (prevOnSale === newOnSale &&
+          prevEffective != null && prevEffective > 0 &&
+          newEffective  != null && newEffective  > 0 &&
+          newEffective <= prevEffective * 0.1) {
+        const prior = db.getPriceIssue(rjCode);
+        let priorEffective = null;
+        if (prior?.issue_type === 'extreme_price_drop_suspected') {
+          try { priorEffective = JSON.parse(prior.raw_fields ?? '{}').new_effective ?? null; } catch { /* ignore */ }
+        }
+        if (priorEffective === newEffective) {
+          // 2回連続で同じ値 → 一時的な不整合ではなく実際の急落の可能性が
+          // 高いと判断し、通常通り保存を許可する。
+          db.clearPriceIssue(rjCode);
+        } else {
+          extremeDropSuspected = true;
+          db.recordPriceIssue(rjCode, 'extreme_price_drop_suspected', {
+            new_effective: newEffective, prev_effective: prevEffective,
+            is_on_sale: newOnSale, prev_is_on_sale: prevOnSale,
+          });
+          log.warn('[detail] extreme price drop (前回比90%以上下落、セールフラグ変化なし) 検出 — 前回の値を保持し次回巡回で確認します',
+            rjCode, { new_effective: newEffective, prev_effective: prevEffective });
+        }
+      }
+    }
+  }
+
   if (priceIssue) {
     db.recordPriceIssue(rjCode, priceIssue.type, priceIssue.raw);
     if (issueTally) issueTally[priceIssue.type] = (issueTally[priceIssue.type] ?? 0) + 1;
@@ -1460,7 +1504,7 @@ function _store(rjCode, body, site = null, issueTally = null) {
     // ログへ出す（実害の大きさに応じて後段のpriceUnreliable分岐で
     // さらにlog.errorへ格上げする）。
     log.warn('[detail] price issue detected', rjCode, priceIssue.type, priceIssue.raw);
-  } else if (!staleSalePriceSuspected) {
+  } else if (!staleSalePriceSuspected && !extremeDropSuspected) {
     // 過去にissueが記録されていて今回は正常に取れた場合はクリアする
     db.clearPriceIssue(rjCode);
   }
@@ -1487,14 +1531,17 @@ function _store(rjCode, body, site = null, issueTally = null) {
     || priceIssue?.type === 'price_work_missing_high_discount'
     || priceIssue?.type === 'invalid_price_combo'
     || priceIssue?.type === 'ambiguous'
-    || staleSalePriceSuspected;
+    || staleSalePriceSuspected
+    || extremeDropSuspected;
 
   // 「測定できなかった(=priceUnreliable、DB書き込みをスキップ)」場合は
   // 上のlog.warnよりさらに重大(実際にデータ更新を諦めている)ため、
   // log.errorへ格上げしてデバッグサマリで見落とされないようにする。
   if (priceUnreliable) {
+    const fallbackType = staleSalePriceSuspected ? 'stale_sale_price_suspected'
+      : extremeDropSuspected ? 'extreme_price_drop_suspected' : null;
     log.error('[detail] price unmeasurable — skipping DB write to avoid contamination',
-      rjCode, { issueType: priceIssue?.type ?? 'stale_sale_price_suspected', raw: priceIssue?.raw ?? null });
+      rjCode, { issueType: priceIssue?.type ?? fallbackType, raw: priceIssue?.raw ?? null });
   }
 
   // バグ修正(重大): savePriceIfChanged() は { changed, consecutive_no_change }
