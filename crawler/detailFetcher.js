@@ -1297,7 +1297,37 @@ async function _apiFetch(works, site) {
         works.slice(0,3).map(w=>w.rj_code).join(','));
       return null;
     }
-    const body = await res.json();
+    // バグ修正(価格取得堅牢化): 以前は res.json() を直接呼んでおり、DLsiteが
+    // 200 OK のまま JSON ではない本文(セッション切れ時の年齢確認ページ等の
+    // HTMLがこのエンドポイントに誤ってルーティングされた場合や、通信断で
+    // 応答が途中で切れた場合)を返すと、JSON.parseの例外がこの関数末尾の
+    // 汎用catchまで伝播していた。そこでは他の本物のネットワーク/APIエラーと
+    // 同列にログされるだけで、(1) apiTrace(異常レスポンスの生サンプル保存)に
+    // 一切記録されず原因調査ができない、(2) 空応答/severely-partialと違って
+    // _recordApiEmptyAndMaybeRecover() が呼ばれないため、まさにこの種の
+    // セッション不調を検知するために存在する空応答ストリーク・サーキット
+    // ブレーカー・自動再ウォームアップの対象に一切乗らない、という2つの
+    // 抜け穴があった。res.text()で本文を確保してから自前でJSON.parseし、
+    // 失敗時は空応答と同じ回復経路に合流させる(ネットワーク呼び出し回数は
+    // 従来と同じで、効率への影響はない)。
+    const bodyText = await res.text();
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (parseErr) {
+      apiTrace.record({
+        kind: 'json-parse-error', site, url, status: res.status,
+        contentType: res.headers.get('content-type'),
+        cfRay: res.headers.get('cf-ray'),
+        requested: works.map(w => w.rj_code),
+        bodySample: bodyText.slice(0, 500),
+      });
+      log[_isInRateLimitBackoff(site) ? 'debug' : 'warn']('[detail] API returned 200 OK but body is not valid JSON (session issue suspected)', site,
+        `requested ${works.length}件`, parseErr.message,
+        'sample:', works.slice(0, 2).map(w => w.rj_code).join(','));
+      await _recordApiEmptyAndMaybeRecover(site);
+      return null;
+    }
     const returnedKeys = Object.keys(body).length;
     if (returnedKeys === 0) {
       apiTrace.record({

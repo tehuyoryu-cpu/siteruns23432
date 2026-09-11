@@ -57,7 +57,7 @@ function _scheduleSave() {
 
 /**
  * @param {object} entry
- *   kind: 'http-error' | 'empty' | 'severe-partial' | 'contamination' | 'price-issue'
+ *   kind: 'http-error' | 'empty' | 'severe-partial' | 'contamination' | 'price-issue' | 'json-parse-error'
  *   その他 site/url/status/contentType/requested/bodySample 等、呼び出し元が
  *   持っている情報を自由に詰めてよい。
  */
