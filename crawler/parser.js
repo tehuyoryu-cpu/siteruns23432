@@ -175,6 +175,23 @@ function parseProductInfo(rjCode, body) {
         if (discRate != null && discRate >= 100) {
           priceIssue = { type: 'price_work_missing_high_discount', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale } };
           log.trace('[parser] price_work missing with discount_rate>=100 — price unreliable', rjCode, priceIssue.raw);
+        } else if (isDiscountFlag || discObj) {
+          // バグ修正(実機確認: RJ01697147 — サークル設定1980円→セール1386円/30%OFFが
+          // 「定価1386円」として保存され続けていた): 上のコメント(③)は discRate が
+          // null/0 のこのブランチを「実際の値引きが無いポイント還元キャンペーン」と
+          // 決め打ちしていたが、これは is_discount_work フラグや discount オブジェクトの
+          // 有無を一切見ずに判定しており誤りだった。is_discount_work===true、または
+          // discountオブジェクト自体は存在する(campaign_price/restore_priceの片方だけ
+          // 欠けている等でcampaignPrice<restorePriceの厳密一致条件から漏れた場合を含む)
+          // にもかかわらずこのブランチへ来た場合は、「本物の価格割引だが内訳を
+          // API応答から復元できなかった」ケースである可能性が高く、priceCurを
+          // そのまま定価として確定させると割引前の本当の定価(このケースでは1980円)を
+          // 恒久的に失う。price_workが無いという理由だけでは正常仕様とは断定できない
+          // ため、priceIssueとして記録しDB書き込みをスキップする(detailFetcher._store()
+          // のpriceUnreliable判定でno_price_field相当として扱われ、既存の正しい定価を
+          // 上書きしない)。
+          priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale, is_discount_work: d.is_discount_work, discount: discObj } };
+          log.trace('[parser] discount flag/object present but no usable breakdown — price unreliable', rjCode, priceIssue.raw);
         }
       } else if (officialPrice > 0 || campaignPrice != null || restorePrice != null) {
         // price_work/priceともに欠損だが、official_price/regular_priceや
