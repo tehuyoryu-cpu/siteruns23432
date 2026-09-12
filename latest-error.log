@@ -1,0 +1,299 @@
+2026-09-12T02:33:25.632Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:33:31.114Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:10.857Z [WARN ] (集約) 同種メッセージが直近59秒で12回発生（9件を抑制）／ 例: [detail] price issue detected RJ01619738 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:34:10.858Z [ERROR] (集約) 同種メッセージが直近59秒で12回発生（9件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01619738 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:34:10.859Z [WARN ] (集約) 同種メッセージが直近59秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:10.859Z [WARN ] (集約) 同種メッセージが直近52秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:11.277Z [WARN ] [detail] price issue detected RJ01516746 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:34:11.278Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01516746 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:34:11.304Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:11.332Z [WARN ] [detail] price issue detected RJ01513077 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:34:11.333Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01513077 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:34:11.362Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:13.115Z [WARN ] [detail] price issue detected RJ01419737 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:34:13.116Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01419737 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:34:13.121Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:13.281Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:26.287Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:34:56.251Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:10.958Z [WARN ] (集約) 同種メッセージが直近60秒で8回発生（5件を抑制）／ 例: [detail] price issue detected RJ01516746 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:35:10.959Z [ERROR] (集約) 同種メッセージが直近60秒で8回発生（5件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01516746 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:35:10.959Z [WARN ] (集約) 同種メッセージが直近58秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:13.717Z [WARN ] [detail] price issue detected RJ01351693 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:35:13.718Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01351693 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:35:13.863Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:15.098Z [WARN ] [detail] price issue detected RJ01462579 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:35:15.098Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01462579 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:35:15.150Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:20.692Z [WARN ] [detail] price issue detected RJ01290448 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:35:20.693Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01290448 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:35:20.715Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T02:35:22.284Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:24.211Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:24.404Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:56.156Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":41,"ana_no_standalone_price":1}
+2026-09-12T02:35:56.361Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:35:56.411Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T02:36:10.997Z [WARN ] (集約) 同種メッセージが直近57秒で32回発生（29件を抑制）／ 例: [detail] price issue detected RJ01351693 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:36:10.998Z [ERROR] (集約) 同種メッセージが直近57秒で32回発生（29件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01351693 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:36:10.998Z [WARN ] (集約) 同種メッセージが直近57秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:36:10.998Z [WARN ] (集約) 同種メッセージが直近50秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T02:36:10.999Z [WARN ] (集約) 同種メッセージが直近15秒で9回発生（6件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":41,"ana_no_standalone_price":1}
+2026-09-12T02:36:25.738Z [WARN ] [detail] price issue detected RJ01703350 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:36:25.738Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01703350 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:36:25.741Z [WARN ] [detail] price issue detected RJ01676734 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:36:25.742Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676734 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:36:25.756Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T02:36:26.443Z [WARN ] [detail] price issue detected RJ01160551 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:36:26.443Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01160551 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:36:26.451Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":18,"ana_no_standalone_price":1}
+2026-09-12T02:36:26.859Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T02:36:28.918Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":6}
+2026-09-12T02:36:30.439Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":32,"ana_no_standalone_price":3}
+2026-09-12T02:36:30.525Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":7}
+2026-09-12T02:36:32.856Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:37:11.007Z [WARN ] (集約) 同種メッセージが直近45秒で30回発生（27件を抑制）／ 例: [detail] price issue detected RJ01703350 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:37:11.008Z [ERROR] (集約) 同種メッセージが直近45秒で30回発生（27件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01703350 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:37:11.008Z [WARN ] (集約) 同種メッセージが直近45秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T02:37:11.212Z [WARN ] [detail] price issue detected RJ01263651 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:37:11.212Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01263651 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:37:11.213Z [WARN ] [detail] price issue detected RJ01209766 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:37:11.214Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01209766 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:37:11.217Z [WARN ] [detail] price issue detected RJ01707390 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:37:11.217Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01707390 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:37:11.237Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":41,"ana_no_standalone_price":3}
+2026-09-12T02:37:11.326Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":49,"ana_no_standalone_price":1}
+2026-09-12T02:37:12.599Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5}
+2026-09-12T02:37:15.396Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:37:17.830Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T02:37:57.848Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T02:37:57.913Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T02:37:59.217Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T02:37:59.286Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":39,"ana_no_standalone_price":3}
+2026-09-12T02:38:11.011Z [WARN ] (集約) 同種メッセージが直近60秒で33回発生（30件を抑制）／ 例: [detail] price issue detected RJ01263651 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:38:11.011Z [ERROR] (集約) 同種メッセージが直近60秒で33回発生（30件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01263651 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:38:11.011Z [WARN ] (集約) 同種メッセージが直近60秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":41,"ana_no_standalone_price":3}
+2026-09-12T02:38:11.011Z [WARN ] (集約) 同種メッセージが直近58秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5}
+2026-09-12T02:38:14.650Z [WARN ] [detail] API returned empty object girls requested 6件 sample: RJ01174552,RJ01661046
+2026-09-12T02:38:15.439Z [WARN ] [detail] API returned empty object girls requested 6件 sample: RJ01174552,RJ01661046
+2026-09-12T02:38:15.439Z [WARN ] [detail] batch fail, splitting 6
+2026-09-12T02:38:15.878Z [WARN ] [detail] API returned empty object girls requested 3件 sample: RJ01174552,RJ01661046
+2026-09-12T02:38:20.182Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T02:38:20.183Z [WARN ] [detail] girls: 空応答が5回連続 — セッション再確立を試みます
+2026-09-12T02:38:20.183Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T02:38:21.404Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T02:38:21.566Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T02:38:49.973Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ140886.html/?locale=ja_JP","title":"【50%OFF】科学と魔法の仮想世界Vol.6 [U.F.D.C.] | DLsite 同人 - R18","readyState":"complete","bodyLen":376049,"isLoading":false}
+2026-09-12T02:39:11.016Z [WARN ] (集約) 同種メッセージが直近56秒で8回発生（5件を抑制）／ 例: [detail] API returned empty object girls requested 6件 sample: RJ01174552,RJ01661046
+2026-09-12T02:39:44.926Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01087155.html/?translation=RJ01361271","title":"【簡体中文版】【待望の音声化】寝バック溺愛れいぷされた後のおまんこを手マンで連続イキさせられたい女の子の話 [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":442521,"isLoading":false}
+2026-09-12T02:40:02.465Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01087155.html/?translation=RJ01361271&locale=ja_JP","title":"【簡体中文版】【待望の音声化】寝バック溺愛れいぷされた後のおまんこを手マンで連続イキさせられたい女の子の話 [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":444233,"isLoading":false}
+2026-09-12T02:40:08.516Z [WARN ] [detail] girls: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-09-12T02:40:41.751Z [WARN ] [detail] all: 実行中に2ラウンド連続で高エラー率(直近ラウンド errorRate=1) を検出したため、この実行の残り分についてconcurrency/rateLimitを即座に引き下げます — concurrency 3→2 / rateLimit 700→1500ms
+2026-09-12T02:41:08.791Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T02:41:09.784Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T02:41:10.745Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T02:42:12.711Z [WARN ] [detail] price issue detected RJ01372467 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T02:42:12.712Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01372467 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T02:42:12.778Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":39,"ana_no_standalone_price":1}
+2026-09-12T02:45:00.605Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T02:45:29.210Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01616344.html/?locale=ja_JP","title":"【50%OFF】【マゾ向け足コキ】放課後の居残り指導〜ドS女教師の冷徹ストッキング足コキで声を出せずに何度も搾り取られる～ [生牡蠣P] | DLsite 同人 - R18","readyState":"complete","bodyLen":503922,"isLoading":false}
+2026-09-12T02:46:25.026Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01660789.html/?translation=RJ01660790","title":"【繁体中文版】レンタルでも、彼氏は彼氏って、そう言って [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":428468,"isLoading":false}
+2026-09-12T02:46:40.160Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01660789.html/?translation=RJ01660790&locale=ja_JP","title":"【繁体中文版】レンタルでも、彼氏は彼氏って、そう言って [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":382494,"isLoading":false}
+2026-09-12T03:00:03.000Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01426917,RJ01442149
+2026-09-12T03:00:03.051Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T03:00:03.105Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01473144,RJ01696969
+2026-09-12T03:00:03.742Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01426917,RJ01442149
+2026-09-12T03:00:03.742Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T03:00:03.788Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T03:00:03.789Z [WARN ] [detail] girls: 空応答が5回連続 — セッション再確立を試みます
+2026-09-12T03:00:03.789Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T03:00:04.089Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T03:00:11.333Z [WARN ] (集約) 同種メッセージが直近8秒で5回発生（2件を抑制）／ 例: [detail] API returned empty object girls requested 50件 sample: RJ01426917,RJ01442149
+2026-09-12T03:01:12.643Z [WARN ] [detail] girls: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-09-12T13:13:15.819Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T13:13:22.711Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T13:13:30.059Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T13:13:38.328Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":4,"parsed":60}
+2026-09-12T13:13:43.207Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":6,"parsed":94}
+2026-09-12T13:14:08.210Z [WARN ] (集約) 同種メッセージが直近38秒で4回発生（1件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-09-01","page":1,"parsed":99}
+2026-09-12T13:14:47.433Z [WARN ] [db] slow transaction (transaction): 376ms {"dbSizeMB":36.4}
+2026-09-12T13:15:57.716Z [WARN ] [db] slow transaction (transactionNoSave): 489ms {"dbSizeMB":36.6}
+2026-09-12T13:17:55.441Z [WARN ] [detail] price issue detected RJ369594 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:17:55.441Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ369594 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:17:55.444Z [WARN ] [detail] price issue detected RJ01690498 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:17:55.444Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01690498 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:17:55.445Z [WARN ] [detail] price issue detected RJ01662251 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:17:55.445Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01662251 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:17:55.454Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":21,"ana_no_standalone_price":11}
+2026-09-12T13:17:59.546Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:18:08.302Z [WARN ] (集約) 同種メッセージが直近13秒で12回発生（9件を抑制）／ 例: [detail] price issue detected RJ369594 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:18:08.303Z [ERROR] (集約) 同種メッセージが直近13秒で12回発生（9件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ369594 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:18:17.236Z [WARN ] [detail] price issue detected RJ01193695 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:18:17.236Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01193695 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:18:17.259Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:18:21.267Z [WARN ] [detail] price issue detected RJ01477167 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:18:21.267Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01477167 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:18:21.267Z [WARN ] [detail] price issue detected RJ01429133 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:18:21.268Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01429133 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:18:21.294Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":34}
+2026-09-12T13:18:39.097Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":8}
+2026-09-12T13:18:39.232Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":17}
+2026-09-12T13:18:39.279Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":8}
+2026-09-12T13:18:39.329Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":3,"ana_no_standalone_price":2}
+2026-09-12T13:18:39.666Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":10}
+2026-09-12T13:18:42.393Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:18:42.420Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:19:04.017Z [WARN ] [detail] API returned empty object maniax requested 1件 sample: RJ01707213
+2026-09-12T13:19:04.515Z [WARN ] [detail] API returned empty object bl requested 1件 sample: RJ01707213
+2026-09-12T13:19:04.773Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":12,"key_not_in_response":1}
+2026-09-12T13:19:08.312Z [WARN ] (集約) 同種メッセージが直近51秒で239回発生（236件を抑制）／ 例: [detail] price issue detected RJ01193695 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:19:08.313Z [ERROR] (集約) 同種メッセージが直近51秒で239回発生（236件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01193695 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:19:08.313Z [WARN ] (集約) 同種メッセージが直近51秒で15回発生（12件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:19:08.313Z [WARN ] (集約) 同種メッセージが直近47秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":34}
+2026-09-12T13:19:08.313Z [WARN ] (集約) 同種メッセージが直近29秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":8}
+2026-09-12T13:19:09.018Z [WARN ] [detail] price issue detected RJ01701399 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:19:09.018Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01701399 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:19:09.020Z [WARN ] [detail] price issue detected RJ01700676 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:19:09.020Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01700676 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:19:09.021Z [WARN ] [detail] price issue detected RJ01700076 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:19:09.021Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01700076 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:19:09.046Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":9}
+2026-09-12T13:19:28.741Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":2,"ana_no_standalone_price":2}
+2026-09-12T13:19:39.663Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:19:42.954Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":46,"ana_no_standalone_price":1}
+2026-09-12T13:20:08.354Z [WARN ] (集約) 同種メッセージが直近59秒で13回発生（10件を抑制）／ 例: [detail] price issue detected RJ01701399 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:08.354Z [ERROR] (集約) 同種メッセージが直近59秒で13回発生（10件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01701399 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:20.421Z [WARN ] [detail] price issue detected RJ01369620 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:20.421Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01369620 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:20.439Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:21.975Z [WARN ] [detail] price issue detected RJ01608743 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:21.975Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01608743 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:22.014Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:23.870Z [WARN ] [detail] price issue detected RJ01534935 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:23.870Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01534935 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:23.956Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:35.335Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:37.714Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:20:55.010Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:08.362Z [WARN ] (集約) 同種メッセージが直近48秒で12回発生（9件を抑制）／ 例: [detail] price issue detected RJ01369620 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:08.362Z [ERROR] (集約) 同種メッセージが直近48秒で12回発生（9件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01369620 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:08.362Z [WARN ] (集約) 同種メッセージが直近48秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:16.130Z [WARN ] [detail] price issue detected RJ01676287 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:16.130Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676287 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:16.137Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:17.994Z [WARN ] [detail] price issue detected RJ01456733 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:17.994Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01456733 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:18.004Z [WARN ] [detail] price issue detected RJ01082864 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:18.004Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01082864 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:18.022Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:21:18.850Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:24.830Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:41.615Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:47.425Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:08.373Z [WARN ] (集約) 同種メッセージが直近52秒で14回発生（11件を抑制）／ 例: [detail] price issue detected RJ01676287 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:08.373Z [ERROR] (集約) 同種メッセージが直近52秒で14回発生（11件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676287 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:08.374Z [WARN ] (集約) 同種メッセージが直近52秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:08.374Z [WARN ] (集約) 同種メッセージが直近50秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:22:14.711Z [WARN ] [detail] price issue detected RJ01621776 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:14.712Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01621776 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:14.725Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:30.117Z [WARN ] [detail] price issue detected RJ01216635 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:30.118Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01216635 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:30.122Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:35.299Z [WARN ] [detail] price issue detected RJ01154725 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:35.299Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01154725 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:35.310Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:38.267Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:23:08.374Z [WARN ] (集約) 同種メッセージが直近54秒で8回発生（5件を抑制）／ 例: [detail] price issue detected RJ01621776 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:08.374Z [ERROR] (集約) 同種メッセージが直近54秒で8回発生（5件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01621776 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:08.374Z [WARN ] (集約) 同種メッセージが直近54秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:12.715Z [WARN ] [detail] price issue detected RJ01341877 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:12.715Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01341877 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:12.723Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:20.452Z [WARN ] [detail] price issue detected RJ01462766 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:20.452Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01462766 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:20.456Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:21.196Z [WARN ] [detail] price issue detected RJ01563649 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:21.196Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01563649 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:21.220Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:36.689Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:40.982Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:49.590Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:24:08.388Z [WARN ] (集約) 同種メッセージが直近56秒で12回発生（9件を抑制）／ 例: [detail] price issue detected RJ01341877 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:08.388Z [ERROR] (集約) 同種メッセージが直近56秒で12回発生（9件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01341877 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:08.388Z [WARN ] (集約) 同種メッセージが直近56秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:08.388Z [WARN ] (集約) 同種メッセージが直近48秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:09.177Z [WARN ] [detail] price issue detected RJ01162575 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:09.177Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01162575 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:09.198Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:10.950Z [WARN ] [detail] price issue detected RJ01695812 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:10.950Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01695812 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:10.971Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:13.711Z [WARN ] [detail] price issue detected RJ285394 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:13.711Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ285394 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:13.738Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":36,"ana_no_standalone_price":1}
+2026-09-12T13:24:15.571Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:20.935Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:24:21.593Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:24:23.266Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:24:25.708Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:28.287Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:08.386Z [WARN ] (集約) 同種メッセージが直近59秒で53回発生（50件を抑制）／ 例: [detail] price issue detected RJ01162575 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:08.386Z [ERROR] (集約) 同種メッセージが直近59秒で53回発生（50件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01162575 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:08.386Z [WARN ] (集約) 同種メッセージが直近59秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:08.386Z [WARN ] (集約) 同種メッセージが直近57秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:08.387Z [WARN ] (集約) 同種メッセージが直近47秒で10回発生（7件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:25:30.309Z [WARN ] [detail] price issue detected RJ01263651 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:30.309Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01263651 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:30.311Z [WARN ] [detail] price issue detected RJ01209766 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:30.311Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01209766 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:30.312Z [WARN ] [detail] price issue detected RJ01707390 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:30.312Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01707390 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:30.355Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":36,"ana_no_standalone_price":3}
+2026-09-12T13:25:32.396Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:34.346Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5}
+2026-09-12T13:25:36.934Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:25:37.339Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:08.395Z [WARN ] (集約) 同種メッセージが直近38秒で14回発生（11件を抑制）／ 例: [detail] price issue detected RJ01263651 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:08.396Z [ERROR] (集約) 同種メッセージが直近38秒で14回発生（11件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01263651 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:08.396Z [WARN ] (集約) 同種メッセージが直近34秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5}
+2026-09-12T13:26:14.851Z [WARN ] [detail] price issue detected RJ01716655 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:14.851Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01716655 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:14.864Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:14.912Z [WARN ] [detail] price issue detected RJ01676787 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:14.912Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676787 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:14.913Z [WARN ] [detail] price issue detected RJ01714731 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:14.913Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01714731 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:14.969Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:26:16.023Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":38,"ana_no_standalone_price":3}
+2026-09-12T13:26:16.282Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:26:16.942Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":8}
+2026-09-12T13:26:22.074Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:38.028Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:45.308Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01628095,RJ01040411
+2026-09-12T13:26:46.044Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01628095,RJ01040411
+2026-09-12T13:26:46.045Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T13:26:46.112Z [WARN ] [detail] API returned partial data girls got 19 / requested 50
+2026-09-12T13:26:46.185Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5,"key_not_in_response":31}
+2026-09-12T13:26:46.414Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T13:26:46.558Z [WARN ] [detail] API returned empty object girls requested 25件 sample: RJ01628095,RJ01040411
+2026-09-12T13:26:47.137Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T13:26:47.137Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T13:26:47.577Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 25
+2026-09-12T13:26:47.685Z [WARN ] [detail] girls: 空応答が5回連続 — セッション再確立を試みます
+2026-09-12T13:26:47.688Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T13:27:08.399Z [WARN ] (集約) 同種メッセージが直近54秒で29回発生（26件を抑制）／ 例: [detail] price issue detected RJ01716655 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:27:08.400Z [ERROR] (集約) 同種メッセージが直近54秒で29回発生（26件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01716655 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:27:08.400Z [WARN ] (集約) 同種メッセージが直近53秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:27:08.400Z [WARN ] (集約) 同種メッセージが直近23秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 50件 sample: RJ01628095,RJ01040411
+2026-09-12T13:27:08.400Z [WARN ] (集約) 同種メッセージが直近22秒で4回発生（1件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T13:27:54.828Z [WARN ] [detail] girls: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-09-12T13:28:18.790Z [WARN ] [detail] all: 実行中に2ラウンド連続で高エラー率(直近ラウンド errorRate=1) を検出したため、この実行の残り分についてconcurrency/rateLimitを即座に引き下げます — concurrency 3→2 / rateLimit 700→1500ms
+2026-09-12T13:50:01.292Z [WARN ] [detail] API returned empty object girls requested 25件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:02.021Z [WARN ] [detail] API returned empty object girls requested 25件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:02.025Z [WARN ] [detail] batch fail, splitting 25
+2026-09-12T13:50:02.438Z [WARN ] [detail] API returned empty object girls requested 13件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:08.574Z [WARN ] (集約) 同種メッセージが直近7秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 25件 sample: RJ01223548,RJ01121414
+2026-09-12T14:45:00.293Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T14:46:01.458Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522","title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":394298,"isLoading":false}
+2026-09-12T14:46:17.787Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522&locale=ja_JP","title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":447965,"isLoading":false}

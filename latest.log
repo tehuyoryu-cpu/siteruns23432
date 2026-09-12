@@ -1,0 +1,499 @@
+2026-09-12T13:20:17.422Z [INFO ] [detail] price changed {"rj":"RJ01416114","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.423Z [INFO ] [detail] price changed {"rj":"RJ01415002","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.425Z [INFO ] [detail] price changed {"rj":"RJ01387304","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.425Z [INFO ] [detail] price changed {"rj":"RJ01380884","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.426Z [INFO ] [detail] price changed {"rj":"RJ01356636","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.428Z [INFO ] [detail] price changed {"rj":"RJ01352665","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.429Z [INFO ] [detail] price changed {"rj":"RJ01334353","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.430Z [INFO ] [detail] price changed {"rj":"RJ01331425","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.431Z [INFO ] [detail] price changed {"rj":"RJ01314712","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.432Z [INFO ] [detail] price changed {"rj":"RJ01307698","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.434Z [INFO ] [detail] price changed {"rj":"RJ01292917","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.435Z [INFO ] [detail] price changed {"rj":"RJ01289006","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.435Z [INFO ] [detail] price changed {"rj":"RJ01278379","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.436Z [INFO ] [detail] price changed {"rj":"RJ01276073","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.437Z [INFO ] [detail] price changed {"rj":"RJ01257498","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.439Z [INFO ] [detail] price changed {"rj":"RJ01253299","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.441Z [INFO ] [detail] price changed {"rj":"RJ01239668","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.441Z [INFO ] [detail] price changed {"rj":"RJ01236223","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.442Z [INFO ] [detail] price changed {"rj":"RJ01226956","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.444Z [INFO ] [detail] price changed {"rj":"RJ01222969","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.446Z [INFO ] [detail] price changed {"rj":"RJ01211237","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.446Z [INFO ] [detail] price changed {"rj":"RJ01209059","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.447Z [INFO ] [detail] price changed {"rj":"RJ01198469","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.448Z [INFO ] [detail] price changed {"rj":"RJ01195199","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.449Z [INFO ] [detail] price changed {"rj":"RJ01178660","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.451Z [INFO ] [detail] price changed {"rj":"RJ01175628","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.452Z [INFO ] [detail] price changed {"rj":"RJ01163196","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.452Z [INFO ] [detail] price changed {"rj":"RJ01159796","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.453Z [INFO ] [detail] price changed {"rj":"RJ01149020","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.453Z [INFO ] [detail] price changed {"rj":"RJ01149012","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.454Z [INFO ] [detail] price changed {"rj":"RJ01137085","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.455Z [INFO ] [detail] price changed {"rj":"RJ01137081","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.456Z [INFO ] [detail] price changed {"rj":"RJ01115025","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.456Z [INFO ] [detail] price changed {"rj":"RJ01115017","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.458Z [INFO ] [detail] price changed {"rj":"RJ01061465","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.459Z [INFO ] [detail] price changed {"rj":"RJ01061461","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.661Z [INFO ] [detail] price changed {"rj":"RJ01430805","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.662Z [INFO ] [detail] price changed {"rj":"RJ01416794","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.662Z [INFO ] [detail] price changed {"rj":"RJ01393807","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.663Z [INFO ] [detail] price changed {"rj":"RJ01360195","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.666Z [INFO ] [detail] price changed {"rj":"RJ01325022","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.667Z [INFO ] [detail] price changed {"rj":"RJ01306199","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.667Z [INFO ] [detail] price changed {"rj":"RJ01294360","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.668Z [INFO ] [detail] price changed {"rj":"RJ01283662","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.669Z [INFO ] [detail] price changed {"rj":"RJ01276884","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.669Z [INFO ] [detail] price changed {"rj":"RJ01269331","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.670Z [INFO ] [detail] price changed {"rj":"RJ01258460","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.671Z [INFO ] [detail] price changed {"rj":"RJ01218891","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.672Z [INFO ] [detail] price changed {"rj":"RJ01210648","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.673Z [INFO ] [detail] price changed {"rj":"RJ01182001","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.674Z [INFO ] [detail] price changed {"rj":"RJ01058480","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.675Z [INFO ] [detail] price changed {"rj":"RJ01006524","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.676Z [INFO ] [detail] price changed {"rj":"RJ01710664","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.677Z [INFO ] [detail] price changed {"rj":"RJ01682366","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:17.678Z [INFO ] [detail] price changed {"rj":"RJ01638415","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:17.681Z [INFO ] [detail] price changed {"rj":"RJ01619202","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.682Z [INFO ] [detail] price changed {"rj":"RJ01577281","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.684Z [INFO ] [detail] price changed {"rj":"RJ01557927","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.685Z [INFO ] [detail] price changed {"rj":"RJ01414709","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.686Z [INFO ] [detail] price changed {"rj":"RJ01383892","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.687Z [INFO ] [detail] price changed {"rj":"RJ01362709","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.688Z [INFO ] [detail] price changed {"rj":"RJ01231555","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.689Z [INFO ] [detail] price changed {"rj":"RJ01683587","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:17.690Z [INFO ] [detail] price changed {"rj":"RJ431623","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:17.692Z [INFO ] [detail] price changed {"rj":"RJ01167247","price":1650,"sale_price":825,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.694Z [INFO ] [detail] price changed {"rj":"RJ01152061","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.695Z [INFO ] [detail] price changed {"rj":"RJ01132443","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.696Z [INFO ] [detail] price changed {"rj":"RJ01121959","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.697Z [INFO ] [detail] price changed {"rj":"RJ01580875","price":7700,"sale_price":3465,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.699Z [INFO ] [detail] price changed {"rj":"RJ01537694","price":1870,"sale_price":1122,"point":null,"point_rate":null,"discount_rate":40,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.700Z [INFO ] [detail] price changed {"rj":"RJ01530237","price":1870,"sale_price":1028,"point":null,"point_rate":null,"discount_rate":45,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.702Z [INFO ] [detail] price changed {"rj":"RJ01515597","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.703Z [INFO ] [detail] price changed {"rj":"RJ01515566","price":7700,"sale_price":3850,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.704Z [INFO ] [detail] price changed {"rj":"RJ01497727","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.705Z [INFO ] [detail] price changed {"rj":"RJ01468737","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.706Z [INFO ] [detail] price changed {"rj":"RJ01464485","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.708Z [INFO ] [detail] price changed {"rj":"RJ01454689","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.710Z [INFO ] [detail] price changed {"rj":"RJ01430242","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.711Z [INFO ] [detail] price changed {"rj":"RJ01430170","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.712Z [INFO ] [detail] price changed {"rj":"RJ01426860","price":1870,"sale_price":841,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.714Z [INFO ] [detail] price changed {"rj":"RJ01382059","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.715Z [INFO ] [detail] price changed {"rj":"RJ01380853","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.715Z [INFO ] [detail] price changed {"rj":"RJ01357133","price":7700,"sale_price":3465,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.716Z [INFO ] [detail] price changed {"rj":"RJ01357205","price":1760,"sale_price":792,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.717Z [INFO ] [detail] price changed {"rj":"RJ01346545","price":1760,"sale_price":792,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:17.719Z [INFO ] [detail] price changed {"rj":"RJ01345685","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.823Z [INFO ] [detail] price changed {"rj":"RJ01305469","price":1870,"sale_price":841,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.824Z [INFO ] [detail] price changed {"rj":"RJ01292997","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.825Z [INFO ] [detail] price changed {"rj":"RJ01278918","price":1760,"sale_price":792,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.826Z [INFO ] [detail] price changed {"rj":"RJ01257403","price":1870,"sale_price":841,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.827Z [INFO ] [detail] price changed {"rj":"RJ01241898","price":1760,"sale_price":792,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.828Z [INFO ] [detail] price changed {"rj":"RJ01228930","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.829Z [INFO ] [detail] price changed {"rj":"RJ01199890","price":1760,"sale_price":880,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.829Z [INFO ] [detail] price changed {"rj":"RJ01171546","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.831Z [INFO ] [detail] price changed {"rj":"RJ01170422","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.832Z [INFO ] [detail] price changed {"rj":"RJ01110746","price":4400,"sale_price":2200,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.833Z [INFO ] [detail] price changed {"rj":"RJ01067083","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.834Z [INFO ] [detail] price changed {"rj":"RJ01024782","price":1980,"sale_price":891,"point":null,"point_rate":null,"discount_rate":55,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.835Z [INFO ] [detail] price changed {"rj":"RJ01005157","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.836Z [INFO ] [detail] price changed {"rj":"RJ01647808","price":1870,"sale_price":1402,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.837Z [INFO ] [detail] price changed {"rj":"RJ01641048","price":1870,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:18.838Z [INFO ] [detail] price changed {"rj":"RJ01580872","price":1320,"sale_price":924,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.838Z [INFO ] [detail] price changed {"rj":"RJ01579801","price":1870,"sale_price":1309,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.840Z [INFO ] [detail] price changed {"rj":"RJ01544104","price":1980,"sale_price":1287,"point":null,"point_rate":null,"discount_rate":35,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.840Z [INFO ] [detail] price changed {"rj":"RJ01399159","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.842Z [INFO ] [detail] price changed {"rj":"RJ01016647","price":880,"sale_price":440,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.843Z [INFO ] [detail] price changed {"rj":"RJ01700528","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:18.844Z [INFO ] [detail] price changed {"rj":"RJ01681215","price":330,"sale_price":264,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.847Z [INFO ] [detail] price changed {"rj":"RJ01661303","price":330,"sale_price":264,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.848Z [INFO ] [detail] price changed {"rj":"RJ01525842","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.848Z [INFO ] [detail] price changed {"rj":"RJ01171104","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.849Z [INFO ] [detail] price changed {"rj":"RJ01101105","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.850Z [INFO ] [detail] price changed {"rj":"RJ01056656","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.851Z [INFO ] [detail] price changed {"rj":"RJ01040057","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.851Z [INFO ] [detail] price changed {"rj":"RJ01033049","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.852Z [INFO ] [detail] price changed {"rj":"RJ01021210","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.854Z [INFO ] [detail] price changed {"rj":"RJ01039555","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.854Z [INFO ] [detail] price changed {"rj":"RJ01549263","price":220,"sale_price":176,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.855Z [INFO ] [detail] price changed {"rj":"RJ01387722","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:18.855Z [INFO ] [detail] price changed {"rj":"RJ01148024","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.858Z [INFO ] [detail] price changed {"rj":"RJ01654412","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:18.860Z [INFO ] [detail] price changed {"rj":"RJ01616262","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.861Z [INFO ] [detail] price changed {"rj":"RJ01616260","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.861Z [INFO ] [detail] price changed {"rj":"RJ01616254","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.862Z [INFO ] [detail] price changed {"rj":"RJ01590444","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.864Z [INFO ] [detail] price changed {"rj":"RJ01571929","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.865Z [INFO ] [detail] price changed {"rj":"RJ01570706","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.866Z [INFO ] [detail] price changed {"rj":"RJ01552769","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.866Z [INFO ] [detail] price changed {"rj":"RJ01548982","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.867Z [INFO ] [detail] price changed {"rj":"RJ01511173","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.868Z [INFO ] [detail] price changed {"rj":"RJ01476945","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.869Z [INFO ] [detail] price changed {"rj":"RJ01436033","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.869Z [INFO ] [detail] price changed {"rj":"RJ01434919","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.870Z [INFO ] [detail] price changed {"rj":"RJ01398541","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.870Z [INFO ] [detail] price changed {"rj":"RJ01378015","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.871Z [INFO ] [detail] price changed {"rj":"RJ01344337","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.941Z [INFO ] [detail] price changed {"rj":"RJ01332998","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.942Z [INFO ] [detail] price changed {"rj":"RJ01295518","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.942Z [INFO ] [detail] price changed {"rj":"RJ01294870","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.943Z [INFO ] [detail] price changed {"rj":"RJ01277392","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.943Z [INFO ] [detail] price changed {"rj":"RJ01236863","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.944Z [INFO ] [detail] price changed {"rj":"RJ01093901","price":990,"sale_price":495,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.944Z [INFO ] [detail] price changed {"rj":"RJ01070077","price":990,"sale_price":495,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.944Z [INFO ] [detail] price changed {"rj":"RJ01052934","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.945Z [INFO ] [detail] price changed {"rj":"RJ01052217","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.945Z [INFO ] [detail] price changed {"rj":"RJ01052215","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.946Z [INFO ] [detail] price changed {"rj":"RJ01705314","price":1100,"sale_price":550,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.946Z [INFO ] [detail] price changed {"rj":"RJ01202357","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.947Z [INFO ] [detail] price changed {"rj":"RJ01169122","price":880,"sale_price":440,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.947Z [INFO ] [detail] price changed {"rj":"RJ01153209","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.947Z [INFO ] [detail] price changed {"rj":"RJ01632621","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.948Z [INFO ] [detail] price changed {"rj":"RJ01111097","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.948Z [INFO ] [detail] price changed {"rj":"RJ01100498","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.948Z [INFO ] [detail] price changed {"rj":"RJ01639282","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:20:18.949Z [INFO ] [detail] price changed {"rj":"RJ01619208","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.949Z [INFO ] [detail] price changed {"rj":"RJ01509107","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.949Z [INFO ] [detail] price changed {"rj":"RJ01632018","price":440,"sale_price":220,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.950Z [INFO ] [detail] price changed {"rj":"RJ01599082","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.950Z [INFO ] [detail] price changed {"rj":"RJ01580982","price":220,"sale_price":110,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.951Z [INFO ] [detail] price changed {"rj":"RJ01500258","price":880,"sale_price":440,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.951Z [INFO ] [detail] price changed {"rj":"RJ01498909","price":880,"sale_price":440,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.952Z [INFO ] [detail] price changed {"rj":"RJ01615259","price":1980,"sale_price":990,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.952Z [INFO ] [detail] price changed {"rj":"RJ01563565","price":1980,"sale_price":1584,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.952Z [INFO ] [detail] price changed {"rj":"RJ01510238","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.952Z [INFO ] [detail] price changed {"rj":"RJ01622963","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-12T13:20:18.961Z [INFO ] [detail] due batch: 500 (total so far: 30000 ) concurrency=3
+2026-09-12T13:20:20.421Z [WARN ] [detail] price issue detected RJ01369620 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:20.421Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01369620 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:20.439Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:21.975Z [WARN ] [detail] price issue detected RJ01608743 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:21.975Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01608743 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:22.014Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:22.826Z [INFO ] [detail] due batch: 500 (total so far: 30500 ) concurrency=3
+2026-09-12T13:20:23.870Z [WARN ] [detail] price issue detected RJ01534935 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:20:23.870Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01534935 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:20:23.956Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:27.631Z [INFO ] [detail] due batch: 500 (total so far: 31000 ) concurrency=3
+2026-09-12T13:20:31.605Z [INFO ] [detail] due batch: 500 (total so far: 31500 ) concurrency=3
+2026-09-12T13:20:35.335Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:36.830Z [INFO ] [detail] due batch: 500 (total so far: 32000 ) concurrency=3
+2026-09-12T13:20:37.714Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:20:41.619Z [INFO ] [detail] due batch: 500 (total so far: 32500 ) concurrency=3
+2026-09-12T13:20:44.906Z [INFO ] [detail] due batch: 500 (total so far: 33000 ) concurrency=3
+2026-09-12T13:20:49.503Z [INFO ] [detail] due batch: 500 (total so far: 33500 ) concurrency=3
+2026-09-12T13:20:53.721Z [INFO ] [detail] due batch: 500 (total so far: 34000 ) concurrency=3
+2026-09-12T13:20:55.010Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:20:57.031Z [INFO ] [detail] due batch: 500 (total so far: 34500 ) concurrency=3
+2026-09-12T13:21:01.221Z [INFO ] [detail] due batch: 500 (total so far: 35000 ) concurrency=3
+2026-09-12T13:21:06.975Z [INFO ] [detail] due batch: 500 (total so far: 35500 ) concurrency=3
+2026-09-12T13:21:08.362Z [WARN ] (集約) 同種メッセージが直近48秒で12回発生（9件を抑制）／ 例: [detail] price issue detected RJ01369620 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:08.362Z [ERROR] (集約) 同種メッセージが直近48秒で12回発生（9件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01369620 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:08.362Z [WARN ] (集約) 同種メッセージが直近48秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:10.739Z [INFO ] [detail] due batch: 500 (total so far: 36000 ) concurrency=3
+2026-09-12T13:21:15.069Z [INFO ] [detail] due batch: 500 (total so far: 36500 ) concurrency=3
+2026-09-12T13:21:16.130Z [WARN ] [detail] price issue detected RJ01676287 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:16.130Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676287 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:16.137Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:17.994Z [WARN ] [detail] price issue detected RJ01456733 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:17.994Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01456733 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:18.004Z [WARN ] [detail] price issue detected RJ01082864 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:21:18.004Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01082864 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:21:18.022Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:21:18.850Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:19.501Z [INFO ] [detail] due batch: 500 (total so far: 37000 ) concurrency=3
+2026-09-12T13:21:23.544Z [INFO ] [detail] due batch: 500 (total so far: 37500 ) concurrency=3
+2026-09-12T13:21:24.830Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:26.681Z [INFO ] [detail] due batch: 500 (total so far: 38000 ) concurrency=3
+2026-09-12T13:21:31.196Z [INFO ] [detail] due batch: 500 (total so far: 38500 ) concurrency=3
+2026-09-12T13:21:37.179Z [INFO ] [detail] due batch: 500 (total so far: 39000 ) concurrency=3
+2026-09-12T13:21:40.611Z [INFO ] [detail] due batch: 500 (total so far: 39500 ) concurrency=3
+2026-09-12T13:21:41.615Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:44.474Z [INFO ] [detail] due batch: 500 (total so far: 40000 ) concurrency=3
+2026-09-12T13:21:47.425Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:21:48.406Z [INFO ] [detail] due batch: 500 (total so far: 40500 ) concurrency=3
+2026-09-12T13:21:52.453Z [INFO ] [detail] due batch: 500 (total so far: 41000 ) concurrency=3
+2026-09-12T13:21:57.554Z [INFO ] [detail] due batch: 500 (total so far: 41500 ) concurrency=3
+2026-09-12T13:22:02.200Z [INFO ] [detail] due batch: 500 (total so far: 42000 ) concurrency=3
+2026-09-12T13:22:06.299Z [INFO ] [detail] due batch: 500 (total so far: 42500 ) concurrency=3
+2026-09-12T13:22:08.373Z [WARN ] (集約) 同種メッセージが直近52秒で14回発生（11件を抑制）／ 例: [detail] price issue detected RJ01676287 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:08.373Z [ERROR] (集約) 同種メッセージが直近52秒で14回発生（11件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676287 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:08.374Z [WARN ] (集約) 同種メッセージが直近52秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:08.374Z [WARN ] (集約) 同種メッセージが直近50秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:22:12.200Z [INFO ] [detail] due batch: 500 (total so far: 43000 ) concurrency=3
+2026-09-12T13:22:14.711Z [WARN ] [detail] price issue detected RJ01621776 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:14.712Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01621776 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:14.725Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:17.708Z [INFO ] [detail] due batch: 500 (total so far: 43500 ) concurrency=3
+2026-09-12T13:22:22.305Z [INFO ] [detail] due batch: 500 (total so far: 44000 ) concurrency=3
+2026-09-12T13:22:25.946Z [INFO ] [detail] due batch: 500 (total so far: 44500 ) concurrency=3
+2026-09-12T13:22:30.117Z [WARN ] [detail] price issue detected RJ01216635 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:30.118Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01216635 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:30.122Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:31.265Z [INFO ] [detail] due batch: 500 (total so far: 45000 ) concurrency=3
+2026-09-12T13:22:35.299Z [WARN ] [detail] price issue detected RJ01154725 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:22:35.299Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01154725 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:22:35.310Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:22:36.383Z [INFO ] [detail] due batch: 500 (total so far: 45500 ) concurrency=3
+2026-09-12T13:22:38.267Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:22:40.858Z [INFO ] [detail] due batch: 500 (total so far: 46000 ) concurrency=3
+2026-09-12T13:22:44.486Z [INFO ] [detail] due batch: 500 (total so far: 46500 ) concurrency=3
+2026-09-12T13:22:48.714Z [INFO ] [detail] due batch: 500 (total so far: 47000 ) concurrency=3
+2026-09-12T13:22:53.857Z [INFO ] [detail] due batch: 500 (total so far: 47500 ) concurrency=3
+2026-09-12T13:22:58.317Z [INFO ] [detail] due batch: 500 (total so far: 48000 ) concurrency=3
+2026-09-12T13:23:00.277Z [INFO ] [detail] price changed {"rj":"RJ01660545","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:23:03.569Z [INFO ] [detail] due batch: 500 (total so far: 48500 ) concurrency=3
+2026-09-12T13:23:08.322Z [INFO ] [detail] due batch: 500 (total so far: 49000 ) concurrency=3
+2026-09-12T13:23:08.374Z [WARN ] (集約) 同種メッセージが直近54秒で8回発生（5件を抑制）／ 例: [detail] price issue detected RJ01621776 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:08.374Z [ERROR] (集約) 同種メッセージが直近54秒で8回発生（5件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01621776 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:08.374Z [WARN ] (集約) 同種メッセージが直近54秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:12.715Z [WARN ] [detail] price issue detected RJ01341877 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:12.715Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01341877 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:12.723Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:12.742Z [INFO ] [detail] due batch: 500 (total so far: 49500 ) concurrency=3
+2026-09-12T13:23:17.996Z [INFO ] [detail] due batch: 500 (total so far: 50000 ) concurrency=3
+2026-09-12T13:23:20.452Z [WARN ] [detail] price issue detected RJ01462766 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:20.452Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01462766 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:20.456Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:21.196Z [WARN ] [detail] price issue detected RJ01563649 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:23:21.196Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01563649 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:23:21.220Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:23.672Z [INFO ] [detail] due batch: 500 (total so far: 50500 ) concurrency=3
+2026-09-12T13:23:30.296Z [INFO ] [detail] due batch: 500 (total so far: 51000 ) concurrency=3
+2026-09-12T13:23:34.690Z [INFO ] [detail] due batch: 500 (total so far: 51500 ) concurrency=3
+2026-09-12T13:23:36.689Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:39.335Z [INFO ] [detail] due batch: 500 (total so far: 52000 ) concurrency=3
+2026-09-12T13:23:40.982Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:23:45.307Z [INFO ] [detail] due batch: 500 (total so far: 52500 ) concurrency=3
+2026-09-12T13:23:49.590Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:23:51.485Z [INFO ] [detail] due batch: 500 (total so far: 53000 ) concurrency=3
+2026-09-12T13:23:57.094Z [INFO ] [detail] due batch: 500 (total so far: 53500 ) concurrency=3
+2026-09-12T13:24:01.865Z [INFO ] [detail] due batch: 500 (total so far: 54000 ) concurrency=3
+2026-09-12T13:24:07.009Z [INFO ] [detail] due batch: 500 (total so far: 54500 ) concurrency=3
+2026-09-12T13:24:08.388Z [WARN ] (集約) 同種メッセージが直近56秒で12回発生（9件を抑制）／ 例: [detail] price issue detected RJ01341877 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:08.388Z [ERROR] (集約) 同種メッセージが直近56秒で12回発生（9件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01341877 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:08.388Z [WARN ] (集約) 同種メッセージが直近56秒で7回発生（4件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:08.388Z [WARN ] (集約) 同種メッセージが直近48秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:09.177Z [WARN ] [detail] price issue detected RJ01162575 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:09.177Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01162575 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:09.198Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:10.950Z [WARN ] [detail] price issue detected RJ01695812 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:10.950Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01695812 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:10.971Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:12.547Z [INFO ] [detail] due batch: 500 (total so far: 55000 ) concurrency=3
+2026-09-12T13:24:13.711Z [WARN ] [detail] price issue detected RJ285394 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:24:13.711Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ285394 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:24:13.738Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":36,"ana_no_standalone_price":1}
+2026-09-12T13:24:15.571Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:18.452Z [INFO ] [detail] due batch: 500 (total so far: 55500 ) concurrency=3
+2026-09-12T13:24:20.935Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:24:21.586Z [INFO ] [detail] circle sale end RG01001994
+2026-09-12T13:24:21.591Z [INFO ] [detail] circle sale start RG01001994
+2026-09-12T13:24:21.593Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:24:22.311Z [INFO ] [detail] due batch: 500 (total so far: 56000 ) concurrency=3
+2026-09-12T13:24:23.266Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:24:25.708Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:26.935Z [INFO ] [detail] due batch: 500 (total so far: 56500 ) concurrency=3
+2026-09-12T13:24:28.287Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:24:30.001Z [INFO ] [detail] due batch: 500 (total so far: 57000 ) concurrency=3
+2026-09-12T13:24:33.735Z [INFO ] [detail] due batch: 500 (total so far: 57500 ) concurrency=3
+2026-09-12T13:24:38.401Z [INFO ] [detail] due batch: 500 (total so far: 58000 ) concurrency=3
+2026-09-12T13:24:43.300Z [INFO ] [detail] due batch: 500 (total so far: 58500 ) concurrency=3
+2026-09-12T13:24:47.761Z [INFO ] [detail] due batch: 500 (total so far: 59000 ) concurrency=3
+2026-09-12T13:24:51.117Z [INFO ] [detail] due batch: 500 (total so far: 59500 ) concurrency=3
+2026-09-12T13:24:52.920Z [INFO ] [detail] price changed {"rj":"RJ01712970","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:24:52.922Z [INFO ] [detail] circle sale end RG47806
+2026-09-12T13:24:52.924Z [INFO ] [detail] price changed {"rj":"RJ01710683","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:24:55.755Z [INFO ] [detail] due batch: 500 (total so far: 60000 ) concurrency=3
+2026-09-12T13:25:00.228Z [INFO ] [detail] due batch: 500 (total so far: 60500 ) concurrency=3
+2026-09-12T13:25:02.840Z [INFO ] [detail] circle sale end RG01018611
+2026-09-12T13:25:02.846Z [INFO ] [detail] circle sale start RG01018611
+2026-09-12T13:25:04.255Z [INFO ] [detail] due batch: 500 (total so far: 61000 ) concurrency=3
+2026-09-12T13:25:07.146Z [INFO ] [detail] due batch: 500 (total so far: 61500 ) concurrency=3
+2026-09-12T13:25:08.386Z [WARN ] (集約) 同種メッセージが直近59秒で53回発生（50件を抑制）／ 例: [detail] price issue detected RJ01162575 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:08.386Z [ERROR] (集約) 同種メッセージが直近59秒で53回発生（50件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01162575 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:08.386Z [WARN ] (集約) 同種メッセージが直近59秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:08.386Z [WARN ] (集約) 同種メッセージが直近57秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:08.387Z [WARN ] (集約) 同種メッセージが直近47秒で10回発生（7件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:25:09.872Z [INFO ] [detail] due batch: 500 (total so far: 62000 ) concurrency=3
+2026-09-12T13:25:14.665Z [INFO ] [detail] due batch: 500 (total so far: 62500 ) concurrency=3
+2026-09-12T13:25:19.655Z [INFO ] [detail] due batch: 500 (total so far: 63000 ) concurrency=3
+2026-09-12T13:25:24.565Z [INFO ] [detail] due batch: 500 (total so far: 63500 ) concurrency=3
+2026-09-12T13:25:29.367Z [INFO ] [detail] due batch: 500 (total so far: 64000 ) concurrency=3
+2026-09-12T13:25:30.309Z [WARN ] [detail] price issue detected RJ01263651 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:30.309Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01263651 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:30.311Z [WARN ] [detail] price issue detected RJ01209766 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:30.311Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01209766 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:30.312Z [WARN ] [detail] price issue detected RJ01707390 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:25:30.312Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01707390 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:25:30.355Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":36,"ana_no_standalone_price":3}
+2026-09-12T13:25:30.583Z [INFO ] [detail] circle sale end RG01036241
+2026-09-12T13:25:30.590Z [INFO ] [detail] circle sale start RG01036241
+2026-09-12T13:25:32.385Z [INFO ] [detail] circle sale end RG01036241
+2026-09-12T13:25:32.396Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:33.363Z [INFO ] [detail] due batch: 500 (total so far: 64500 ) concurrency=3
+2026-09-12T13:25:34.346Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5}
+2026-09-12T13:25:34.890Z [INFO ] [detail] circle sale end RG57329
+2026-09-12T13:25:34.896Z [INFO ] [detail] circle sale start RG57329
+2026-09-12T13:25:36.934Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":2}
+2026-09-12T13:25:37.339Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:25:38.284Z [INFO ] [detail] due batch: 500 (total so far: 65000 ) concurrency=3
+2026-09-12T13:25:39.520Z [INFO ] [detail] circle sale end RG53542
+2026-09-12T13:25:39.529Z [INFO ] [detail] circle sale start RG53542
+2026-09-12T13:25:39.841Z [INFO ] [detail] circle sale end RG01016872
+2026-09-12T13:25:39.843Z [INFO ] [detail] circle sale start RG01016872
+2026-09-12T13:25:39.849Z [INFO ] [detail] circle sale end RG61480
+2026-09-12T13:25:39.851Z [INFO ] [detail] circle sale start RG61480
+2026-09-12T13:25:40.715Z [INFO ] [detail] circle sale end RG01057712
+2026-09-12T13:25:41.836Z [INFO ] [detail] circle sale start RG01057712
+2026-09-12T13:25:41.836Z [INFO ] [detail] circle sale end RG58262
+2026-09-12T13:25:42.661Z [INFO ] [detail] circle sale start RG58262
+2026-09-12T13:25:43.776Z [INFO ] [detail] due batch: 500 (total so far: 65500 ) concurrency=3
+2026-09-12T13:25:49.207Z [INFO ] [detail] due batch: 500 (total so far: 66000 ) concurrency=3
+2026-09-12T13:25:55.359Z [INFO ] [detail] due batch: 500 (total so far: 66500 ) concurrency=3
+2026-09-12T13:26:01.751Z [INFO ] [detail] due batch: 500 (total so far: 67000 ) concurrency=3
+2026-09-12T13:26:07.733Z [INFO ] [detail] due batch: 500 (total so far: 67500 ) concurrency=3
+2026-09-12T13:26:08.395Z [WARN ] (集約) 同種メッセージが直近38秒で14回発生（11件を抑制）／ 例: [detail] price issue detected RJ01263651 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:08.396Z [ERROR] (集約) 同種メッセージが直近38秒で14回発生（11件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01263651 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:08.396Z [WARN ] (集約) 同種メッセージが直近34秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5}
+2026-09-12T13:26:13.727Z [INFO ] [detail] due batch: 500 (total so far: 68000 ) concurrency=3
+2026-09-12T13:26:14.846Z [INFO ] [detail] circle sale end RG01046641
+2026-09-12T13:26:14.851Z [WARN ] [detail] price issue detected RJ01716655 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:14.851Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01716655 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:14.864Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:14.912Z [WARN ] [detail] price issue detected RJ01676787 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:14.912Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01676787 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:14.913Z [WARN ] [detail] price issue detected RJ01714731 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:26:14.913Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01714731 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:26:14.969Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:26:15.019Z [INFO ] [detail] circle sale end RG01000800
+2026-09-12T13:26:15.019Z [INFO ] [detail] circle sale end RG01009722
+2026-09-12T13:26:15.020Z [INFO ] [detail] circle sale end RG01056451
+2026-09-12T13:26:16.023Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":38,"ana_no_standalone_price":3}
+2026-09-12T13:26:16.253Z [INFO ] [detail] circle sale end RG01076853
+2026-09-12T13:26:16.254Z [INFO ] [detail] circle sale start RG01076853
+2026-09-12T13:26:16.260Z [INFO ] [detail] circle sale start RG01046641
+2026-09-12T13:26:16.282Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:26:16.329Z [INFO ] [detail] circle sale start RG01009722
+2026-09-12T13:26:16.337Z [INFO ] [detail] circle sale start RG01056451
+2026-09-12T13:26:16.338Z [INFO ] [detail] circle sale start RG01000800
+2026-09-12T13:26:16.942Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":8}
+2026-09-12T13:26:16.972Z [INFO ] [detail] due batch: 500 (total so far: 68500 ) concurrency=3
+2026-09-12T13:26:22.074Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:23.431Z [INFO ] [detail] due batch: 500 (total so far: 69000 ) concurrency=3
+2026-09-12T13:26:29.797Z [INFO ] [detail] due batch: 500 (total so far: 69500 ) concurrency=3
+2026-09-12T13:26:36.186Z [INFO ] [detail] due batch: 500 (total so far: 70000 ) concurrency=3
+2026-09-12T13:26:38.028Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-12T13:26:43.493Z [INFO ] [detail] due batch: 500 (total so far: 70500 ) concurrency=3
+2026-09-12T13:26:44.712Z [INFO ] [detail] price changed {"rj":"RJ01718710","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:44.713Z [INFO ] [detail] price changed {"rj":"RJ01719029","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:44.715Z [INFO ] [detail] circle sale start RG01080044
+2026-09-12T13:26:44.715Z [INFO ] [detail] price changed {"rj":"RJ01718248","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:44.716Z [INFO ] [detail] circle sale start RG01079415
+2026-09-12T13:26:44.716Z [INFO ] [detail] price changed {"rj":"RJ01718770","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:45.308Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01628095,RJ01040411
+2026-09-12T13:26:46.044Z [WARN ] [detail] API returned empty object girls requested 50件 sample: RJ01628095,RJ01040411
+2026-09-12T13:26:46.045Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T13:26:46.112Z [WARN ] [detail] API returned partial data girls got 19 / requested 50
+2026-09-12T13:26:46.124Z [INFO ] [detail] price changed {"rj":"RJ01717555","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:46.126Z [INFO ] [detail] price changed {"rj":"RJ01715717","price":1760,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:46.128Z [INFO ] [detail] circle sale end RG68280
+2026-09-12T13:26:46.132Z [INFO ] [detail] price changed {"rj":"RJ01675089","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.135Z [INFO ] [detail] price changed {"rj":"RJ01718453","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:46.136Z [INFO ] [detail] circle sale end RG43942
+2026-09-12T13:26:46.141Z [INFO ] [detail] price changed {"rj":"RJ01713471","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.185Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":5,"key_not_in_response":31}
+2026-09-12T13:26:46.414Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T13:26:46.558Z [WARN ] [detail] API returned empty object girls requested 25件 sample: RJ01628095,RJ01040411
+2026-09-12T13:26:46.576Z [INFO ] [detail] circle sale start RG18987
+2026-09-12T13:26:46.576Z [INFO ] [detail] price changed {"rj":"RJ01705882","price":3300,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:46.577Z [INFO ] [detail] circle sale start RG01071124
+2026-09-12T13:26:46.581Z [INFO ] [detail] price changed {"rj":"RJ01183141","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-12T13:26:46.582Z [INFO ] [detail] circle sale end RG01018960
+2026-09-12T13:26:46.584Z [INFO ] [detail] price changed {"rj":"RJ01717092","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.585Z [INFO ] [detail] circle sale end RG01025685
+2026-09-12T13:26:46.585Z [INFO ] [detail] price changed {"rj":"RJ01717818","price":1760,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.587Z [INFO ] [detail] circle sale end RG03003
+2026-09-12T13:26:46.588Z [INFO ] [detail] price changed {"rj":"RJ01667983","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.590Z [INFO ] [detail] circle sale end RG51455
+2026-09-12T13:26:46.591Z [INFO ] [detail] price changed {"rj":"RJ01717110","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.592Z [INFO ] [detail] circle sale end RG62400
+2026-09-12T13:26:46.593Z [INFO ] [detail] price changed {"rj":"RJ01718743","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:46.595Z [INFO ] [detail] circle sale end RG70762
+2026-09-12T13:26:46.597Z [INFO ] [detail] price changed {"rj":"RJ01647859","price":1870,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":0,"is_point_only":0}
+2026-09-12T13:26:47.137Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T13:26:47.137Z [WARN ] [detail] batch fail, splitting 50
+2026-09-12T13:26:47.577Z [WARN ] [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 25
+2026-09-12T13:26:47.685Z [WARN ] [detail] girls: 空応答が5回連続 — セッション再確立を試みます
+2026-09-12T13:26:47.688Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T13:26:54.339Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","clicked":false,"clickedInfo":null}
+2026-09-12T13:26:54.340Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","title":"エラー: 該当作品がありません"}
+2026-09-12T13:26:54.342Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP"}
+2026-09-12T13:27:00.640Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-12T13:27:00.641Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP","title":"エラー: 該当作品がありません"}
+2026-09-12T13:27:06.654Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-12T13:27:06.662Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","__cf_bm","DL_PRODUCT_LOG","_vwo_ds","_ga_sid","_gat","_vwo_sn","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_D0DFBO3C77U626LJDL6G","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_CLVT5NRC77U95UC4O12G","_twsid"]}
+2026-09-12T13:27:08.399Z [WARN ] (集約) 同種メッセージが直近54秒で29回発生（26件を抑制）／ 例: [detail] price issue detected RJ01716655 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-12T13:27:08.400Z [ERROR] (集約) 同種メッセージが直近54秒で29回発生（26件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01716655 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-12T13:27:08.400Z [WARN ] (集約) 同種メッセージが直近53秒で4回発生（1件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":3}
+2026-09-12T13:27:08.400Z [WARN ] (集約) 同種メッセージが直近23秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 50件 sample: RJ01628095,RJ01040411
+2026-09-12T13:27:08.400Z [WARN ] (集約) 同種メッセージが直近22秒で4回発生（1件を抑制）／ 例: [detail] API response severely degraded (near-empty, discarding partial data as unreliable, counted toward recovery streak) girls got 1 / requested 50
+2026-09-12T13:27:13.869Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","clicked":false,"clickedInfo":null}
+2026-09-12T13:27:13.869Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","title":"エラー: 該当作品がありません"}
+2026-09-12T13:27:13.870Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP"}
+2026-09-12T13:27:22.417Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-12T13:27:22.418Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP","title":"エラー: 該当作品がありません"}
+2026-09-12T13:27:28.425Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-12T13:27:28.428Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","__cf_bm","_vwo_ds","_ga_sid","_gat","DL_PRODUCT_LOG","_dd_s","_vwo_sn","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid"]}
+2026-09-12T13:27:39.342Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01533321.html","clicked":false,"clickedInfo":null}
+2026-09-12T13:27:39.342Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01533321.html","title":"【60%OFF】【繁体中文版】週末監禁 ～部下の彼氏は週末限定のご主人様～ (CV. 三橋渡) [みんなで翻訳] | DLsite がるまに"}
+2026-09-12T13:27:39.344Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01533321.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01024325.html/?translation=RJ01533321&locale=ja_JP"}
+2026-09-12T13:27:48.801Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01024325.html/?translation=RJ01533321&locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-12T13:27:48.801Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01024325.html/?translation=RJ01533321&locale=ja_JP","title":"【60%OFF】【繁体中文版】週末監禁 ～部下の彼氏は週末限定のご主人様～ (CV. 三橋渡) [みんなで翻訳] | DLsite がるまに"}
+2026-09-12T13:27:54.806Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01533321.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-12T13:27:54.808Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","__cf_bm","_vwo_ds","_ga_sid","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_vwo_sn","_ga","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_ga_ZW5GTXK6EV","_twsid"]}
+2026-09-12T13:27:54.808Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"エラー: 該当作品がありません","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム スマホゲーム 検索 こだわり条件 新規登録 ログイン カート ガイド 同人 成年コミック 美少女ゲーム スマホゲーム 制作ソフト・素材 オンラインゲーム 全年齢向けへ 女性向け 全年齢へ 女性向け","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","rjUsed":"RJ01686418","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"エラー: 該当作品がありません","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコミック 乙女向けドラマCD BL同人 BLコミック BLドラマCD 検索 こだわり条件 新規登録 ログイン カート ガイド 乙女向け/TL BL 全年齢向けへ 男性向け R18へ 女性向け 全年齢","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","rjUsed":"RJ01677936","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【60%OFF】【繁体中文版】週末監禁 ～部下の彼氏は週末限定のご主人様～ (CV. 三橋渡) [みんなで翻訳] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01024325.html/?translation=RJ01533321&locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコミック 乙女向けドラマCD BL同人 BLコミック BLドラマCD 検索 こだわり条件 新規登録 ログイン カート ガイド 乙女向け/TL BL 全年齢向けへ 男性向け R18へ 女性向け 全","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01533321.html","rjUsed":"RJ01533321","cookieObtained":true}}
+2026-09-12T13:27:54.827Z [INFO ] [detail] session re-warmup completed, resuming girls
+2026-09-12T13:27:54.828Z [WARN ] [detail] girls: 再ウォーム後も診断上はセッション健全(gate absent, cookie obtained) — セッション切れではなくレート制限の可能性が高いため、5分間このサイトへの並列度を抑制します
+2026-09-12T13:27:56.759Z [INFO ] [detail] due batch: 204 (total so far: 70704 ) concurrency=3
+2026-09-12T13:28:18.790Z [WARN ] [detail] all: 実行中に2ラウンド連続で高エラー率(直近ラウンド errorRate=1) を検出したため、この実行の残り分についてconcurrency/rateLimitを即座に引き下げます — concurrency 3→2 / rateLimit 700→1500ms
+2026-09-12T13:28:18.792Z [INFO ] [detail] done {"processed":70328,"priceChanges":1412,"errors":376,"total":70704,"apiMissing":1,"contaminated":0,"fetchFail":375,"storeError":0,"verifiedAlive":0,"autoThrottled":false,"rateLimit":1500,"concurrency":2,"withinRunThrottled":true,"errorRate":0.005,"highErrorRate":false}
+2026-09-12T13:28:29.697Z [INFO ] [pushDebugBundle] pushed {"job":"all","files":12,"branch":"debug"}
+2026-09-12T13:50:00.623Z [INFO ] [detail] due batch: 25 (total so far: 25 ) concurrency=3
+2026-09-12T13:50:01.292Z [WARN ] [detail] API returned empty object girls requested 25件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:02.021Z [WARN ] [detail] API returned empty object girls requested 25件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:02.025Z [WARN ] [detail] batch fail, splitting 25
+2026-09-12T13:50:02.438Z [WARN ] [detail] API returned empty object girls requested 13件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:03.474Z [INFO ] [detail] done {"processed":0,"priceChanges":0,"errors":25,"total":25,"apiMissing":0,"contaminated":0,"fetchFail":25,"storeError":0,"verifiedAlive":0,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":null,"highErrorRate":false}
+2026-09-12T13:50:08.574Z [WARN ] (集約) 同種メッセージが直近7秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 25件 sample: RJ01223548,RJ01121414
+2026-09-12T13:50:14.164Z [INFO ] [pushDebugBundle] pushed {"job":"detail","files":12,"branch":"debug"}
+2026-09-12T14:45:00.246Z [INFO ] [scheduler] sessionRewarm start (periodic, preventive)
+2026-09-12T14:45:00.293Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-12T14:45:07.440Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","clicked":false,"clickedInfo":null}
+2026-09-12T14:45:07.441Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","title":"エラー: 該当作品がありません"}
+2026-09-12T14:45:07.453Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP"}
+2026-09-12T14:45:15.495Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-12T14:45:15.496Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP","title":"エラー: 該当作品がありません"}
+2026-09-12T14:45:21.503Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-12T14:45:21.513Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","DL_PRODUCT_LOG","__cf_bm","_vwo_ds","_ga_sid","_gat","_dd_s","_vwo_sn","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid"]}
+2026-09-12T14:45:30.786Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","clicked":false,"clickedInfo":null}
+2026-09-12T14:45:30.786Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","title":"エラー: 該当作品がありません"}
+2026-09-12T14:45:30.793Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP"}
+2026-09-12T14:45:39.430Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-12T14:45:39.430Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP","title":"エラー: 該当作品がありません"}
+2026-09-12T14:45:45.438Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-12T14:45:45.441Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","DL_PRODUCT_LOG","__cf_bm","_vwo_ds","_ga_sid","_gat","_dd_s","_vwo_sn","_inflow_dlsite_params","_ga","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_ga_ZW5GTXK6EV","_twsid"]}
+2026-09-12T14:46:01.458Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522","title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":394298,"isLoading":false}
+2026-09-12T14:46:01.471Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137522.html","clicked":false,"clickedInfo":null}
+2026-09-12T14:46:01.471Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137522.html","title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに"}
+2026-09-12T14:46:01.479Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137522.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522&locale=ja_JP"}
+2026-09-12T14:46:17.787Z [WARN ] [warmUp] timeout diagnostics {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522&locale=ja_JP","title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに","readyState":"complete","bodyLen":447965,"isLoading":false}
+2026-09-12T14:46:17.802Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522&locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-12T14:46:17.803Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522&locale=ja_JP","title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに"}
+2026-09-12T14:46:23.805Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137522.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-12T14:46:23.808Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_gcl_au","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","__cf_bm","_vwo_ds","_ga_sid","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_vwo_sn","_ga","_gat","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_ga_ZW5GTXK6EV","_twsid"]}
+2026-09-12T14:46:23.808Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"エラー: 該当作品がありません","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム スマホゲーム 検索 こだわり条件 新規登録 ログイン カート ガイド 同人 成年コミック 美少女ゲーム スマホゲーム 制作ソフト・素材 オンラインゲーム 全年齢向けへ 女性向け 全年齢へ 女性向け","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01686418.html","rjUsed":"RJ01686418","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"エラー: 該当作品がありません","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコミック 乙女向けドラマCD BL同人 BLコミック BLドラマCD 検索 こだわり条件 新規登録 ログイン カート ガイド 乙女向け/TL BL 全年齢向けへ 男性向け R18へ 女性向け 全年齢","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01677936.html","rjUsed":"RJ01677936","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"【簡体中文版】何でも知りたい研究員は我慢できない～教えてください、あなたの全てを～ [みんなで翻訳] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01137521.html/?translation=RJ01137522&locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコミック 乙女向けドラマCD BL同人 BLコミック BLドラマCD 検索 こだわり条件 新規登録 ログイン カート ガイド 乙女向け/TL BL 全年齢向けへ 男性向け R18へ 女性向け 全","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01137522.html","rjUsed":"RJ01137522","cookieObtained":true}}
+2026-09-12T14:46:23.826Z [INFO ] [scheduler] sessionRewarm done
+2026-09-12T14:50:00.305Z [INFO ] [compScan] detail: no due candidates
+2026-09-12T14:50:12.858Z [INFO ] [pushDebugBundle] pushed {"job":"comp_detail","files":12,"branch":"debug"}
+2026-09-12T15:00:00.887Z [INFO ] [detail] no due works

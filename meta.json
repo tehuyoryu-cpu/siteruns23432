@@ -1,0 +1,266 @@
+{
+  "pushedAt": "2026-09-12T15:00:01.934Z",
+  "job": "detail",
+  "resultSummary": {
+    "processed": 0,
+    "priceChanges": 0,
+    "errors": 0,
+    "total": 0,
+    "apiMissing": 0,
+    "contaminated": 0,
+    "fetchFail": 0,
+    "storeError": 0,
+    "verifiedAlive": 0,
+    "autoThrottled": false,
+    "rateLimit": 700,
+    "concurrency": 3,
+    "errorRate": null,
+    "highErrorRate": false
+  },
+  "dbStats": {
+    "totalWorks": 74372,
+    "onSale": 73217,
+    "priceChanges": 142553,
+    "totalCircles": 9544,
+    "circlesOnSale": 9406,
+    "dueNow": 0,
+    "slowTransactions": {
+      "count": 10,
+      "maxMs": 671,
+      "lastMs": 489,
+      "lastAt": "2026-09-12T13:15:57.715Z",
+      "lastLabel": "transactionNoSave",
+      "thresholdMs": 300
+    }
+  },
+  "priceIssuesCount": 412,
+  "integrityHistory": [],
+  "dataSanity": {
+    "salePriceNotLower": 0,
+    "discountWithoutSalePrice": 0,
+    "zeroPriceOnSale": 51,
+    "negativePrice": 0,
+    "discountRateOutOfRange": 0
+  },
+  "health": {
+    "perSite": {
+      "girls": {
+        "emptyStreak": 0,
+        "circuitOpen": false,
+        "rewarmInProgress": false,
+        "rateLimitBackoffRemainingSec": 0,
+        "rateLimitBackoffLevel": 1
+      }
+    },
+    "global": {
+      "backoffActive": false,
+      "backoffRemainingSec": 0,
+      "lastTriggeredAt": null
+    },
+    "globalConcurrency": {
+      "active": 0,
+      "waiting": 0,
+      "max": 5
+    },
+    "rewarm": {
+      "lastRewarmAt": "2026-09-12T13:26:47.685Z",
+      "cooldownRemainingSec": 0
+    },
+    "autoThrottle": {
+      "all": {
+        "consecutiveHighErrorRuns": 0,
+        "active": false,
+        "lastRunFinishedAt": "2026-09-12T13:28:18.792Z"
+      }
+    }
+  },
+  "warmUpHistory": [
+    {
+      "ts": "2026-09-12T00:16:21.896Z",
+      "trigger": "startup",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    },
+    {
+      "ts": "2026-09-12T01:01:53.673Z",
+      "trigger": "reactive",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    },
+    {
+      "ts": "2026-09-12T02:40:08.496Z",
+      "trigger": "reactive",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    },
+    {
+      "ts": "2026-09-12T02:46:46.184Z",
+      "trigger": "periodic",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    },
+    {
+      "ts": "2026-09-12T03:01:12.618Z",
+      "trigger": "reactive",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    },
+    {
+      "ts": "2026-09-12T13:27:54.810Z",
+      "trigger": "reactive",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    },
+    {
+      "ts": "2026-09-12T14:46:23.812Z",
+      "trigger": "periodic",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "gate-absent(product)",
+          "regionBlocked": false
+        }
+      }
+    }
+  ],
+  "buildInfo": {
+    "sha": "4dd3277d1c56fd6ce2df32a99f62c9b7eb960500",
+    "builtAt": "2026-09-12T00:07:32Z",
+    "runNumber": 388
+  },
+  "env": {
+    "appVersion": "1.0.0",
+    "node": "v20.18.0",
+    "electron": "31.7.7",
+    "platform": "win32",
+    "arch": "x64"
+  }
+}
