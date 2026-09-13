@@ -290,6 +290,10 @@ body {
   line-height: 30px;
 }
 .rj    { font-family: var(--mono); font-size: 10px; color: var(--text-3); }
+.rj-copy { cursor: pointer; transition: color .15s; }
+.rj-copy:hover { text-decoration: underline; color: var(--accent); }
+.rj-copy.copied      { color: var(--green) !important; }
+.rj-copy.copy-failed { color: var(--red) !important; }
 .price { text-align: right; font-family: var(--mono); font-size: 11.5px; font-weight: 500; }
 .disc  {
   text-align: center; font-family: var(--mono); font-size: 10px; font-weight: 700;
@@ -1227,7 +1231,7 @@ function rowHTML(w) {
     discCls = 'disc point';
   }
   return '<div class="work-row" data-rj="' + w.rj_code + '" onclick="selectWork(this,\'' + w.rj_code + '\')">'
-    + '<div class="work-cell rj">' + esc(w.rj_code) + '</div>'
+    + '<div class="work-cell rj rj-copy" title="クリックでコピー" onclick="copyRj(event,\'' + w.rj_code + '\')">' + esc(w.rj_code) + '</div>'
     + '<div class="work-cell">' + esc(w.title || '–') + '</div>'
     + '<div class="work-cell price">' + priceStr + '</div>'
     + '<div class="work-cell ' + discCls + '">' + disc + '</div>'
@@ -1273,7 +1277,7 @@ function renderDetail(work, history, rj) {
 
   const headerHtml =
     '<div class="detail-header">' +
-    '<div class="detail-rj">' + esc(rj) + (work?.work_type ? ' / ' + esc(work.work_type) : '') + (work?.release_date ? ' / ' + esc(work.release_date) : '') + '</div>' +
+    '<div class="detail-rj"><span class="rj-copy" title="クリックでコピー" onclick="copyRj(event,\'' + esc(rj) + '\')">' + esc(rj) + '</span>' + (work?.work_type ? ' / ' + esc(work.work_type) : '') + (work?.release_date ? ' / ' + esc(work.release_date) : '') + '</div>' +
     '<div class="detail-title">' + esc(title) + onSaleBadge + '</div>' +
     '<div class="detail-meta">' +
       '<div class="detail-meta-item"><span class="detail-meta-key">サークル</span>' +
@@ -2061,6 +2065,46 @@ function setStatus(msg) {
 function esc(s) {
   if (!s) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── RJコードのコピー ─────────────────────────────────────────────────────────
+// body全体がuser-select:noneのため、通常のテキスト選択でコピーできない。
+// クリックでクリップボードにコピーし、対象要素の色を一瞬変えてフィードバックする
+// (行選択のクリックイベントと競合しないようstopPropagationする)。
+function copyRj(event, rj) {
+  event.stopPropagation();
+  const el = event.currentTarget;
+  const flash = (ok) => {
+    if (!el) return;
+    el.classList.add(ok ? 'copied' : 'copy-failed');
+    setTimeout(() => el.classList.remove('copied', 'copy-failed'), 900);
+  };
+  const onDone = (ok) => {
+    flash(ok);
+    setStatus(ok ? rj + ' をコピーしました' : 'コピーに失敗しました');
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(rj).then(() => onDone(true)).catch(() => _fallbackCopyText(rj, onDone));
+  } else {
+    _fallbackCopyText(rj, onDone);
+  }
+}
+
+function _fallbackCopyText(text, cb) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    cb(ok);
+  } catch {
+    cb(false);
+  }
 }
 
 
