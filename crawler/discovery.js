@@ -46,11 +46,27 @@ function _circleProfileUrl(site, makerId, page) {
 // ─── 通常discovery ───────────────────────────────────────────────────────────
 
 // 今月リリース FSR URL テンプレート
-// {date} = YYYY-MM-DD（今月1日）、{page} = /page/N（ページ番号：1は省略）
+// {date}    = YYYY-MM-DD（対象月の1日）
+// {dateEnd} = YYYY-MM-DD（対象月の末日）
+// {page}    = /page/N（ページ番号：1は省略）
+//
+// バグ修正(重大): 従来は regist_date_start/{date} と release_term/month を
+// 併用していたが、DLsite の release_term は「今日から遡って○ヶ月以内」を
+// 意味する相対フィルタであり、regist_date_start（絶対日付）を無視して常に
+// 「直近1ヶ月」の結果を返していたことを実機検証で確認した(regist_date_start
+// を半年前に指定しても直近の新着だけが返り続けた)。これにより「全収集」
+// (_runFullScanByMonth、過去の月へ1ヶ月ずつ遡る処理)は、どの月を要求しても
+// 常に同じ「直近1ヶ月」の結果(=既に discover 済みの既知作品)を受け取り続け、
+// hadItems=true・added=0 が300ヶ月×3サイト分続いて数時間かけて新規0件で
+// 終わる、という実質的な機能不全に陥っていた(通常のdiscover「今月分」は
+// 偶然両フィルタの範囲が一致するため症状が表面化しなかった)。
+// regist_date_start と regist_date_end(絶対日付の終点)の組み合わせが
+// DLsite側で正しく機能することを実機検証済みのため、release_term/month を
+// 廃止しregist_date_endに置き換える。
 const DISCOVERY_FSR = {
-  maniax: 'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/release_term/month/show_type/1',
-  bl:     'https://www.dlsite.com/bl/fsr/=/language/jp/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/drama/work_category%5B3%5D/pc/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/KO_KR/options%5B4%5D/SPA/options%5B5%5D/GER/options%5B6%5D/FRE/options%5B7%5D/IND/options%5B8%5D/ITA/options%5B9%5D/POR/options%5B10%5D/SWE/options%5B11%5D/THA/options%5B12%5D/VIE/options%5B13%5D/OTL/options%5B14%5D/NM/per_page/100{page}/is_tl/1/is_bl/1/is_gay%5B0%5D/1/release_term/month/show_type/1',
-  girls:  'https://www.dlsite.com/girls/fsr/=/language/jp/regist_date_start/{date}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order%5B0%5D/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/release_term/month/show_type/1',
+  maniax: 'https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/regist_date_start/{date}/regist_date_end/{dateEnd}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/show_type/1',
+  bl:     'https://www.dlsite.com/bl/fsr/=/language/jp/regist_date_start/{date}/regist_date_end/{dateEnd}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/drama/work_category%5B3%5D/pc/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/KO_KR/options%5B4%5D/SPA/options%5B5%5D/GER/options%5B6%5D/FRE/options%5B7%5D/IND/options%5B8%5D/ITA/options%5B9%5D/POR/options%5B10%5D/SWE/options%5B11%5D/THA/options%5B12%5D/VIE/options%5B13%5D/OTL/options%5B14%5D/NM/per_page/100{page}/is_tl/1/is_bl/1/is_gay%5B0%5D/1/show_type/1',
+  girls:  'https://www.dlsite.com/girls/fsr/=/language/jp/regist_date_start/{date}/regist_date_end/{dateEnd}/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order%5B0%5D/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100{page}/show_type/1',
 };
 
 /** 今月1日の日付文字列を返す (YYYY-MM-DD) */
@@ -59,6 +75,19 @@ function _monthStart(offset = 0) {
   // offset=-1 で前月1日を返す（月またぎ時のカバー用）
   d.setMonth(d.getMonth() + offset);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+/**
+ * 指定した月初日付(YYYY-MM-01)からその月の末日(YYYY-MM-DD)を返す。
+ * regist_date_start とセットで使い、release_term(相対フィルタ、実機検証で
+ * regist_date_startを無視することが判明)の代わりに月の範囲を絶対日付で
+ * 明示的に区切るために使う。
+ */
+function _monthEnd(monthStartStr) {
+  const [y, m] = monthStartStr.split('-').map(Number);
+  // 翌月の0日目 = 当月の末日（JSのDateコンストラクタの仕様を利用）
+  const d = new Date(y, m, 0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** 月が変わったばかり（1〜5日）かどうか */
@@ -79,6 +108,7 @@ function _isMonthRollover() {
  */
 async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = null) {
   const date = dateStr ?? _monthStart();
+  const dateEnd = _monthEnd(date);
   const tmpl = DISCOVERY_FSR[site];
   if (!tmpl) return { added: 0, hadItems: false };
 
@@ -87,7 +117,7 @@ async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = nul
   while (true) {
     if (_discoveryAborted()) { log.warn('[discovery] monthly aborted', { site, date, page }); break; }
     const pagePart = page === 1 ? '' : `/page/${page}`;
-    const url = tmpl.replace('{date}', date).replace('{page}', pagePart);
+    const url = tmpl.replace('{date}', date).replace('{dateEnd}', dateEnd).replace('{page}', pagePart);
     const items = await _fetchWithPrice(url);
 
     if (!items.length) {
@@ -219,7 +249,7 @@ async function runMonthlyScan(dateStr, { onProgress = null } = {}) {
 // 判定ロジック自体は正常に機能しているが、そもそもDLsite側が有効なページを
 // 返せる範囲を超えているため、このロジックだけでは検出できない。
 // セール対象外の通常全収集(sale=false)は、単一のtrend順ソートに頼らず、
-// _scanFsrMonthly()と同じ「月単位(regist_date_start + release_term=month)」の
+// _scanFsrMonthly()と同じ「月単位(regist_date_start + regist_date_end)」の
 // ウィンドウで過去へ遡って収集する方式に切り替える。各月の件数は深度制限を
 // 大きく下回るため、月単位でスキャンする限り取りこぼしが起きない。
 // (fullscan_sale(sale=true)は対象母数が少なく深度制限に到達しにくいため、
@@ -1107,5 +1137,5 @@ module.exports = {
   // 構造的問題#4対応: テスト専用エクスポート。既存動作は変更していない。
   // サークルプロフィールURL(過去に一度実機で修正が入った箇所)・月初日付
   // 計算等の純粋関数をtest/discovery.test.jsから直接検証するために公開する。
-  __testHooks: { _circleProfileUrl, _monthStart, _isMonthRollover, _classifyMakerIdMismatch },
+  __testHooks: { _circleProfileUrl, _monthStart, _monthEnd, _isMonthRollover, _classifyMakerIdMismatch },
 };
