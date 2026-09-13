@@ -77,7 +77,17 @@ function parseProductInfo(rjCode, body) {
     const campaignPrice  = _int(discObj?.campaign_price);
     const restorePrice   = _int(discObj?.restore_price);
     const officialPrice  = _int(d.official_price ?? d.regular_price);
-    const isDiscountFlag = d.is_discount_work === true || d.is_discount_work === 1 || d.is_discount_work === '1';
+    // バグ修正(実機確認: RJ229730の生レスポンスで確認): isDiscountFlagは
+    // d.is_discount_workのみを見ていたが、実際にDLsiteのAPIが返すフィールド名は
+    // is_discount_workではなく is_discount だった(実機ダンプで確認: "is_discount":true)。
+    // このチェックはまさに「price_workもofficial_priceも無いが本物の値引きである」
+    // ケース(RJ01697147のバグ修正で追加)を捕まえるための安全網なのに、
+    // 見ているフィールド名が実際には一度も一致しないため事実上のデッドコードに
+    // なっていた。is_discount_work/is_discountの両方を見るようにする
+    // (どちらの名前で来ても安全網が機能するように)。
+    const isDiscountFlag =
+      d.is_discount_work === true || d.is_discount_work === 1 || d.is_discount_work === '1' ||
+      d.is_discount      === true || d.is_discount      === 1 || d.is_discount      === '1';
 
     const priceWork = _int(d.price_work);              // 通常価格（DLsite APIの主フィールド、経験則）
     const priceCur  = _int(d.price);                   // 現在価格（セール中は値引き後）
@@ -190,7 +200,7 @@ function parseProductInfo(rjCode, body) {
           // ため、priceIssueとして記録しDB書き込みをスキップする(detailFetcher._store()
           // のpriceUnreliable判定でno_price_field相当として扱われ、既存の正しい定価を
           // 上書きしない)。
-          priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale, is_discount_work: d.is_discount_work, discount: discObj } };
+          priceIssue = { type: 'no_price_field', raw: { price_work: d.price_work, price: d.price, discount_rate: d.discount_rate, is_sale: d.is_sale, is_discount_work: d.is_discount_work, is_discount: d.is_discount, discount: discObj } };
           log.trace('[parser] discount flag/object present but no usable breakdown — price unreliable', rjCode, priceIssue.raw);
         }
       } else if (officialPrice > 0 || campaignPrice != null || restorePrice != null) {

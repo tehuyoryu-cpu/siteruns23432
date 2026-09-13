@@ -166,6 +166,39 @@ test('sale_price>=price の不正な組み合わせはinvalid_price_comboとし�
   assert.ok(!Number.isNaN(r.price.price));
 });
 
+// ── データ汚染対策: is_discount_workだけでなくis_discountも見る ─────────────
+// 実機確認(RJ229730、サークル設定価格770円→セール特価385円/50%OFF)の
+// 生レスポンスをそのまま使った回帰テスト。official_priceが存在するため
+// official_price優先ロジックで正しく処理されるはずのケース。
+test('RJ229730実機データ: official_priceがある場合は正しく定価/セール価格を復元する', () => {
+  const r = parse('RJ229730', {
+    is_sale: true, on_sale: 1, is_discount: true, is_pointup: false,
+    price: 385, price_without_tax: 350, official_price: 770,
+    discount_rate: 50, campaign_id: '170663', discount_calc_type: null,
+  });
+  assert.strictEqual(r.priceIssue, null);
+  assert.strictEqual(r.price.price, 770);
+  assert.strictEqual(r.price.sale_price, 385);
+  assert.strictEqual(r.price.discount_rate, 50);
+});
+
+// バグ修正回帰テスト: isDiscountFlagがd.is_discount_workしか見ておらず、
+// 実際のAPIフィールド名 is_discount とは一致しないため、price_work/official_price
+// どちらも無い(バッチ応答が値引き内訳フィールドを欠く等)ケースでこの安全網が
+// 発動せず、priceCurがそのまま定価として確定してしまっていた。
+test('price_work/official_priceが無くis_discount(is_discount_workではない)のみの場合、定価不明として書き込みをスキップする', () => {
+  const r = parse('RJ000022', { is_sale: true, is_discount: true, price: 385 });
+  assert.ok(r.priceIssue, 'is_discountフラグがあるのに定価復元不能なのでpriceIssueになるべき');
+  assert.strictEqual(r.priceIssue.type, 'no_price_field');
+});
+
+test('is_discount_work(旧フィールド名)でも引き続き同じ安全網が機能する', () => {
+  const r = parse('RJ000023', { is_sale: true, is_discount_work: true, price: 385 });
+  assert.ok(r.priceIssue);
+  assert.strictEqual(r.priceIssue.type, 'no_price_field');
+});
+
+
 // ── ポイント還元判定: discount_rateが無くis_saleのみ ────────────────────────
 test('discount_rate=0かつis_sale=1はポイント還元(is_point_only=1)として分類', () => {
   const r = parse('RJ000015', { is_sale: 1, price: 500, discount_rate: 0 });
