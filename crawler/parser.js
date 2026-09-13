@@ -92,14 +92,60 @@ function parseProductInfo(rjCode, body) {
     const priceWork = _int(d.price_work);              // 通常価格（DLsite APIの主フィールド、経験則）
     const priceCur  = _int(d.price);                   // 現在価格（セール中は値引き後）
     const discRate  = _int(d.discount_rate ?? d.rate); // 割引率 (%)
-    // is_sale は "1" (文字列) / 1 (数値) の両方が返る
-    const isOnSale  = isDiscountFlag || d.is_sale == 1 || (discRate != null && discRate > 0)
-      || (campaignPrice != null && restorePrice != null && campaignPrice < restorePrice);
+    // バグ修正(重大・実機確認): d.is_sale は実際には値引きが一切無い作品でも
+    // true を返すことがある過剰に広いフラグだった。実機データで確認:
+    //   is_ana(アップグレード購入)作品: is_sale:true, on_sale:0, is_discount:false,
+    //   price:null(=本当に値引きは無い)
+    // これに対しRJ229730(実際に50%OFF中)は is_sale:true, on_sale:1, is_discount:true
+    // で全フラグが一致していた。つまり on_sale (0/1) こそが実際の値引き有無と
+    // 一致する厳密なフラグで、is_saleは「セール施策への参加対象かどうか」等の
+    // より広い意味を持つ別物である可能性が高い。
+    // 従来はis_sale単体でisOnSaleをtrue判定していたため、DLsiteが大規模な
+    // 期間限定施策(バルク購入セット割引「set20260904summer」等)を全カタログに
+    // 対して is_sale:true でマーキングした際、実際には値引きの無い作品まで
+    // 軒並み「セール中」と誤判定していた。この誤判定は単に表示上の問題に
+    // 留まらず、works.is_on_sale/circles.on_sale/巡回スケジュール(_schedule()の
+    // onSale間隔=2時間)を汚染し、本来onSale間隔で再チェックする必要のない
+    // 大多数の作品が常にdue状態になり続け、巡回効率を著しく損なっていた
+    // (実測: onSale 166,844/168,317件=99.1%、circlesOnSale 29,503/29,696件=99.3%)。
+    // on_saleフィールドが明示的に0で返ってきた場合は、他のフラグに関わらず
+    // 「実際には値引き無し」を優先する。on_saleが1、または未定義(別サイト
+    // ファミリー等でフィールド自体が無い場合)は、既存の実績あるロジックを
+    // そのまま使う(壊さないため、on_sale===0のときだけ上書きする最小限の変更)。
+    const onSaleFieldFalse = d.on_sale === 0 || d.on_sale === '0';
+    const isOnSale = !onSaleFieldFalse && (
+      isDiscountFlag || d.is_sale == 1 || (discRate != null && discRate > 0)
+      || (campaignPrice != null && restorePrice != null && campaignPrice < restorePrice)
+    );
 
     let price, salePrice, disc = discRate;
     let priceIssue = null; // { type, raw } — 定価が信頼できなかった場合にセットされる
 
-    if (isOnSale && campaignPrice != null && restorePrice != null && campaignPrice < restorePrice) {
+    if (d.is_ana === true) {
+      // データ分類改善(2026-09-05 debugブランチのapi-trace実データで確認):
+      // girls/bl側のprice_issuesの大半(直近サンプル50件中36件、すべて
+      // is_ana:true)が、price/price_work/official_priceを一切持たず
+      // price_str:"0"・upgrade_min_price:110という判で押したように同じ
+      // 形のレスポンスだった。is_ana は「アップグレード購入」形式の商品
+      // (親作品の差額購入等)を示すフラグで、この形式はそもそも単体の
+      // 定価という概念がAPI応答に存在しない(price_strはプレースホルダ
+      // で実売価格ではない)。既知のDLsite仕様上の欠落として型を分け、
+      // 今後の調査ノイズを減らす(保存側の扱い自体は従来通り: priceは
+      // 書き込まず既存値を維持する)。
+      //
+      // バグ修正: 以前はこのチェックが isOnSale 判定内(else if の末尾)に
+      // ネストされており、isOnSale=false になる経路(is_ana作品は実機観測で
+      // is_sale:true・on_sale:0が一般的)ではこの分類自体に到達できず、
+      // 代わりに「セール中でない」分岐でprice=0がpriceIssue無しでそのまま
+      // 書き込まれてしまっていた(is_saleの過剰判定バグ修正の副作用で新たに
+      // 生まれかねない回帰)。is_anaは値引き有無に関係なく「単体定価という
+      // 概念が無い」という作品自体の性質なので、isOnSale判定より前に
+      // 独立してチェックする。
+      price     = 0;
+      salePrice = null;
+      priceIssue = { type: 'ana_no_standalone_price', raw: { is_ana: true, price_str: d.price_str, upgrade_min_price: d.upgrade_min_price } };
+      log.trace('[parser] is_ana work has no standalone price (known DLsite upgrade-purchase format)', rjCode, priceIssue.raw);
+    } else if (isOnSale && campaignPrice != null && restorePrice != null && campaignPrice < restorePrice) {
       // 最優先: discountオブジェクトが直接示す「セール価格」と「復元後の定価」。
       // DLsite自身が管理する値であり、他フィールドの大小関係を見て推測する
       // 必要が無いため最も確実。
@@ -214,23 +260,6 @@ function parseProductInfo(rjCode, body) {
         salePrice = null;
         priceIssue = { type: 'ambiguous', raw: { official_price: d.official_price, regular_price: d.regular_price, discount: discObj, price_work: d.price_work, price: d.price } };
         log.trace('[parser] price_work/price欠損だがofficial_price等から代替', rjCode, priceIssue.raw);
-      } else if (d.is_ana === true) {
-        // データ分類改善(2026-09-05 debugブランチのapi-trace実データで確認):
-        // girls/bl側のprice_issuesの大半(直近サンプル50件中36件、すべて
-        // is_ana:true)が、price/price_work/official_priceを一切持たず
-        // price_str:"0"・upgrade_min_price:110という判で押したように同じ
-        // 形のレスポンスだった。is_ana は「アップグレード購入」形式の商品
-        // (親作品の差額購入等)を示すフラグで、この形式はそもそも単体の
-        // 定価という概念がAPI応答に存在しない(price_strはプレースホルダ
-        // で実売価格ではない)。従来はこれも汎用の'no_price_field'として
-        // 記録していたため、「原因不明の定価取得失敗」として調査対象に
-        // 紛れ込み続けていた。既知のDLsite仕様上の欠落として型を分け、
-        // 今後の調査ノイズを減らす(保存側の扱い自体は従来通り: priceは
-        // 書き込まず既存値を維持する)。
-        price     = 0;
-        salePrice = null;
-        priceIssue = { type: 'ana_no_standalone_price', raw: { is_ana: true, price_str: d.price_str, upgrade_min_price: d.upgrade_min_price } };
-        log.trace('[parser] is_ana work has no standalone price (known DLsite upgrade-purchase format)', rjCode, priceIssue.raw);
       } else {
         price     = 0;
         salePrice = null;

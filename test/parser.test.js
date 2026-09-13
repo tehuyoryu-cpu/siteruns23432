@@ -198,6 +198,46 @@ test('is_discount_work(旧フィールド名)でも引き続き同じ安全網�
   assert.strictEqual(r.priceIssue.type, 'no_price_field');
 });
 
+// ════════════════════════════════════════════════════════════════════════════
+// 重大バグ修正回帰テスト: is_sale過剰判定によるon_sale汚染
+//
+// 実機のdebugブランチで確認: onSale 166,844/168,317件(99.1%)、
+// circlesOnSale 29,503/29,696件(99.3%)という異常値の根本原因。
+// is_saleは実際には値引きが一切無い作品でもtrueを返す過剰に広いフラグで、
+// on_sale(0/1)こそが実際の値引き有無と一致する厳密なフラグだった
+// (実機トレース: is_ana作品はis_sale:true, on_sale:0, is_discount:falseで
+// 一貫、RJ229730はis_sale:true, on_sale:1, is_discount:trueで一貫)。
+// ════════════════════════════════════════════════════════════════════════════
+
+test('is_sale:trueでもon_sale:0が明示されていれば値引き無しとして扱う(is_ana実機トレース)', () => {
+  const r = parse('RJ01715662', {
+    is_ana: true, is_sale: true, on_sale: 0, is_discount: false, is_pointup: false,
+    price: null, price_str: '0', upgrade_min_price: 110,
+  });
+  assert.strictEqual(r.price.is_on_sale, 0, 'is_saleに引っ張られてon_sale扱いになってはいけない');
+  assert.strictEqual(r.priceIssue.type, 'ana_no_standalone_price', 'is_anaの独立チェックが機能し、no_price_fieldへの回帰(price=0の無警告書き込み)にならないこと');
+});
+
+test('is_ana作品はon_sale:0でも独立チェックによりpriceIssue付きで書き込みスキップされる(price=0の無警告書き込みへの回帰防止)', () => {
+  const r = parse('RJ000024', { is_ana: true, is_sale: true, on_sale: 0, price: null, price_str: '0' });
+  assert.ok(r.priceIssue, 'is_ana作品は必ずpriceIssueが付き、DB書き込みがスキップされるべき');
+  assert.strictEqual(r.priceIssue.type, 'ana_no_standalone_price');
+});
+
+test('on_saleが未定義(フィールド自体が無い)場合は従来通りis_sale等から判定する(後方互換)', () => {
+  const r = parse('RJ000025', { is_sale: 1, price_work: 1000, price: 700 });
+  assert.strictEqual(r.price.is_on_sale, 1);
+  assert.strictEqual(r.price.price, 1000);
+  assert.strictEqual(r.price.sale_price, 700);
+});
+
+test('on_sale:1が明示されている通常のセールは従来通り正しく処理される', () => {
+  const r = parse('RJ000026', { is_sale: true, on_sale: 1, price_work: 1000, price: 700 });
+  assert.strictEqual(r.price.is_on_sale, 1);
+  assert.strictEqual(r.price.price, 1000);
+  assert.strictEqual(r.price.sale_price, 700);
+});
+
 
 // ── ポイント還元判定: discount_rateが無くis_saleのみ ────────────────────────
 test('discount_rate=0かつis_sale=1はポイント還元(is_point_only=1)として分類', () => {
