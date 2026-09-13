@@ -1,0 +1,87 @@
+{
+  "pushedAt": "2026-09-13T23:22:13.848Z",
+  "job": "manual",
+  "resultSummary": null,
+  "dbStats": {
+    "totalWorks": 168317,
+    "onSale": 166703,
+    "priceChanges": 330070,
+    "totalCircles": 29696,
+    "circlesOnSale": 29503,
+    "dueNow": 163213,
+    "slowTransactions": {
+      "count": 1,
+      "maxMs": 865,
+      "lastMs": 865,
+      "lastAt": "2026-09-13T23:22:03.614Z",
+      "lastLabel": "runInTransaction",
+      "thresholdMs": 300
+    }
+  },
+  "priceIssuesCount": 459,
+  "integrityHistory": [],
+  "dataSanity": {
+    "salePriceNotLower": 0,
+    "discountWithoutSalePrice": 0,
+    "zeroPriceOnSale": 0,
+    "negativePrice": 0,
+    "discountRateOutOfRange": 0
+  },
+  "health": {
+    "perSite": {},
+    "global": {
+      "backoffActive": false,
+      "backoffRemainingSec": 0,
+      "lastTriggeredAt": null
+    },
+    "globalConcurrency": {
+      "active": 0,
+      "waiting": 0,
+      "max": 5
+    },
+    "rewarm": {
+      "lastRewarmAt": null,
+      "cooldownRemainingSec": 0
+    },
+    "autoThrottle": {}
+  },
+  "warmUpHistory": [
+    {
+      "ts": "2026-09-13T23:22:09.117Z",
+      "trigger": "startup",
+      "allOk": true,
+      "results": {
+        "maniax": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "no-age-gate-no-product-link",
+          "regionBlocked": false
+        },
+        "bl": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "no-age-gate-no-product-link",
+          "regionBlocked": false
+        },
+        "girls": {
+          "cookieObtained": true,
+          "clicked": false,
+          "reason": "no-age-gate-no-product-link",
+          "regionBlocked": false
+        }
+      }
+    }
+  ],
+  "buildInfo": {
+    "sha": "302d9baa713348a7c9c5639f742f495635c42bc6",
+    "builtAt": "2026-09-13T10:47:03Z",
+    "runNumber": 390
+  },
+  "env": {
+    "appVersion": "1.0.0",
+    "node": "v20.18.0",
+    "electron": "31.7.7",
+    "platform": "win32",
+    "arch": "x64"
+  }
+}

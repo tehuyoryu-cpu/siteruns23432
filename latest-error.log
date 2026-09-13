@@ -1,0 +1,299 @@
+2026-09-13T12:53:59.411Z [WARN ] [db] slow transaction (transactionNoSave): 364ms {"dbSizeMB":71.3}
+2026-09-13T12:54:01.401Z [WARN ] [db] slow transaction (transactionNoSave): 317ms {"dbSizeMB":71.4}
+2026-09-13T12:54:02.126Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:54:03.639Z [WARN ] [detail] API returned empty object girls requested 2件 sample: RJ01676604,RJ01714219
+2026-09-13T12:54:04.385Z [WARN ] [db] slow transaction (transactionNoSave): 326ms {"dbSizeMB":71.4}
+2026-09-13T12:54:04.694Z [WARN ] [detail] API returned empty object girls requested 2件 sample: RJ01676604,RJ01714219
+2026-09-13T12:54:04.694Z [WARN ] [detail] batch fail, splitting 2
+2026-09-13T12:54:05.062Z [WARN ] [detail] API returned empty object girls requested 1件 sample: RJ01676604
+2026-09-13T12:54:05.990Z [WARN ] [detail] API returned empty object girls requested 1件 sample: RJ01714219
+2026-09-13T12:54:23.267Z [WARN ] [db] slow transaction (transactionNoSave): 331ms {"dbSizeMB":71.6}
+2026-09-13T12:54:30.989Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":6,"ana_no_standalone_price":1}
+2026-09-13T12:54:33.788Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":3}
+2026-09-13T12:54:43.068Z [WARN ] (集約) 同種メッセージが直近48秒で35回発生（32件を抑制）／ 例: [detail] price issue detected RJ01569576 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T12:54:43.069Z [ERROR] (集約) 同種メッセージが直近48秒で35回発生（32件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ01569576 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T12:54:43.069Z [WARN ] (集約) 同種メッセージが直近48秒で6回発生（3件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":7}
+2026-09-13T12:54:45.729Z [WARN ] [db] slow transaction (transactionNoSave): 352ms {"dbSizeMB":71.8}
+2026-09-13T12:54:46.355Z [WARN ] [detail] price issue detected RJ01459346 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T12:54:46.356Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01459346 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T12:54:46.359Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":7,"ana_no_standalone_price":1}
+2026-09-13T12:54:50.522Z [WARN ] [db] slow transaction (transactionNoSave): 346ms {"dbSizeMB":71.9}
+2026-09-13T12:54:52.645Z [WARN ] [db] slow transaction (transactionNoSave): 348ms {"dbSizeMB":71.9}
+2026-09-13T12:55:22.660Z [WARN ] [detail] price issue detected RJ01677425 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T12:55:22.661Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01677425 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T12:55:22.691Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T12:55:36.724Z [WARN ] [db] slow transaction (transactionNoSave): 323ms {"dbSizeMB":72.3}
+2026-09-13T12:55:38.677Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:55:39.066Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:55:40.999Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:55:51.308Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":2}
+2026-09-13T12:55:54.053Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":2}
+2026-09-13T12:55:54.220Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":4}
+2026-09-13T12:56:43.076Z [WARN ] (集約) 同種メッセージが直近52秒で11回発生（8件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":2}
+2026-09-13T12:57:00.169Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:57:00.277Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":3}
+2026-09-13T12:57:15.268Z [WARN ] [db] slow transaction (transactionNoSave): 352ms {"dbSizeMB":73.3}
+2026-09-13T12:57:15.268Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:57:26.305Z [WARN ] [db] slow transaction (transactionNoSave): 302ms {"dbSizeMB":73.4}
+2026-09-13T12:57:43.084Z [WARN ] (集約) 同種メッセージが直近43秒で9回発生（6件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:57:44.209Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:57:46.492Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":23,"key_not_in_response":2}
+2026-09-13T12:57:52.058Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":2}
+2026-09-13T12:58:43.080Z [WARN ] (集約) 同種メッセージが直近59秒で13回発生（10件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:59:10.383Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:59:14.427Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":2}
+2026-09-13T12:59:17.008Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T12:59:24.686Z [WARN ] [db] slow transaction (transactionNoSave): 307ms {"dbSizeMB":74.7}
+2026-09-13T12:59:28.287Z [WARN ] [db] slow transaction (transactionNoSave): 345ms {"dbSizeMB":74.7}
+2026-09-13T12:59:43.099Z [WARN ] (集約) 同種メッセージが直近33秒で5回発生（2件を抑制）／ 例: [detail] batch issues summary {"site":"maniax","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:04:12.305Z [WARN ] [detail] API returned empty object girls requested 4件 sample: RJ01714282,RJ01674468
+2026-09-13T13:04:13.187Z [WARN ] [detail] API returned empty object girls requested 4件 sample: RJ01714282,RJ01674468
+2026-09-13T13:04:13.188Z [WARN ] [detail] batch fail, splitting 4
+2026-09-13T13:04:13.509Z [WARN ] [detail] API returned empty object girls requested 2件 sample: RJ01714282,RJ01674468
+2026-09-13T13:04:43.124Z [WARN ] (集約) 同種メッセージが直近31秒で4回発生（1件を抑制）／ 例: [detail] API returned empty object girls requested 4件 sample: RJ01714282,RJ01674468
+2026-09-13T13:06:16.015Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:06:21.306Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:06:24.022Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":5}
+2026-09-13T13:06:43.136Z [WARN ] (集約) 同種メッセージが直近27秒で15回発生（12件を抑制）／ 例: [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:06:45.322Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:07:15.948Z [WARN ] [detail] price issue detected RJ133148 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:07:15.949Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ133148 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:07:16.012Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T13:07:18.143Z [WARN ] [detail] price issue detected RJ140769 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:07:18.143Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ140769 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:07:18.220Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T13:07:28.332Z [WARN ] [detail] price issue detected RJ122160 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:07:28.332Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ122160 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:07:28.348Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T13:07:47.473Z [WARN ] [detail] price issue detected RJ059895 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:07:47.473Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ059895 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:07:47.525Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T13:08:04.738Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2}
+2026-09-13T13:08:05.974Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:08:07.711Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":1}
+2026-09-13T13:08:08.649Z [WARN ] [detail] price issue detected RJ01390086 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:08:08.649Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01390086 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:08:08.784Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":29,"ana_no_standalone_price":1,"key_not_in_response":3}
+2026-09-13T13:08:18.876Z [WARN ] [detail] price issue detected RJ01412282 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:08:18.877Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01412282 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:08:18.931Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":7,"ana_no_standalone_price":2}
+2026-09-13T13:08:20.133Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T13:08:20.224Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T13:08:21.446Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":3,"ana_no_standalone_price":1}
+2026-09-13T13:08:40.948Z [WARN ] (集約) 同種メッセージが直近53秒で7回発生（4件を抑制）／ 例: [detail] price issue detected RJ059895 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T13:08:40.948Z [ERROR] (集約) 同種メッセージが直近53秒で7回発生（4件を抑制）／ 例: [detail] price unmeasurable — skipping DB write to avoid contamination RJ059895 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T13:08:40.948Z [WARN ] (集約) 同種メッセージが直近36秒で8回発生（5件を抑制）／ 例: [detail] batch issues summary {"site":"girls","batchSize":50,"key_not_in_response":2}
+2026-09-13T13:08:52.667Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":96}
+2026-09-13T13:08:55.831Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-08-01","page":2,"parsed":74}
+2026-09-13T13:08:57.821Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-07-01","page":1,"parsed":90}
+2026-09-13T13:09:43.457Z [WARN ] (集約) 同種メッセージが直近51秒で12回発生（9件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":96}
+2026-09-13T13:09:44.616Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2025-03-01","page":2,"parsed":93}
+2026-09-13T13:09:48.012Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2025-02-01","page":1,"parsed":83}
+2026-09-13T13:09:50.239Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2025-02-01","page":3,"parsed":52}
+2026-09-13T13:10:43.489Z [WARN ] (集約) 同種メッセージが直近59秒で15回発生（12件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2025-03-01","page":2,"parsed":93}
+2026-09-13T13:10:48.114Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2023-11-01","page":1,"parsed":89}
+2026-09-13T13:10:50.413Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2023-11-01","page":3,"parsed":87}
+2026-09-13T13:10:53.851Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2023-10-01","page":2,"parsed":84}
+2026-09-13T13:11:43.785Z [WARN ] (集約) 同種メッセージが直近56秒で22回発生（19件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2023-11-01","page":1,"parsed":89}
+2026-09-13T13:11:46.119Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2022-06-01","page":1,"parsed":70}
+2026-09-13T13:11:48.403Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2022-06-01","page":3,"parsed":84}
+2026-09-13T13:11:50.675Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2022-05-01","page":1,"parsed":98}
+2026-09-13T13:12:43.799Z [WARN ] (集約) 同種メッセージが直近58秒で25回発生（22件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2022-06-01","page":1,"parsed":70}
+2026-09-13T13:12:44.792Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2020-07-01","page":1,"parsed":47}
+2026-09-13T13:12:47.044Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2020-06-01","page":1,"parsed":87}
+2026-09-13T13:12:50.440Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2020-05-01","page":2,"parsed":64}
+2026-09-13T13:13:43.801Z [WARN ] (集約) 同種メッセージが直近59秒で26回発生（23件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2020-07-01","page":1,"parsed":47}
+2026-09-13T13:13:45.277Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2018-06-01","page":1,"parsed":84}
+2026-09-13T13:13:47.470Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2018-05-01","page":1,"parsed":75}
+2026-09-13T13:13:49.719Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2018-04-01","page":1,"parsed":91}
+2026-09-13T13:14:43.803Z [WARN ] (集約) 同種メッセージが直近59秒で27回発生（24件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2018-06-01","page":1,"parsed":84}
+2026-09-13T13:14:45.450Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2016-03-01","page":1,"parsed":77}
+2026-09-13T13:14:47.628Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2016-02-01","page":1,"parsed":81}
+2026-09-13T13:14:49.810Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2016-01-01","page":1,"parsed":87}
+2026-09-13T13:15:43.815Z [WARN ] (集約) 同種メッセージが直近58秒で27回発生（24件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2016-03-01","page":1,"parsed":77}
+2026-09-13T13:15:45.370Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2013-12-01","page":1,"parsed":92}
+2026-09-13T13:15:47.541Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2013-11-01","page":1,"parsed":74}
+2026-09-13T13:15:49.763Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2013-10-01","page":1,"parsed":83}
+2026-09-13T13:16:43.819Z [WARN ] (集約) 同種メッセージが直近58秒で28回発生（25件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2013-12-01","page":1,"parsed":92}
+2026-09-13T13:16:45.828Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2011-08-01","page":1,"parsed":90}
+2026-09-13T13:16:47.979Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2011-07-01","page":1,"parsed":84}
+2026-09-13T13:16:50.171Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2011-06-01","page":1,"parsed":86}
+2026-09-13T13:17:43.825Z [WARN ] (集約) 同種メッセージが直近58秒で27回発生（24件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2011-08-01","page":1,"parsed":90}
+2026-09-13T13:17:44.572Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2009-05-01","page":1,"parsed":77}
+2026-09-13T13:17:46.721Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2009-04-01","page":1,"parsed":85}
+2026-09-13T13:17:48.893Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2009-03-01","page":1,"parsed":74}
+2026-09-13T13:18:43.838Z [WARN ] (集約) 同種メッセージが直近59秒で28回発生（25件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2009-05-01","page":1,"parsed":77}
+2026-09-13T13:18:45.438Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2007-01-01","page":1,"parsed":84}
+2026-09-13T13:18:47.630Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2006-12-01","page":1,"parsed":79}
+2026-09-13T13:18:49.803Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2006-11-01","page":1,"parsed":88}
+2026-09-13T13:19:43.846Z [WARN ] (集約) 同種メッセージが直近58秒で24回発生（21件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2007-01-01","page":1,"parsed":84}
+2026-09-13T13:19:54.570Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2004-06-01","page":2,"parsed":99}
+2026-09-13T13:19:57.764Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2004-05-01","page":2,"parsed":99}
+2026-09-13T13:20:57.151Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2002-02-01","page":2,"parsed":99}
+2026-09-13T13:21:01.352Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2002-01-01","page":2,"parsed":99}
+2026-09-13T13:21:04.490Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2001-12-01","page":1,"parsed":99}
+2026-09-13T13:21:11.795Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":94}
+2026-09-13T13:21:13.951Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-08-01","page":1,"parsed":48}
+2026-09-13T13:21:17.216Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-07-01","page":2,"parsed":15}
+2026-09-13T13:21:43.868Z [WARN ] (集約) 同種メッセージが直近32秒で14回発生（11件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":94}
+2026-09-13T13:21:46.020Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2025-07-01","page":1,"parsed":87}
+2026-09-13T13:21:48.280Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2025-06-01","page":1,"parsed":20}
+2026-09-13T13:21:50.537Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2025-05-01","page":1,"parsed":72}
+2026-09-13T13:22:43.980Z [WARN ] (集約) 同種メッセージが直近58秒で26回発生（23件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2025-07-01","page":1,"parsed":87}
+2026-09-13T13:22:45.070Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2023-08-01","page":3,"parsed":69}
+2026-09-13T13:22:47.264Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2023-07-01","page":1,"parsed":68}
+2026-09-13T13:22:49.454Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2023-06-01","page":1,"parsed":55}
+2026-09-13T13:23:43.984Z [WARN ] (集約) 同種メッセージが直近59秒で28回発生（25件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2023-08-01","page":3,"parsed":69}
+2026-09-13T13:23:45.013Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2021-04-01","page":1,"parsed":20}
+2026-09-13T13:23:47.179Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2021-03-01","page":1,"parsed":33}
+2026-09-13T13:23:49.325Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2021-02-01","page":1,"parsed":20}
+2026-09-13T13:24:43.994Z [WARN ] (集約) 同種メッセージが直近59秒で29回発生（26件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2021-04-01","page":1,"parsed":20}
+2026-09-13T13:24:45.720Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2018-11-01","page":1,"parsed":19}
+2026-09-13T13:24:47.783Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2018-10-01","page":1,"parsed":23}
+2026-09-13T13:24:49.873Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2018-09-01","page":1,"parsed":10}
+2026-09-13T13:25:44.004Z [WARN ] (集約) 同種メッセージが直近58秒で28回発生（25件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2018-11-01","page":1,"parsed":19}
+2026-09-13T13:25:44.429Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2016-07-01","page":1,"parsed":21}
+2026-09-13T13:25:46.536Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2016-06-01","page":1,"parsed":32}
+2026-09-13T13:25:48.714Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2016-05-01","page":1,"parsed":32}
+2026-09-13T13:26:44.010Z [WARN ] (集約) 同種メッセージが直近60秒で29回発生（26件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2016-07-01","page":1,"parsed":21}
+2026-09-13T13:26:45.407Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2014-02-01","page":1,"parsed":45}
+2026-09-13T13:26:47.414Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2014-01-01","page":1,"parsed":58}
+2026-09-13T13:26:49.500Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2013-12-01","page":1,"parsed":26}
+2026-09-13T13:27:44.016Z [WARN ] (集約) 同種メッセージが直近59秒で29回発生（26件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2014-02-01","page":1,"parsed":45}
+2026-09-13T13:27:46.121Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2011-09-01","page":1,"parsed":84}
+2026-09-13T13:27:48.279Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2011-08-01","page":1,"parsed":76}
+2026-09-13T13:27:50.318Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2011-07-01","page":1,"parsed":86}
+2026-09-13T13:28:44.033Z [WARN ] (集約) 同種メッセージが直近58秒で27回発生（24件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2011-09-01","page":1,"parsed":84}
+2026-09-13T13:28:44.719Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2009-06-01","page":1,"parsed":94}
+2026-09-13T13:28:46.776Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2009-05-01","page":1,"parsed":90}
+2026-09-13T13:28:48.851Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2009-04-01","page":1,"parsed":90}
+2026-09-13T13:29:44.037Z [WARN ] (集約) 同種メッセージが直近59秒で18回発生（15件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2009-06-01","page":1,"parsed":94}
+2026-09-13T13:29:44.804Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2007-09-01","page":1,"parsed":98}
+2026-09-13T13:29:46.794Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2007-08-01","page":1,"parsed":98}
+2026-09-13T13:29:48.842Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2007-07-01","page":1,"parsed":98}
+2026-09-13T13:30:44.042Z [WARN ] (集約) 同種メッセージが直近59秒で11回発生（8件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2007-09-01","page":1,"parsed":98}
+2026-09-13T13:30:45.347Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2005-08-01","page":2,"parsed":93}
+2026-09-13T13:30:53.457Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2005-07-01","page":2,"parsed":90}
+2026-09-13T13:31:01.461Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2005-06-01","page":2,"parsed":89}
+2026-09-13T13:31:44.044Z [WARN ] (集約) 同種メッセージが直近59秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2005-08-01","page":2,"parsed":93}
+2026-09-13T13:31:50.007Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-12-01","page":2,"parsed":66}
+2026-09-13T13:31:58.070Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-11-01","page":2,"parsed":60}
+2026-09-13T13:32:06.134Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-10-01","page":2,"parsed":45}
+2026-09-13T13:32:44.046Z [WARN ] (集約) 同種メッセージが直近54秒で7回発生（4件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-12-01","page":2,"parsed":66}
+2026-09-13T13:32:46.177Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-05-01","page":2,"parsed":19}
+2026-09-13T13:32:54.460Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-04-01","page":2,"parsed":18}
+2026-09-13T13:33:02.410Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-03-01","page":2,"parsed":15}
+2026-09-13T13:33:44.053Z [WARN ] (集約) 同種メッセージが直近58秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2004-05-01","page":2,"parsed":19}
+2026-09-13T13:33:50.651Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2003-09-01","page":2,"parsed":5}
+2026-09-13T13:33:58.097Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2003-08-01","page":1,"parsed":97}
+2026-09-13T13:34:05.255Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2003-07-01","page":1,"parsed":93}
+2026-09-13T13:34:44.060Z [WARN ] (集約) 同種メッセージが直近53秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2003-09-01","page":2,"parsed":5}
+2026-09-13T13:34:47.512Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2003-01-01","page":1,"parsed":67}
+2026-09-13T13:34:54.554Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2002-12-01","page":1,"parsed":64}
+2026-09-13T13:35:01.784Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2002-11-01","page":1,"parsed":62}
+2026-09-13T13:35:44.070Z [WARN ] (集約) 同種メッセージが直近57秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2003-01-01","page":1,"parsed":67}
+2026-09-13T13:35:44.817Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2002-05-01","page":1,"parsed":49}
+2026-09-13T13:35:51.718Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2002-04-01","page":1,"parsed":32}
+2026-09-13T13:35:58.869Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2002-03-01","page":1,"parsed":32}
+2026-09-13T13:36:44.209Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":1,"parsed":83}
+2026-09-13T13:36:44.212Z [WARN ] (集約) 同種メッセージが直近59秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2002-05-01","page":1,"parsed":49}
+2026-09-13T13:36:46.416Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":3,"parsed":42}
+2026-09-13T13:36:49.662Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-07-01","page":2,"parsed":55}
+2026-09-13T13:36:51.864Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-07-01","page":4,"parsed":75}
+2026-09-13T13:37:44.227Z [WARN ] (集約) 同種メッセージが直近58秒で21回発生（18件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2026-08-01","page":3,"parsed":42}
+2026-09-13T13:37:46.256Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2025-03-01","page":2,"parsed":11}
+2026-09-13T13:37:48.399Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2025-02-01","page":1,"parsed":66}
+2026-09-13T13:37:51.635Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2025-01-01","page":2,"parsed":80}
+2026-09-13T13:38:44.228Z [WARN ] (集約) 同種メッセージが直近58秒で23回発生（20件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2025-03-01","page":2,"parsed":11}
+2026-09-13T13:38:46.304Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2023-03-01","page":1,"parsed":18}
+2026-09-13T13:38:48.377Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2023-02-01","page":1,"parsed":16}
+2026-09-13T13:38:50.490Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2023-01-01","page":1,"parsed":97}
+2026-09-13T13:39:44.236Z [WARN ] (集約) 同種メッセージが直近58秒で27回発生（24件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2023-03-01","page":1,"parsed":18}
+2026-09-13T13:39:45.818Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2020-12-01","page":1,"parsed":45}
+2026-09-13T13:39:47.955Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2020-11-01","page":1,"parsed":13}
+2026-09-13T13:39:50.111Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2020-10-01","page":1,"parsed":14}
+2026-09-13T13:40:44.234Z [WARN ] (集約) 同種メッセージが直近58秒で26回発生（23件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2020-12-01","page":1,"parsed":45}
+2026-09-13T13:40:46.197Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2018-10-01","page":1,"parsed":19}
+2026-09-13T13:40:48.344Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2018-09-01","page":1,"parsed":5}
+2026-09-13T13:40:50.453Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2018-08-01","page":1,"parsed":15}
+2026-09-13T13:41:44.247Z [WARN ] (集約) 同種メッセージが直近58秒で27回発生（24件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2018-10-01","page":1,"parsed":19}
+2026-09-13T13:41:44.977Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2016-07-01","page":1,"parsed":16}
+2026-09-13T13:41:47.149Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2016-06-01","page":1,"parsed":25}
+2026-09-13T13:41:49.308Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2016-05-01","page":1,"parsed":16}
+2026-09-13T13:42:44.258Z [WARN ] (集約) 同種メッセージが直近59秒で28回発生（25件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2016-07-01","page":1,"parsed":16}
+2026-09-13T13:42:45.895Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2014-03-01","page":1,"parsed":11}
+2026-09-13T13:42:48.039Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2014-02-01","page":1,"parsed":35}
+2026-09-13T13:42:50.174Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2014-01-01","page":1,"parsed":29}
+2026-09-13T13:43:44.416Z [WARN ] (集約) 同種メッセージが直近59秒で29回発生（26件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2014-03-01","page":1,"parsed":11}
+2026-09-13T13:43:45.424Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2011-10-01","page":1,"parsed":92}
+2026-09-13T13:43:47.509Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2011-09-01","page":1,"parsed":95}
+2026-09-13T13:43:49.472Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2011-08-01","page":1,"parsed":96}
+2026-09-13T13:44:44.425Z [WARN ] (集約) 同種メッセージが直近59秒で29回発生（26件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2011-10-01","page":1,"parsed":92}
+2026-09-13T13:44:45.959Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2009-05-01","page":1,"parsed":91}
+2026-09-13T13:44:48.724Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2009-04-01","page":1,"parsed":91}
+2026-09-13T13:44:51.608Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2009-03-01","page":1,"parsed":92}
+2026-09-13T13:45:44.429Z [WARN ] (集約) 同種メッセージが直近58秒で7回発生（4件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2009-05-01","page":1,"parsed":91}
+2026-09-13T13:45:52.085Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-09-01","page":2,"parsed":83}
+2026-09-13T13:45:59.985Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-08-01","page":2,"parsed":80}
+2026-09-13T13:46:07.757Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-07-01","page":2,"parsed":79}
+2026-09-13T13:46:44.432Z [WARN ] (集約) 同種メッセージが直近52秒で7回発生（4件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-09-01","page":2,"parsed":83}
+2026-09-13T13:46:47.801Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-02-01","page":2,"parsed":64}
+2026-09-13T13:46:55.644Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-01-01","page":2,"parsed":62}
+2026-09-13T13:47:03.439Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2006-12-01","page":2,"parsed":59}
+2026-09-13T13:47:44.434Z [WARN ] (集約) 同種メッセージが直近57秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2007-02-01","page":2,"parsed":64}
+2026-09-13T13:47:48.036Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2006-06-01","page":1,"parsed":89}
+2026-09-13T13:47:55.219Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2006-05-01","page":1,"parsed":89}
+2026-09-13T13:48:02.253Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2006-04-01","page":1,"parsed":88}
+2026-09-13T13:48:44.442Z [WARN ] (集約) 同種メッセージが直近56秒で9回発生（6件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2006-06-01","page":1,"parsed":89}
+2026-09-13T13:48:50.945Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2005-09-01","page":1,"parsed":71}
+2026-09-13T13:48:57.889Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2005-08-01","page":1,"parsed":71}
+2026-09-13T13:49:04.865Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2005-07-01","page":1,"parsed":69}
+2026-09-13T13:49:44.453Z [WARN ] (集約) 同種メッセージが直近54秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2005-09-01","page":1,"parsed":71}
+2026-09-13T13:49:46.565Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2005-01-01","page":1,"parsed":61}
+2026-09-13T13:49:53.654Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2004-12-01","page":1,"parsed":60}
+2026-09-13T13:50:03.068Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2004-11-01","page":1,"parsed":56}
+2026-09-13T13:50:44.466Z [WARN ] (集約) 同種メッセージが直近58秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2005-01-01","page":1,"parsed":61}
+2026-09-13T13:50:45.419Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2004-05-01","page":1,"parsed":44}
+2026-09-13T13:50:52.398Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2004-04-01","page":1,"parsed":43}
+2026-09-13T13:50:59.232Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2004-03-01","page":1,"parsed":42}
+2026-09-13T13:51:44.473Z [WARN ] (集約) 同種メッセージが直近59秒で9回発生（6件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2004-05-01","page":1,"parsed":44}
+2026-09-13T13:51:47.726Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2003-08-01","page":1,"parsed":41}
+2026-09-13T13:51:54.510Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2003-07-01","page":1,"parsed":40}
+2026-09-13T13:52:01.440Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2003-06-01","page":1,"parsed":39}
+2026-09-13T13:52:44.474Z [WARN ] (集約) 同種メッセージが直近57秒で9回発生（6件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2003-08-01","page":1,"parsed":41}
+2026-09-13T13:52:49.809Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-11-01","page":1,"parsed":31}
+2026-09-13T13:52:56.746Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-10-01","page":1,"parsed":30}
+2026-09-13T13:53:03.729Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-09-01","page":1,"parsed":28}
+2026-09-13T13:53:44.480Z [WARN ] (集約) 同種メッセージが直近55秒で8回発生（5件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-11-01","page":1,"parsed":31}
+2026-09-13T13:53:44.936Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-03-01","page":1,"parsed":11}
+2026-09-13T13:53:51.775Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-02-01","page":1,"parsed":11}
+2026-09-13T13:53:58.693Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-01-01","page":1,"parsed":11}
+2026-09-13T13:54:40.145Z [WARN ] (集約) 同種メッセージが直近55秒で6回発生（3件を抑制）／ 例: [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"girls","date":"2002-03-01","page":1,"parsed":11}
+2026-09-13T14:12:13.200Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"maniax","date":"2026-09-01","page":1,"parsed":96}
+2026-09-13T14:12:14.438Z [WARN ] [discovery] monthly: 疑わしい短ページ、次ページで確認します {"site":"bl","date":"2026-09-01","page":1,"parsed":94}
+2026-09-13T14:12:21.259Z [WARN ] [discovery] collectCircles: 一部作品でmaker_id不一致を検出(サンプル不足のため確定はせず該当作品のみ除外) {"makerId":"RG43942","site":"girls","mismatched":4,"totalOnPage":74}
+2026-09-13T14:12:51.593Z [WARN ] [db] slow transaction (transaction): 502ms {"dbSizeMB":79.9}
+2026-09-13T14:12:57.601Z [WARN ] [db] slow transaction (transaction): 523ms {"dbSizeMB":79.9}
+2026-09-13T14:13:33.430Z [WARN ] [db] slow transaction (transaction): 358ms {"dbSizeMB":79.9}
+2026-09-13T14:13:48.696Z [WARN ] [db] slow transaction (transaction): 327ms {"dbSizeMB":80.1}
+2026-09-13T14:13:52.625Z [WARN ] [db] slow transaction (transaction): 445ms {"dbSizeMB":80.1}
+2026-09-13T14:13:55.582Z [WARN ] [db] slow transaction (transaction): 401ms {"dbSizeMB":80.2}
+2026-09-13T14:14:23.942Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"verify_rescued":1}
+2026-09-13T14:14:26.238Z [WARN ] [detail] price issue detected RJ01165440 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T14:14:26.239Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01165440 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T14:14:26.306Z [WARN ] [detail] batch issues summary {"site":"maniax","batchSize":50,"ana_no_standalone_price":1}
+2026-09-13T14:14:40.980Z [WARN ] [detail] price issue detected RJ01384245 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T14:14:40.980Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01384245 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T14:14:40.988Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":28,"ana_no_standalone_price":1}
+2026-09-13T14:14:42.620Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":11,"verify_rescued":2}
+2026-09-13T14:14:43.591Z [WARN ] [db] slow transaction (transactionNoSave): 341ms {"dbSizeMB":80.5}
+2026-09-13T14:45:00.499Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-13T20:29:45.561Z [ERROR] [electron] child-process-gone {"type":"Utility","reason":"killed","exitCode":1073807364}
+2026-09-13T23:22:02.746Z [WARN ] [db] 起動時サニティスキャン: 汚染疑いレコードを検出 {"salePriceNotLower":0,"discountWithoutSalePrice":0,"zeroPriceOnSale":141,"negativePrice":0,"discountRateOutOfRange":0}
+2026-09-13T23:22:03.614Z [WARN ] [db] slow transaction (runInTransaction): 865ms {"dbSizeMB":80.7}
+2026-09-13T23:22:03.614Z [WARN ] [db] repairContaminatedPriceData: 修復件数(パターン別合計、重複含む) 141
+2026-09-13T23:22:06.554Z [WARN ] [warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01493561.html","site":"maniax","regionBlocked":false}
+2026-09-13T23:22:07.299Z [WARN ] [warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01710683.html","site":"bl","regionBlocked":false}
+2026-09-13T23:22:09.114Z [WARN ] [warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01309824.html","site":"girls","regionBlocked":false}
+2026-09-13T23:22:11.648Z [WARN ] [fetch] 503 throttle – wait 1276ms https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/regist_date_start/2026-09-01/regist_date_end/2026-09-30/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100/show_type/1
+2026-09-13T23:22:11.648Z [WARN ] [fetch] network pause (系統:discovery): waiting 30s

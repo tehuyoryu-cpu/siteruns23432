@@ -1,0 +1,499 @@
+2026-09-13T14:14:40.244Z [INFO ] [detail] price changed {"rj":"RJ01412493","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:40.245Z [INFO ] [detail] price changed {"rj":"RJ01405981","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:40.246Z [INFO ] [detail] price changed {"rj":"RJ01394710","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:40.246Z [INFO ] [detail] price changed {"rj":"RJ01392587","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:40.247Z [INFO ] [detail] price changed {"rj":"RJ01710630","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:40.425Z [INFO ] [detail] due batch: 439 (total so far: 1939 ) concurrency=3
+2026-09-13T14:14:40.965Z [INFO ] [detail] circle sale start RG47806
+2026-09-13T14:14:40.967Z [INFO ] [detail] circle sale start RG01008451
+2026-09-13T14:14:40.979Z [INFO ] [detail] price changed {"rj":"RJ01153804","price":0,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:40.979Z [INFO ] [detail] circle sale start RG58262
+2026-09-13T14:14:40.980Z [WARN ] [detail] price issue detected RJ01384245 ana_no_standalone_price {"is_ana":true,"price_str":"0","upgrade_min_price":110}
+2026-09-13T14:14:40.980Z [ERROR] [detail] price unmeasurable — skipping DB write to avoid contamination RJ01384245 {"issueType":"ana_no_standalone_price","raw":{"is_ana":true,"price_str":"0","upgrade_min_price":110}}
+2026-09-13T14:14:40.988Z [WARN ] [detail] batch issues summary {"site":"girls","batchSize":28,"ana_no_standalone_price":1}
+2026-09-13T14:14:41.210Z [INFO ] [detail] price changed {"rj":"RJ01049833","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.211Z [INFO ] [detail] price changed {"rj":"RJ01043187","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.213Z [INFO ] [detail] price changed {"rj":"RJ01035674","price":1430,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.214Z [INFO ] [detail] price changed {"rj":"RJ01028420","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.215Z [INFO ] [detail] price changed {"rj":"RJ01021930","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.217Z [INFO ] [detail] price changed {"rj":"RJ01012852","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.218Z [INFO ] [detail] price changed {"rj":"RJ01002207","price":220,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.220Z [INFO ] [detail] price changed {"rj":"RJ01382661","price":880,"sale_price":704,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.222Z [INFO ] [detail] price changed {"rj":"RJ01370308","price":550,"sale_price":440,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.223Z [INFO ] [detail] price changed {"rj":"RJ01325119","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.225Z [INFO ] [detail] price changed {"rj":"RJ01233363","price":1650,"sale_price":1155,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.226Z [INFO ] [detail] price changed {"rj":"RJ01220630","price":330,"sale_price":264,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.227Z [INFO ] [detail] price changed {"rj":"RJ01190187","price":1320,"sale_price":924,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.228Z [INFO ] [detail] price changed {"rj":"RJ01182759","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.229Z [INFO ] [detail] price changed {"rj":"RJ01180344","price":990,"sale_price":495,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.230Z [INFO ] [detail] price changed {"rj":"RJ01165881","price":1320,"sale_price":924,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.232Z [INFO ] [detail] price changed {"rj":"RJ01517423","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.234Z [INFO ] [detail] price changed {"rj":"RJ01487004","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.236Z [INFO ] [detail] price changed {"rj":"RJ01459906","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.237Z [INFO ] [detail] price changed {"rj":"RJ01435222","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.238Z [INFO ] [detail] price changed {"rj":"RJ01390718","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.239Z [INFO ] [detail] price changed {"rj":"RJ01315460","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.240Z [INFO ] [detail] price changed {"rj":"RJ01225229","price":990,"sale_price":495,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.241Z [INFO ] [detail] price changed {"rj":"RJ01134475","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.242Z [INFO ] [detail] price changed {"rj":"RJ01131293","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.243Z [INFO ] [detail] price changed {"rj":"RJ01126168","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.243Z [INFO ] [detail] price changed {"rj":"RJ01125497","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.244Z [INFO ] [detail] price changed {"rj":"RJ01124690","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.246Z [INFO ] [detail] price changed {"rj":"RJ01103343","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.247Z [INFO ] [detail] price changed {"rj":"RJ01094918","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.248Z [INFO ] [detail] price changed {"rj":"RJ01090124","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.249Z [INFO ] [detail] price changed {"rj":"RJ01085625","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.250Z [INFO ] [detail] price changed {"rj":"RJ01077096","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.251Z [INFO ] [detail] price changed {"rj":"RJ01717544","price":1430,"sale_price":715,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.252Z [INFO ] [detail] price changed {"rj":"RJ01706228","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.253Z [INFO ] [detail] price changed {"rj":"RJ01702591","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.253Z [INFO ] [detail] price changed {"rj":"RJ01690847","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.255Z [INFO ] [detail] price changed {"rj":"RJ01684669","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.256Z [INFO ] [detail] price changed {"rj":"RJ01649953","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.257Z [INFO ] [detail] price changed {"rj":"RJ01646083","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.258Z [INFO ] [detail] price changed {"rj":"RJ01633970","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.259Z [INFO ] [detail] price changed {"rj":"RJ01621918","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.260Z [INFO ] [detail] price changed {"rj":"RJ01619588","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.260Z [INFO ] [detail] price changed {"rj":"RJ01616351","price":5940,"sale_price":5346,"point":null,"point_rate":null,"discount_rate":10,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.261Z [INFO ] [detail] price changed {"rj":"RJ01586096","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.261Z [INFO ] [detail] price changed {"rj":"RJ01568363","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.266Z [INFO ] [detail] price changed {"rj":"RJ01567957","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.267Z [INFO ] [detail] price changed {"rj":"RJ01558609","price":550,"sale_price":275,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.269Z [INFO ] [detail] price changed {"rj":"RJ01558240","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.270Z [INFO ] [detail] price changed {"rj":"RJ01530716","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.545Z [INFO ] [detail] price changed {"rj":"RJ01704753","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.546Z [INFO ] [detail] price changed {"rj":"RJ01699485","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.547Z [INFO ] [detail] price changed {"rj":"RJ01691516","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.547Z [INFO ] [detail] price changed {"rj":"RJ01390981","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.548Z [INFO ] [detail] price changed {"rj":"RJ01387104","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.549Z [INFO ] [detail] price changed {"rj":"RJ01383776","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.551Z [INFO ] [detail] price changed {"rj":"RJ01373574","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.552Z [INFO ] [detail] price changed {"rj":"RJ01369954","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.554Z [INFO ] [detail] price changed {"rj":"RJ01367833","price":330,"sale_price":165,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.555Z [INFO ] [detail] price changed {"rj":"RJ01352428","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.556Z [INFO ] [detail] price changed {"rj":"RJ01345547","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.557Z [INFO ] [detail] price changed {"rj":"RJ01345543","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.557Z [INFO ] [detail] price changed {"rj":"RJ01340074","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.558Z [INFO ] [detail] price changed {"rj":"RJ01337780","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.559Z [INFO ] [detail] price changed {"rj":"RJ01331872","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.560Z [INFO ] [detail] price changed {"rj":"RJ01328187","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.561Z [INFO ] [detail] price changed {"rj":"RJ01326948","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.561Z [INFO ] [detail] price changed {"rj":"RJ01322667","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.563Z [INFO ] [detail] price changed {"rj":"RJ01321055","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.563Z [INFO ] [detail] price changed {"rj":"RJ01315467","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.564Z [INFO ] [detail] price changed {"rj":"RJ01302742","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.564Z [INFO ] [detail] price changed {"rj":"RJ01302723","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.565Z [INFO ] [detail] price changed {"rj":"RJ01298257","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.565Z [INFO ] [detail] price changed {"rj":"RJ01285268","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.566Z [INFO ] [detail] price changed {"rj":"RJ01284804","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.566Z [INFO ] [detail] price changed {"rj":"RJ01278843","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.567Z [INFO ] [detail] price changed {"rj":"RJ01278832","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.567Z [INFO ] [detail] price changed {"rj":"RJ01275772","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.568Z [INFO ] [detail] price changed {"rj":"RJ01274524","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.569Z [INFO ] [detail] price changed {"rj":"RJ01270883","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.569Z [INFO ] [detail] price changed {"rj":"RJ01264021","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.569Z [INFO ] [detail] price changed {"rj":"RJ01255852","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.571Z [INFO ] [detail] price changed {"rj":"RJ01239641","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.572Z [INFO ] [detail] price changed {"rj":"RJ01234106","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.572Z [INFO ] [detail] price changed {"rj":"RJ01225496","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.574Z [INFO ] [detail] price changed {"rj":"RJ01225493","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.575Z [INFO ] [detail] price changed {"rj":"RJ01225489","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.575Z [INFO ] [detail] price changed {"rj":"RJ01218112","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.577Z [INFO ] [detail] price changed {"rj":"RJ01214487","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.579Z [INFO ] [detail] price changed {"rj":"RJ01209122","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.580Z [INFO ] [detail] price changed {"rj":"RJ01204400","price":1320,"sale_price":660,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.581Z [INFO ] [detail] price changed {"rj":"RJ01714072","price":5500,"sale_price":3300,"point":null,"point_rate":null,"discount_rate":40,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:41.582Z [INFO ] [detail] price changed {"rj":"RJ01674941","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.583Z [INFO ] [detail] price changed {"rj":"RJ01655585","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.584Z [INFO ] [detail] price changed {"rj":"RJ01646849","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.585Z [INFO ] [detail] price changed {"rj":"RJ01633186","price":3300,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.586Z [INFO ] [detail] price changed {"rj":"RJ01608098","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.586Z [INFO ] [detail] price changed {"rj":"RJ01594077","price":3300,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.588Z [INFO ] [detail] price changed {"rj":"RJ01578781","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.589Z [INFO ] [detail] price changed {"rj":"RJ01565596","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.683Z [INFO ] [detail] price changed {"rj":"RJ01547332","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.683Z [INFO ] [detail] price changed {"rj":"RJ01537623","price":220,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.685Z [INFO ] [detail] price changed {"rj":"RJ01532570","price":7700,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.686Z [INFO ] [detail] price changed {"rj":"RJ01515464","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.687Z [INFO ] [detail] price changed {"rj":"RJ01501861","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.689Z [INFO ] [detail] price changed {"rj":"RJ01493292","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.690Z [INFO ] [detail] price changed {"rj":"RJ01484671","price":3300,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.692Z [INFO ] [detail] price changed {"rj":"RJ01477352","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.693Z [INFO ] [detail] price changed {"rj":"RJ01475051","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.694Z [INFO ] [detail] price changed {"rj":"RJ01464115","price":990,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.696Z [INFO ] [detail] price changed {"rj":"RJ01464063","price":5500,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.697Z [INFO ] [detail] price changed {"rj":"RJ01442948","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.698Z [INFO ] [detail] price changed {"rj":"RJ01431779","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.699Z [INFO ] [detail] price changed {"rj":"RJ01428131","price":5500,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.700Z [INFO ] [detail] price changed {"rj":"RJ01412921","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.701Z [INFO ] [detail] price changed {"rj":"RJ01404182","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.702Z [INFO ] [detail] price changed {"rj":"RJ01404105","price":1430,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.703Z [INFO ] [detail] price changed {"rj":"RJ01366863","price":5500,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.705Z [INFO ] [detail] price changed {"rj":"RJ01348155","price":880,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.706Z [INFO ] [detail] price changed {"rj":"RJ01339112","price":5500,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.707Z [INFO ] [detail] price changed {"rj":"RJ01308544","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.708Z [INFO ] [detail] price changed {"rj":"RJ01278155","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.709Z [INFO ] [detail] price changed {"rj":"RJ01266283","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.710Z [INFO ] [detail] price changed {"rj":"RJ01261870","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.711Z [INFO ] [detail] price changed {"rj":"RJ01264610","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.712Z [INFO ] [detail] price changed {"rj":"RJ01252036","price":1650,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.713Z [INFO ] [detail] price changed {"rj":"RJ01250100","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.713Z [INFO ] [detail] price changed {"rj":"RJ01246957","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.715Z [INFO ] [detail] price changed {"rj":"RJ01234890","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.715Z [INFO ] [detail] price changed {"rj":"RJ01225891","price":1430,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.716Z [INFO ] [detail] price changed {"rj":"RJ01203214","price":1760,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.716Z [INFO ] [detail] price changed {"rj":"RJ01185988","price":1100,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.717Z [INFO ] [detail] price changed {"rj":"RJ01181404","price":330,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.718Z [INFO ] [detail] price changed {"rj":"RJ01170337","price":1430,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.718Z [INFO ] [detail] price changed {"rj":"RJ01163381","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.719Z [INFO ] [detail] price changed {"rj":"RJ01132540","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.720Z [INFO ] [detail] price changed {"rj":"RJ01129353","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.722Z [INFO ] [detail] price changed {"rj":"RJ01110974","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.724Z [INFO ] [detail] price changed {"rj":"RJ01107417","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.724Z [INFO ] [detail] price changed {"rj":"RJ01105239","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.725Z [INFO ] [detail] price changed {"rj":"RJ01097727","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.726Z [INFO ] [detail] price changed {"rj":"RJ01085245","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.726Z [INFO ] [detail] price changed {"rj":"RJ01085070","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.727Z [INFO ] [detail] price changed {"rj":"RJ01082291","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.728Z [INFO ] [detail] price changed {"rj":"RJ01078980","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.729Z [INFO ] [detail] price changed {"rj":"RJ01074712","price":2420,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.730Z [INFO ] [detail] price changed {"rj":"RJ01078863","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.731Z [INFO ] [detail] price changed {"rj":"RJ01071570","price":1210,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.733Z [INFO ] [detail] price changed {"rj":"RJ01061525","price":1540,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:41.734Z [INFO ] [detail] price changed {"rj":"RJ01059359","price":1320,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:42.620Z [WARN ] [detail] batch issues summary {"site":"bl","batchSize":11,"verify_rescued":2}
+2026-09-13T14:14:42.801Z [INFO ] [detail] price changed {"rj":"RJ01530701","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.803Z [INFO ] [detail] price changed {"rj":"RJ01530672","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.804Z [INFO ] [detail] price changed {"rj":"RJ01530535","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.805Z [INFO ] [detail] price changed {"rj":"RJ01530463","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.806Z [INFO ] [detail] price changed {"rj":"RJ01530090","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.807Z [INFO ] [detail] price changed {"rj":"RJ01530022","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.809Z [INFO ] [detail] price changed {"rj":"RJ01529966","price":2970,"sale_price":1485,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.810Z [INFO ] [detail] price changed {"rj":"RJ01527966","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.811Z [INFO ] [detail] price changed {"rj":"RJ01527842","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.812Z [INFO ] [detail] price changed {"rj":"RJ01527836","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.813Z [INFO ] [detail] price changed {"rj":"RJ01527386","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.814Z [INFO ] [detail] price changed {"rj":"RJ01527281","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.815Z [INFO ] [detail] price changed {"rj":"RJ01526732","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.815Z [INFO ] [detail] price changed {"rj":"RJ01526716","price":2970,"sale_price":1485,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.816Z [INFO ] [detail] price changed {"rj":"RJ01526320","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.817Z [INFO ] [detail] price changed {"rj":"RJ01525775","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.818Z [INFO ] [detail] price changed {"rj":"RJ01525745","price":4950,"sale_price":3712,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.819Z [INFO ] [detail] price changed {"rj":"RJ01524879","price":4950,"sale_price":3712,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.820Z [INFO ] [detail] price changed {"rj":"RJ01524195","price":4950,"sale_price":3712,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.821Z [INFO ] [detail] price changed {"rj":"RJ01523482","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.822Z [INFO ] [detail] price changed {"rj":"RJ01522957","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.822Z [INFO ] [detail] price changed {"rj":"RJ01522864","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.823Z [INFO ] [detail] price changed {"rj":"RJ01522820","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.824Z [INFO ] [detail] price changed {"rj":"RJ01522094","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.824Z [INFO ] [detail] price changed {"rj":"RJ01522073","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.825Z [INFO ] [detail] price changed {"rj":"RJ01521777","price":550,"sale_price":495,"point":null,"point_rate":null,"discount_rate":10,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.826Z [INFO ] [detail] price changed {"rj":"RJ01521734","price":550,"sale_price":495,"point":null,"point_rate":null,"discount_rate":10,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.827Z [INFO ] [detail] price changed {"rj":"RJ01521692","price":4950,"sale_price":3712,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.827Z [INFO ] [detail] price changed {"rj":"RJ01521516","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.828Z [INFO ] [detail] price changed {"rj":"RJ01521501","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:42.828Z [INFO ] [detail] price changed {"rj":"RJ01519787","price":2970,"sale_price":2227,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.829Z [INFO ] [detail] price changed {"rj":"RJ01518835","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.830Z [INFO ] [detail] price changed {"rj":"RJ01518122","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.831Z [INFO ] [detail] price changed {"rj":"RJ01517812","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.831Z [INFO ] [detail] price changed {"rj":"RJ01517171","price":2970,"sale_price":2079,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.832Z [INFO ] [detail] price changed {"rj":"RJ01509119","price":2970,"sale_price":1485,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.833Z [INFO ] [detail] price changed {"rj":"RJ01510951","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.833Z [INFO ] [detail] price changed {"rj":"RJ01510859","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.833Z [INFO ] [detail] price changed {"rj":"RJ01507947","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.834Z [INFO ] [detail] price changed {"rj":"RJ01501578","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.834Z [INFO ] [detail] price changed {"rj":"RJ01496347","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.835Z [INFO ] [detail] price changed {"rj":"RJ01492209","price":990,"sale_price":693,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.835Z [INFO ] [detail] price changed {"rj":"RJ01486745","price":1100,"sale_price":770,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.835Z [INFO ] [detail] price changed {"rj":"RJ01483652","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.836Z [INFO ] [detail] price changed {"rj":"RJ01483622","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.836Z [INFO ] [detail] price changed {"rj":"RJ01483601","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.837Z [INFO ] [detail] price changed {"rj":"RJ01479859","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.837Z [INFO ] [detail] price changed {"rj":"RJ01479800","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.838Z [INFO ] [detail] price changed {"rj":"RJ01479786","price":1430,"sale_price":1001,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:42.839Z [INFO ] [detail] price changed {"rj":"RJ01478669","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.033Z [INFO ] [detail] price changed {"rj":"RJ01473686","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.034Z [INFO ] [detail] price changed {"rj":"RJ01444510","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.035Z [INFO ] [detail] price changed {"rj":"RJ01444491","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.036Z [INFO ] [detail] price changed {"rj":"RJ01444442","price":550,"sale_price":385,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.037Z [INFO ] [detail] price changed {"rj":"RJ01444050","price":990,"sale_price":693,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.038Z [INFO ] [detail] price changed {"rj":"RJ01443536","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.039Z [INFO ] [detail] price changed {"rj":"RJ01442661","price":1980,"sale_price":1386,"point":null,"point_rate":null,"discount_rate":30,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.040Z [INFO ] [detail] price changed {"rj":"RJ01442590","price":5940,"sale_price":4455,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.041Z [INFO ] [detail] price changed {"rj":"RJ01435261","price":4950,"sale_price":3712,"point":null,"point_rate":null,"discount_rate":25,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.042Z [INFO ] [detail] price changed {"rj":"RJ01435196","price":550,"sale_price":495,"point":null,"point_rate":null,"discount_rate":10,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.043Z [INFO ] [detail] price changed {"rj":"RJ01435178","price":550,"sale_price":495,"point":null,"point_rate":null,"discount_rate":10,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.044Z [INFO ] [detail] price changed {"rj":"RJ01435152","price":550,"sale_price":495,"point":null,"point_rate":null,"discount_rate":10,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.045Z [INFO ] [detail] price changed {"rj":"RJ01430703","price":1430,"sale_price":1144,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.046Z [INFO ] [detail] price changed {"rj":"RJ01430689","price":1430,"sale_price":1144,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.047Z [INFO ] [detail] price changed {"rj":"RJ01430608","price":1430,"sale_price":1144,"point":null,"point_rate":null,"discount_rate":20,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.049Z [INFO ] [detail] price changed {"rj":"RJ01647661","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.051Z [INFO ] [detail] price changed {"rj":"RJ01643161","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.052Z [INFO ] [detail] price changed {"rj":"RJ01623217","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.053Z [INFO ] [detail] price changed {"rj":"RJ01617479","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.054Z [INFO ] [detail] price changed {"rj":"RJ01612841","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.055Z [INFO ] [detail] price changed {"rj":"RJ01608313","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.056Z [INFO ] [detail] price changed {"rj":"RJ01603804","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.057Z [INFO ] [detail] price changed {"rj":"RJ01597528","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.058Z [INFO ] [detail] price changed {"rj":"RJ01584070","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.059Z [INFO ] [detail] price changed {"rj":"RJ01579711","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.060Z [INFO ] [detail] price changed {"rj":"RJ01574495","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.062Z [INFO ] [detail] price changed {"rj":"RJ01569641","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.063Z [INFO ] [detail] price changed {"rj":"RJ01565511","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.064Z [INFO ] [detail] price changed {"rj":"RJ01561180","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.065Z [INFO ] [detail] price changed {"rj":"RJ01555762","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.066Z [INFO ] [detail] price changed {"rj":"RJ01551352","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.067Z [INFO ] [detail] price changed {"rj":"RJ01547104","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.068Z [INFO ] [detail] price changed {"rj":"RJ01542431","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.068Z [INFO ] [detail] price changed {"rj":"RJ01537941","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.069Z [INFO ] [detail] price changed {"rj":"RJ01532662","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.070Z [INFO ] [detail] price changed {"rj":"RJ01527938","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.072Z [INFO ] [detail] price changed {"rj":"RJ01523708","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.072Z [INFO ] [detail] price changed {"rj":"RJ01519020","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.073Z [INFO ] [detail] price changed {"rj":"RJ01509904","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.073Z [INFO ] [detail] price changed {"rj":"RJ01505900","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.074Z [INFO ] [detail] price changed {"rj":"RJ01501679","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.075Z [INFO ] [detail] price changed {"rj":"RJ01496888","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.075Z [INFO ] [detail] price changed {"rj":"RJ01492817","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.076Z [INFO ] [detail] price changed {"rj":"RJ01488986","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.076Z [INFO ] [detail] price changed {"rj":"RJ01484813","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.077Z [INFO ] [detail] price changed {"rj":"RJ01479802","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.078Z [INFO ] [detail] price changed {"rj":"RJ01471590","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.078Z [INFO ] [detail] price changed {"rj":"RJ01467418","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.079Z [INFO ] [detail] price changed {"rj":"RJ01462892","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.079Z [INFO ] [detail] price changed {"rj":"RJ01448535","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.251Z [INFO ] [detail] price changed {"rj":"RJ01443584","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.253Z [INFO ] [detail] price changed {"rj":"RJ01439748","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.254Z [INFO ] [detail] price changed {"rj":"RJ01429996","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.255Z [INFO ] [detail] price changed {"rj":"RJ01714828","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.256Z [INFO ] [detail] price changed {"rj":"RJ01709154","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.257Z [INFO ] [detail] price changed {"rj":"RJ01703672","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.259Z [INFO ] [detail] price changed {"rj":"RJ01693778","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.261Z [INFO ] [detail] price changed {"rj":"RJ01688181","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.261Z [INFO ] [detail] price changed {"rj":"RJ01681610","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.263Z [INFO ] [detail] price changed {"rj":"RJ01676723","price":770,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:43.264Z [INFO ] [detail] price changed {"rj":"RJ01422671","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.265Z [INFO ] [detail] price changed {"rj":"RJ01412565","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.266Z [INFO ] [detail] price changed {"rj":"RJ01408701","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.267Z [INFO ] [detail] price changed {"rj":"RJ01404897","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.268Z [INFO ] [detail] price changed {"rj":"RJ01396619","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.269Z [INFO ] [detail] price changed {"rj":"RJ01393033","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.271Z [INFO ] [detail] price changed {"rj":"RJ01389636","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.272Z [INFO ] [detail] price changed {"rj":"RJ01384529","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.273Z [INFO ] [detail] price changed {"rj":"RJ01376228","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.274Z [INFO ] [detail] price changed {"rj":"RJ01372616","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.275Z [INFO ] [detail] price changed {"rj":"RJ01369271","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.276Z [INFO ] [detail] price changed {"rj":"RJ01352500","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.277Z [INFO ] [detail] price changed {"rj":"RJ01348870","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.277Z [INFO ] [detail] price changed {"rj":"RJ01344857","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.278Z [INFO ] [detail] price changed {"rj":"RJ01340726","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.279Z [INFO ] [detail] price changed {"rj":"RJ01329461","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.280Z [INFO ] [detail] price changed {"rj":"RJ01325992","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.281Z [INFO ] [detail] price changed {"rj":"RJ01322106","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.282Z [INFO ] [detail] price changed {"rj":"RJ01318061","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.283Z [INFO ] [detail] price changed {"rj":"RJ01309724","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.283Z [INFO ] [detail] price changed {"rj":"RJ01306186","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.284Z [INFO ] [detail] price changed {"rj":"RJ01303058","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.285Z [INFO ] [detail] price changed {"rj":"RJ01299216","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.286Z [INFO ] [detail] price changed {"rj":"RJ01295409","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.287Z [INFO ] [detail] price changed {"rj":"RJ01291231","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.287Z [INFO ] [detail] price changed {"rj":"RJ01287628","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.289Z [INFO ] [detail] price changed {"rj":"RJ01284262","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.291Z [INFO ] [detail] price changed {"rj":"RJ01280681","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.292Z [INFO ] [detail] price changed {"rj":"RJ01277318","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.293Z [INFO ] [detail] price changed {"rj":"RJ01274546","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.294Z [INFO ] [detail] price changed {"rj":"RJ01270806","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.294Z [INFO ] [detail] price changed {"rj":"RJ01261645","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.295Z [INFO ] [detail] price changed {"rj":"RJ01258762","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.296Z [INFO ] [detail] price changed {"rj":"RJ01255877","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.297Z [INFO ] [detail] price changed {"rj":"RJ01251537","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.298Z [INFO ] [detail] price changed {"rj":"RJ01245743","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.300Z [INFO ] [detail] price changed {"rj":"RJ01241821","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.301Z [INFO ] [detail] price changed {"rj":"RJ01240627","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.302Z [INFO ] [detail] price changed {"rj":"RJ01236647","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.303Z [INFO ] [detail] price changed {"rj":"RJ01230127","price":770,"sale_price":385,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:43.591Z [WARN ] [db] slow transaction (transactionNoSave): 341ms {"dbSizeMB":80.5}
+2026-09-13T14:14:44.418Z [INFO ] [detail] price changed {"rj":"RJ01636128","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:44.419Z [INFO ] [detail] price changed {"rj":"RJ01636124","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T14:14:44.419Z [INFO ] [detail] price changed {"rj":"RJ01623526","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.420Z [INFO ] [detail] price changed {"rj":"RJ01623525","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.420Z [INFO ] [detail] price changed {"rj":"RJ01623522","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.421Z [INFO ] [detail] price changed {"rj":"RJ01623244","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.422Z [INFO ] [detail] price changed {"rj":"RJ01623241","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.423Z [INFO ] [detail] price changed {"rj":"RJ01623144","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.424Z [INFO ] [detail] price changed {"rj":"RJ01619375","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.425Z [INFO ] [detail] price changed {"rj":"RJ01619342","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.426Z [INFO ] [detail] price changed {"rj":"RJ01616188","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.427Z [INFO ] [detail] price changed {"rj":"RJ01616182","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.428Z [INFO ] [detail] price changed {"rj":"RJ01614712","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.429Z [INFO ] [detail] price changed {"rj":"RJ01614711","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.430Z [INFO ] [detail] price changed {"rj":"RJ01614706","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.430Z [INFO ] [detail] price changed {"rj":"RJ01614701","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.431Z [INFO ] [detail] price changed {"rj":"RJ01614145","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.431Z [INFO ] [detail] price changed {"rj":"RJ01484272","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.432Z [INFO ] [detail] price changed {"rj":"RJ01484270","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.433Z [INFO ] [detail] price changed {"rj":"RJ01484269","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.433Z [INFO ] [detail] price changed {"rj":"RJ01484267","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.434Z [INFO ] [detail] price changed {"rj":"RJ01484266","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.434Z [INFO ] [detail] price changed {"rj":"RJ01484264","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.435Z [INFO ] [detail] price changed {"rj":"RJ01484263","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.436Z [INFO ] [detail] price changed {"rj":"RJ01484775","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.437Z [INFO ] [detail] price changed {"rj":"RJ01484778","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.439Z [INFO ] [detail] price changed {"rj":"RJ01478055","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.439Z [INFO ] [detail] price changed {"rj":"RJ01478054","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.440Z [INFO ] [detail] price changed {"rj":"RJ01478050","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.440Z [INFO ] [detail] price changed {"rj":"RJ01478049","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.441Z [INFO ] [detail] price changed {"rj":"RJ01478048","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.441Z [INFO ] [detail] price changed {"rj":"RJ01478047","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.442Z [INFO ] [detail] price changed {"rj":"RJ01478062","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.442Z [INFO ] [detail] price changed {"rj":"RJ01478065","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.443Z [INFO ] [detail] price changed {"rj":"RJ01478063","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.443Z [INFO ] [detail] price changed {"rj":"RJ01478059","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.443Z [INFO ] [detail] price changed {"rj":"RJ01474518","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.444Z [INFO ] [detail] price changed {"rj":"RJ01474517","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.444Z [INFO ] [detail] price changed {"rj":"RJ01474516","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.445Z [INFO ] [detail] price changed {"rj":"RJ01474515","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.446Z [INFO ] [detail] price changed {"rj":"RJ01473473","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.447Z [INFO ] [detail] price changed {"rj":"RJ01473471","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.447Z [INFO ] [detail] price changed {"rj":"RJ01473469","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.448Z [INFO ] [detail] price changed {"rj":"RJ01471602","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.449Z [INFO ] [detail] price changed {"rj":"RJ01471601","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.449Z [INFO ] [detail] price changed {"rj":"RJ01471600","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.450Z [INFO ] [detail] price changed {"rj":"RJ01466888","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.451Z [INFO ] [detail] price changed {"rj":"RJ01466883","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.451Z [INFO ] [detail] price changed {"rj":"RJ01466881","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.453Z [INFO ] [detail] price changed {"rj":"RJ01466879","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.542Z [INFO ] [detail] price changed {"rj":"RJ01466878","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.543Z [INFO ] [detail] price changed {"rj":"RJ01466876","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.543Z [INFO ] [detail] price changed {"rj":"RJ01466874","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.544Z [INFO ] [detail] price changed {"rj":"RJ01465491","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.544Z [INFO ] [detail] price changed {"rj":"RJ01460060","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.545Z [INFO ] [detail] price changed {"rj":"RJ01460058","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.545Z [INFO ] [detail] price changed {"rj":"RJ01460057","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.546Z [INFO ] [detail] price changed {"rj":"RJ01458783","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.546Z [INFO ] [detail] price changed {"rj":"RJ01458782","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.546Z [INFO ] [detail] price changed {"rj":"RJ01458781","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.547Z [INFO ] [detail] price changed {"rj":"RJ01458779","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.547Z [INFO ] [detail] price changed {"rj":"RJ01458777","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.548Z [INFO ] [detail] price changed {"rj":"RJ01456883","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.548Z [INFO ] [detail] price changed {"rj":"RJ01456882","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.550Z [INFO ] [detail] price changed {"rj":"RJ01452498","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.551Z [INFO ] [detail] price changed {"rj":"RJ01451201","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.553Z [INFO ] [detail] price changed {"rj":"RJ01451199","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.554Z [INFO ] [detail] price changed {"rj":"RJ01451198","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.556Z [INFO ] [detail] price changed {"rj":"RJ01451197","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.556Z [INFO ] [detail] price changed {"rj":"RJ01451193","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.557Z [INFO ] [detail] price changed {"rj":"RJ01450496","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.558Z [INFO ] [detail] price changed {"rj":"RJ01449880","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.559Z [INFO ] [detail] price changed {"rj":"RJ01447080","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.559Z [INFO ] [detail] price changed {"rj":"RJ01444971","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.560Z [INFO ] [detail] price changed {"rj":"RJ01444974","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.561Z [INFO ] [detail] price changed {"rj":"RJ01444978","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.562Z [INFO ] [detail] price changed {"rj":"RJ01444980","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.562Z [INFO ] [detail] price changed {"rj":"RJ01445686","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.563Z [INFO ] [detail] price changed {"rj":"RJ01445687","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.563Z [INFO ] [detail] price changed {"rj":"RJ01443344","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.564Z [INFO ] [detail] price changed {"rj":"RJ01443329","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.565Z [INFO ] [detail] price changed {"rj":"RJ01441996","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.566Z [INFO ] [detail] price changed {"rj":"RJ01441990","price":110,"sale_price":55,"point":null,"point_rate":null,"discount_rate":50,"is_on_sale":1,"is_point_only":0}
+2026-09-13T14:14:44.566Z [INFO ] [detail] circle sale start RG51455
+2026-09-13T14:14:44.579Z [INFO ] [detail] done {"processed":1936,"priceChanges":1797,"errors":3,"total":1939,"apiMissing":0,"contaminated":0,"fetchFail":3,"storeError":0,"verifiedAlive":3,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0.002,"highErrorRate":false}
+2026-09-13T14:45:00.469Z [INFO ] [scheduler] sessionRewarm start (periodic, preventive)
+2026-09-13T14:45:00.499Z [WARN ] [warmUp] re-warmup triggered externally (repeated empty responses detected)
+2026-09-13T14:45:10.813Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html","clicked":false,"clickedInfo":null}
+2026-09-13T14:45:10.815Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html","title":"女性無料のフタナリ浴場(欲情) [ときたま] | DLsite 同人 - R18"}
+2026-09-13T14:45:10.823Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html","productUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html/?locale=ja_JP"}
+2026-09-13T14:45:20.959Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-13T14:45:20.959Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html/?locale=ja_JP","title":"女性無料のフタナリ浴場(欲情) [ときたま] | DLsite 同人 - R18"}
+2026-09-13T14:45:26.961Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-13T14:45:26.985Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","2026911_summer_home","_gcl_au","__cf_bm","DL_PRODUCT_LOG","_vwo_ds","_ga_sid","_gat","_vwo_sn","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid"]}
+2026-09-13T14:45:41.249Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html","clicked":false,"clickedInfo":null}
+2026-09-13T14:45:41.249Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html","title":"先生、キスして、Hして。玩具好き先生と夜の教室で初H [かみしまあきら] | DLsite がるまに"}
+2026-09-13T14:45:41.256Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html","productUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html/?locale=ja_JP"}
+2026-09-13T14:45:53.815Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-13T14:45:53.815Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html/?locale=ja_JP","title":"先生、キスして、Hして。玩具好き先生と夜の教室で初H [かみしまあきら] | DLsite がるまに"}
+2026-09-13T14:45:59.823Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-13T14:45:59.827Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","2026911_summer_home","_gcl_au","__cf_bm","_vwo_ds","_ga_sid","_gat","DL_PRODUCT_LOG","_dd_s","_vwo_sn","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid"]}
+2026-09-13T14:46:11.315Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html","clicked":false,"clickedInfo":null}
+2026-09-13T14:46:11.315Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html","title":"これは生贄の儚き幸福 [かみしまあきら] | DLsite がるまに"}
+2026-09-13T14:46:11.319Z [INFO ] [warmUp] トップページに年齢確認ボタンなし。商品ページへ遷移して再試行 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html","productUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html/?locale=ja_JP"}
+2026-09-13T14:46:23.730Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html/?locale=ja_JP","clicked":false,"clickedInfo":null}
+2026-09-13T14:46:23.730Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html/?locale=ja_JP","title":"これは生贄の儚き幸福 [かみしまあきら] | DLsite がるまに"}
+2026-09-13T14:46:29.746Z [INFO ] [warmUp] site done {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html","clicked":false,"reason":"gate-absent(product)","navigatedAfterClick":false}
+2026-09-13T14:46:29.753Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","locale","_vis_opt_s","_vis_opt_test_cookie","2026911_summer_home","_gcl_au","__cf_bm","_vwo_ds","_ga_sid","DL_PRODUCT_LOG","_dd_s","_vwo_sn","_inflow_dlsite_params","_ga","_gat","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid"]}
+2026-09-13T14:46:29.753Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"女性無料のフタナリ浴場(欲情) [ときたま] | DLsite 同人 - R18","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt 同人誌・同人ゲーム・同人ボイス・ASMRならDLsite 日本語-JPY 関連サービス すべて すべて 同人 成年コミック 美少女ゲーム スマホゲーム 検索 こだわり条件 新規登録 ログイン カート ガイド 同人 成年コミック 美少女ゲーム スマホゲーム 制作ソフト・素材 オンラインゲーム 全年齢向けへ 女性向け 全年齢へ 女性向け","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01643383.html","rjUsed":"RJ01643383","cookieObtained":true},"bl":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"先生、キスして、Hして。玩具好き先生と夜の教室で初H [かみしまあきら] | DLsite がるまに","url":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt ボーイズラブ(BL)同人・漫画・ゲーム・ボイスならDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコミック 乙女向けドラマCD BL同人 BLコミック BLドラマCD 検索 こだわり条件 新規登録 ログイン カート ガイド 乙女向け/TL BL 全年齢向けへ 男性向け R18へ 女性向け 全年齢","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ284471.html","rjUsed":"RJ284471","cookieObtained":true},"girls":{"clicked":false,"reason":"gate-absent(product)","diag":{"title":"これは生贄の儚き幸福 [かみしまあきら] | DLsite がるまに","url":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html/?locale=ja_JP","bodyTextSample":" Select Language 日本語 English 简体中文 繁體中文 한국어 Español Deutsch Français Bahasa Indonesia Italiano Português Svenska ภาษาไทย Tiếng Việt 乙女向け(TL)漫画・シチュエーションボイス・ゲームはDLsiteがるまに 日本語-JPY 関連サービス すべて すべて 乙女向け同人 TLコミック 乙女向けドラマCD BL同人 BLコミック BLドラマCD 検索 こだわり条件 新規登録 ログイン カート ガイド 乙女向け/TL BL 全年齢向けへ 男性向け R18へ 女性向け 全","anchorTextsSample":["日本語","English","简体中文","繁體中文","한국어","Español","Deutsch","Français","Bahasa Indonesia","Italiano","Português","Svenska","ภาษาไทย","Tiếng Việt"],"clickedInfo":null},"gateAbsent":true,"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ376108.html","rjUsed":"RJ376108","cookieObtained":true}}
+2026-09-13T14:46:29.802Z [INFO ] [scheduler] sessionRewarm done
+2026-09-13T14:50:00.166Z [INFO ] [compScan] detail: no due candidates
+2026-09-13T14:50:15.799Z [INFO ] [pushDebugBundle] pushed {"job":"comp_detail","files":12,"branch":"debug"}
+2026-09-13T15:00:00.828Z [INFO ] [detail] due batch: 500 (total so far: 500 ) concurrency=3
+2026-09-13T15:00:05.236Z [INFO ] [detail] circle sale end RG47806
+2026-09-13T15:00:05.267Z [INFO ] [detail] circle sale end RG58262
+2026-09-13T15:00:05.271Z [INFO ] [detail] circle sale end RG01008451
+2026-09-13T15:00:06.318Z [INFO ] [detail] circle sale end RG51455
+2026-09-13T15:00:08.747Z [INFO ] [detail] price changed {"rj":"RJ01616077","price":440,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T15:00:10.518Z [INFO ] [detail] price changed {"rj":"RJ01581160","price":550,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T15:00:10.800Z [INFO ] [detail] price changed {"rj":"RJ01592745","price":660,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T15:00:12.547Z [INFO ] [detail] price changed {"rj":"RJ01596536","price":110,"sale_price":null,"point":null,"point_rate":null,"discount_rate":null,"is_on_sale":1,"is_point_only":1}
+2026-09-13T15:00:12.554Z [INFO ] [detail] limit reached: 500
+2026-09-13T15:00:12.555Z [INFO ] [detail] done {"processed":500,"priceChanges":4,"errors":0,"total":500,"apiMissing":0,"contaminated":0,"fetchFail":0,"storeError":0,"verifiedAlive":0,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0,"highErrorRate":false}
+2026-09-13T15:00:24.430Z [INFO ] [pushDebugBundle] pushed {"job":"detail","files":12,"branch":"debug"}
+2026-09-13T18:15:00.302Z [INFO ] [scheduler] priceIssueResample: revived 150 件を再チェック対象に戻しました
+2026-09-13T18:20:00.137Z [INFO ] [detail] due batch: 500 (total so far: 500 ) concurrency=3
+2026-09-13T18:20:05.165Z [INFO ] [detail] price changed {"rj":"RJ01574728","price":550,"sale_price":55,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-09-13T18:20:05.603Z [INFO ] [detail] price changed {"rj":"RJ01590334","price":550,"sale_price":55,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-09-13T18:20:05.606Z [INFO ] [detail] price changed {"rj":"RJ01590263","price":550,"sale_price":55,"point":null,"point_rate":null,"discount_rate":90,"is_on_sale":1,"is_point_only":0}
+2026-09-13T18:20:09.301Z [INFO ] [detail] limit reached: 500
+2026-09-13T18:20:09.303Z [INFO ] [detail] done {"processed":500,"priceChanges":3,"errors":0,"total":500,"apiMissing":0,"contaminated":0,"fetchFail":0,"storeError":0,"verifiedAlive":0,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0,"highErrorRate":false}
+2026-09-13T18:20:22.327Z [INFO ] [pushDebugBundle] pushed {"job":"detail","files":12,"branch":"debug"}
+2026-09-13T19:10:00.112Z [INFO ] [detail] due batch: 500 (total so far: 500 ) concurrency=3
+2026-09-13T19:10:09.254Z [INFO ] [detail] limit reached: 500
+2026-09-13T19:10:09.255Z [INFO ] [detail] done {"processed":500,"priceChanges":0,"errors":0,"total":500,"apiMissing":0,"contaminated":0,"fetchFail":0,"storeError":0,"verifiedAlive":0,"autoThrottled":false,"rateLimit":700,"concurrency":3,"errorRate":0,"highErrorRate":false}
+2026-09-13T19:10:21.404Z [INFO ] [pushDebugBundle] pushed {"job":"detail","files":12,"branch":"debug"}
+2026-09-13T20:29:45.561Z [ERROR] [electron] child-process-gone {"type":"Utility","reason":"killed","exitCode":1073807364}
+2026-09-13T23:21:59.516Z [INFO ] [startup] app ready
+2026-09-13T23:21:59.521Z [INFO ] [startup] requiring modules...
+2026-09-13T23:21:59.758Z [INFO ] [queue] using electron.net.fetch (Chromium session)
+2026-09-13T23:21:59.784Z [INFO ] [startup] modules loaded, starting db.init()...
+2026-09-13T23:21:59.870Z [INFO ] [db] loaded C:\Users\23saiwat\Downloads\New folder (2)\dlsite.db
+2026-09-13T23:22:02.746Z [WARN ] [db] 起動時サニティスキャン: 汚染疑いレコードを検出 {"salePriceNotLower":0,"discountWithoutSalePrice":0,"zeroPriceOnSale":141,"negativePrice":0,"discountRateOutOfRange":0}
+2026-09-13T23:22:03.614Z [WARN ] [db] slow transaction (runInTransaction): 865ms {"dbSizeMB":80.7}
+2026-09-13T23:22:03.614Z [WARN ] [db] repairContaminatedPriceData: 修復件数(パターン別合計、重複含む) 141
+2026-09-13T23:22:03.614Z [INFO ] [startup] db.init() done, starting apiServer...
+2026-09-13T23:22:03.617Z [INFO ] [startup] apiServer started
+2026-09-13T23:22:03.617Z [INFO ] [startup] _bindIpc...
+2026-09-13T23:22:03.618Z [INFO ] [startup] createTray...
+2026-09-13T23:22:03.653Z [INFO ] [startup] createWindow...
+2026-09-13T23:22:03.808Z [INFO ] [startup] window created, starting background tasks...
+2026-09-13T23:22:03.826Z [INFO ] [api] dashboard → http://127.0.0.1:7777
+2026-09-13T23:22:04.745Z [INFO ] [api] dashboard loaded from C:\Users\23saiwat\AppData\Local\Temp\3JGnwZp1eu2oxhTV8lGIls3N9Uj\resources\public\index.html
+2026-09-13T23:22:06.552Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01493561.html","clicked":false,"clickedInfo":null}
+2026-09-13T23:22:06.553Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01493561.html","title":"Application Blocked"}
+2026-09-13T23:22:06.554Z [WARN ] [warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念 {"url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01493561.html","site":"maniax","regionBlocked":false}
+2026-09-13T23:22:06.557Z [INFO ] [warmUp] cookie check (maniax) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","_vis_opt_s","2026911_summer_home","_gcl_au","_vwo_ds","_ga_sid","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid","locale"]}
+2026-09-13T23:22:07.298Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01710683.html","clicked":false,"clickedInfo":null}
+2026-09-13T23:22:07.298Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01710683.html","title":"Application Blocked"}
+2026-09-13T23:22:07.299Z [WARN ] [warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念 {"url":"https://www.dlsite.com/bl/work/=/product_id/RJ01710683.html","site":"bl","regionBlocked":false}
+2026-09-13T23:22:07.301Z [INFO ] [warmUp] cookie check (bl) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","_vis_opt_s","2026911_summer_home","_gcl_au","_vwo_ds","_ga_sid","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid","locale"]}
+2026-09-13T23:22:09.113Z [INFO ] [warmUp] クリック試行結果 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01309824.html","clicked":false,"clickedInfo":null}
+2026-09-13T23:22:09.113Z [INFO ] [warmUp] 年齢確認ゲートなし（既に通過済み、またはこのページには表示されない）— 正常 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01309824.html","title":"Application Blocked"}
+2026-09-13T23:22:09.114Z [WARN ] [warmUp] 年齢確認ボタンが見つからず、同一サイト内の商品リンクも見つからなかったため断念 {"url":"https://www.dlsite.com/girls/work/=/product_id/RJ01309824.html","site":"girls","regionBlocked":false}
+2026-09-13T23:22:09.116Z [INFO ] [warmUp] cookie check (girls) {"hasAgeCookie":true,"ageCookies":["adultchecked=1"],"allCookieNames":["recommend_device_id","_vwo_uuid_v2","202694_special_maniax","_vwo_uuid","__DLsite_SID","_trust360_","_inflow_params","_inflow_ad_params","_twpid","_im_vid","_fbp","_tt_enable_cookie","_ttp","_gaid","lamp_cookie_synced_flag","adultchecked","_vis_opt_exp_179_exclude","_gid","_vwo_uuid_180","_vis_opt_exp_180_combi","_vis_opt_exp_180_combi_choose","_vwo_uuid_181","_vis_opt_exp_181_combi","_vis_opt_exp_181_combi_choose","_vis_opt_s","2026911_summer_home","_gcl_au","_vwo_ds","_ga_sid","DL_PRODUCT_LOG","_dd_s","_inflow_dlsite_params","_ga","_ga_ZW5GTXK6EV","ttcsid","ttcsid_CKRMHGRC77U81CKC8HNG","ttcsid_CLVT5NRC77U95UC4O12G","ttcsid_CPLBGI3C77U3S3PJLFRG","ttcsid_CQ3QNNBC77U0CETNEGNG","ttcsid_D02V363C77U9GIBTNP9G","ttcsid_D0DFBO3C77U626LJDL6G","_twsid","locale"]}
+2026-09-13T23:22:09.117Z [INFO ] [warmUp] age-gate results (per site) {"maniax":{"clicked":false,"reason":"no-age-gate-no-product-link","diag":{"title":"Application Blocked","url":"https://www.dlsite.com/maniax/work/=/product_id/RJ01493561.html","bodyTextSample":"Application Blocked The application you are trying to use has been blocked in accordance with company policy. Please contact your system administrator if you believe this is an error. User: wataru.saito143@schools.sa.edu.au Application: web-browsing","anchorTextsSample":[],"clickedInfo":null},"regionBlocked":false,"targetUrl":"https://www.dlsite.com/maniax/work/=/product_id/RJ01493561.html","rjUsed":"RJ01493561","cookieObtained":true},"bl":{"clicked":false,"reason":"no-age-gate-no-product-link","diag":{"title":"Application Blocked","url":"https://www.dlsite.com/bl/work/=/product_id/RJ01710683.html","bodyTextSample":"Application Blocked The application you are trying to use has been blocked in accordance with company policy. Please contact your system administrator if you believe this is an error. User: wataru.saito143@schools.sa.edu.au Application: web-browsing","anchorTextsSample":[],"clickedInfo":null},"regionBlocked":false,"targetUrl":"https://www.dlsite.com/bl/work/=/product_id/RJ01710683.html","rjUsed":"RJ01710683","cookieObtained":true},"girls":{"clicked":false,"reason":"no-age-gate-no-product-link","diag":{"title":"Application Blocked","url":"https://www.dlsite.com/girls/work/=/product_id/RJ01309824.html","bodyTextSample":"Application Blocked The application you are trying to use has been blocked in accordance with company policy. Please contact your system administrator if you believe this is an error. User: wataru.saito143@schools.sa.edu.au Application: web-browsing","anchorTextsSample":[],"clickedInfo":null},"regionBlocked":false,"targetUrl":"https://www.dlsite.com/girls/work/=/product_id/RJ01309824.html","rjUsed":"RJ01309824","cookieObtained":true}}
+2026-09-13T23:22:09.122Z [INFO ] [scheduler] starting
+2026-09-13T23:22:09.127Z [INFO ] [scheduler] discovery job scheduled 0 */6 * * *
+2026-09-13T23:22:09.128Z [INFO ] [scheduler] detail job scheduled */10 * * * *
+2026-09-13T23:22:09.128Z [INFO ] [scheduler] saleBoost job scheduled */10 * * * *
+2026-09-13T23:22:09.128Z [INFO ] [scheduler] backup job scheduled (daily 03:00)
+2026-09-13T23:22:09.128Z [INFO ] [scheduler] integrityCheck job scheduled (daily 03:50)
+2026-09-13T23:22:09.129Z [INFO ] [scheduler] prevMonthScan job scheduled (monthly 2nd 04:00)
+2026-09-13T23:22:09.129Z [INFO ] [scheduler] exportShards job scheduled (every 6h, :30)
+2026-09-13T23:22:09.129Z [INFO ] [scheduler] sessionRewarm job scheduled (every 6h at :15)
+2026-09-13T23:22:09.130Z [INFO ] [scheduler] comp_listing job scheduled (daily 05:00)
+2026-09-13T23:22:09.130Z [INFO ] [scheduler] comp_detail job scheduled (every 2h at :20)
+2026-09-13T23:22:09.130Z [INFO ] [scheduler] quarantineResample job scheduled (daily 03:40, 100件)
+2026-09-13T23:22:09.131Z [INFO ] [scheduler] priceIssueResample job scheduled (daily 03:45, 150件)
+2026-09-13T23:22:09.131Z [INFO ] [scheduler] circleGap job scheduled (daily 04:10)
+2026-09-13T23:22:09.131Z [INFO ] [scheduler] running initial passes on startup
+2026-09-13T23:22:09.131Z [INFO ] [discovery] start — monthly FSR {"month":"2026-09-01","prevMonth":"(skip)"}
+2026-09-13T23:22:11.648Z [WARN ] [fetch] 503 throttle – wait 1276ms https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/regist_date_start/2026-09-01/regist_date_end/2026-09-30/ana_flg/all/age_category%5B0%5D/general/age_category%5B1%5D/r15/age_category%5B2%5D/adult/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/work_category%5B4%5D/ai/order/release_d/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI_HANS/options%5B3%5D/CHI_HANT/options%5B4%5D/KO_KR/options%5B5%5D/SPA/options%5B6%5D/GER/options%5B7%5D/FRE/options%5B8%5D/IND/options%5B9%5D/ITA/options%5B10%5D/POR/options%5B11%5D/SWE/options%5B12%5D/THA/options%5B13%5D/VIE/options%5B14%5D/OTL/options%5B15%5D/NM/per_page/100/show_type/1
+2026-09-13T23:22:11.648Z [WARN ] [fetch] network pause (系統:discovery): waiting 30s

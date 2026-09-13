@@ -1,0 +1,27 @@
+[
+  {
+    "ts": "2026-09-13T23:22:09.117Z",
+    "trigger": "startup",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "no-age-gate-no-product-link",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "no-age-gate-no-product-link",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "no-age-gate-no-product-link",
+        "regionBlocked": false
+      }
+    }
+  }
+]
