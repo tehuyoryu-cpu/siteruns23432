@@ -22,6 +22,18 @@ function _discoveryAborted() {
   return !!global._crawlerAbort?.discovery;
 }
 
+/**
+ * リスティングページの発売日文字列(例: "2024年10月15日"、"2026-09-01"等)を
+ * "YYYY-MM-DD" に正規化する。パースできない場合は null を返す。
+ */
+function _parseListingDate(dateStr) {
+  if (!dateStr) return null;
+  const m = String(dateStr).match(/(\d{4})[年\-/](\d{1,2})[月\-/](\d{1,2})/);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
 // バグ修正: サークル単位の作品一覧取得に、これまで /fsr/=/maker_id/{id}/... という
 // 汎用検索エンドポイント(fsr)のURLを使っていたが、実際にDLsiteで検証したところ
 // fsrはmaker_idを filter として認識しておらず、指定したmaker_idに関係なく
@@ -136,6 +148,31 @@ async function _scanFsrMonthly(site, knownRjs, delistedRjs = null, dateStr = nul
     }
     failCount = 0;
     hadItems = true;
+
+    // バグ修正(重大・実機確認済み): regist_date_start/regist_date_end による
+    // 月次絞り込みは、ページ番号が十分に深くなる(実機確認: 1ヶ月あたり
+    // 15万件目付近、per_page=30でpage=5000)と機能しなくなり、指定した月とは
+    // 無関係な過去の作品(実機確認: 2026年9月指定で2024年10月の作品が返る)を
+    // 際限なく返し続けることが判明した。DLsiteの検索インデックスが一定件数
+    // 以降のページで日付フィルタを適用できず、フィルタ無視のフォールバック
+    // 結果(カタログ全体を発売日順に並べたもの)を返しているとみられる。
+    // この状態になると返ってくるページは常にpage件数(=100件)を満たすため、
+    // 「100件未満2回連続で終了」判定に一度も引っかからず、_runFullScanByMonth
+    // が月をまたいで無限に走り続ける(release_term=monthのバグと同種の
+    // 「毎回0件のまま数時間かかる」症状が別の原因で再発する)。
+    // 各ページの発売日をチェックし、対象月の範囲外の作品が過半数を占めたら
+    // フィルタ破綻とみなしてこの月の走査を打ち切る(=通常の「最終ページ」と
+    // 同じ扱いにする。取りこぼした分は該当作品自身の正しい月のスキャン時に
+    // 別途発見されるため実害はない)。
+    const parsedDates = items.map(it => _parseListingDate(it.releaseDate)).filter(Boolean);
+    if (parsedDates.length >= 5) {
+      const outOfRange = parsedDates.filter(d => d < date || d > dateEnd).length;
+      if (outOfRange / parsedDates.length >= 0.5) {
+        log.warn('[discovery] monthly: 深いページで日付フィルタ破綻を検知、この月の走査を打ち切ります',
+          { site, date, dateEnd, page, outOfRange, sampled: parsedDates.length });
+        break;
+      }
+    }
 
     // 効率化: このFSRは order/release_d（新しい順）でソートされているため、
     // ページを跨ぐほど古い作品になる。1ページ丸ごと(100件)が既に既知のRJだけで
@@ -1137,5 +1174,5 @@ module.exports = {
   // 構造的問題#4対応: テスト専用エクスポート。既存動作は変更していない。
   // サークルプロフィールURL(過去に一度実機で修正が入った箇所)・月初日付
   // 計算等の純粋関数をtest/discovery.test.jsから直接検証するために公開する。
-  __testHooks: { _circleProfileUrl, _monthStart, _monthEnd, _isMonthRollover, _classifyMakerIdMismatch },
+  __testHooks: { _circleProfileUrl, _monthStart, _monthEnd, _isMonthRollover, _classifyMakerIdMismatch, _parseListingDate },
 };
