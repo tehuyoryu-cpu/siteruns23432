@@ -97,7 +97,7 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
     if (digestTail != null) files.push({ path: 'digest-recent.log',   content: digestTail });
     if (eventsTail != null) files.push({ path: 'events-recent.jsonl', content: eventsTail });
 
-    let dbStats = null, priceIssuesCount = null, integrityHistory = null, dataSanity = null;
+    let dbStats = null, priceIssuesCount = null, integrityHistory = null, dataSanity = null, onSaleContaminationEstimate = null;
     try {
       // circular require回避のため呼び出し時に require する
       // (db.js -> ... -> pushDebugBundle.js という循環経路は無いが、
@@ -116,6 +116,11 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       // 「測定できなかった」場合(関数未実装の旧ビルド等)はnullのまま扱い、
       // debug-summary.md側でその旨を明示する(黙って0件と誤解させない)。
       dataSanity = db.getDataSanityReport?.() ?? null;
+      // is_sale過剰判定バグ(2026-09-13修正)の残留影響を時系列で追跡するための
+      // 観測専用カウント(自動修復はしない。理由はdb.js側のコメント参照)。
+      // この数値が今後の複数回のpushにわたって減っていけば、自己修復が
+      // 正しく進んでいる証拠になる。
+      onSaleContaminationEstimate = db.getOnSaleContaminationEstimate?.() ?? null;
     } catch (e) {
       log.warn('[pushDebugBundle] db read failed', e.message);
     }
@@ -188,6 +193,7 @@ async function pushDebugBundle({ job = null, result = null } = {}) {
       priceIssuesCount,
       integrityHistory,
       dataSanity,
+      onSaleContaminationEstimate,
       health,
       warmUpHistory: warmUpHistoryData,
       buildInfo,
@@ -296,6 +302,21 @@ function _buildSummaryMarkdown({ job, meta, digestTail, recentErrors }) {
     } else {
       L.push('汚染疑いレコードなし。');
     }
+  }
+  L.push('');
+
+  // is_sale過剰判定バグ(2026-09-13修正)の残留影響を時系列で追跡するための
+  // 観測専用セクション。上のデータ汚染サニティスキャンとは違い、これは
+  // 「本物のポイント還元キャンペーン」と機械的に区別できないため自動修復の
+  // 対象にしていない。複数回のpushにわたってこの数値が減っていけば、
+  // 該当作品が自然な再取得サイクルで自己修復できている証拠になる。
+  L.push('## on_sale過剰判定バグの残留影響（観測専用・自動修復なし）');
+  if (meta.onSaleContaminationEstimate == null) {
+    L.push('⚠ 測定できませんでした（getOnSaleContaminationEstimate()が利用できないビルド、またはDB読み取り失敗）。');
+  } else {
+    L.push(`- is_on_sale=1だがsale_price/discount_rateが一度も記録されていない件数: ${meta.onSaleContaminationEstimate}`);
+    L.push('  （本物のポイント還元キャンペーンも同じ形で現れるため、この数値そのものが' +
+      '全て不具合とは限らない。前回pushからの減少幅を見て自己修復の進捗を確認する用途）');
   }
   L.push('');
 

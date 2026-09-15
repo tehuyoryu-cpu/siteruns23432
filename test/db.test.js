@@ -143,6 +143,25 @@ async function asyncTest(name, fn) {
     assert.ok(rjs.includes('RJ900004'));
   });
 
+  test('getOnSaleContaminationEstimate: is_on_sale=1でsale_price/discount_rateが両方無いレコードのみ数える', () => {
+    db.upsertWork({
+      rj_code: 'RJ900010', title: 'contamination candidate', circle: null, maker_id: null,
+      work_type: null, site_id: 'maniax', release_date: null, dl_count: 0,
+    });
+    db.savePriceIfChanged('RJ900010', { price: 1000, sale_price: null, point: null, discount_rate: null, is_on_sale: 1, is_point_only: 1 });
+    db.markChecked('RJ900010', { check_interval: 7200, priority: 100, is_on_sale: 1, consecutive_no_change: 0, consecutive_errors: 0 });
+
+    db.upsertWork({
+      rj_code: 'RJ900011', title: 'genuine sale', circle: null, maker_id: null,
+      work_type: null, site_id: 'maniax', release_date: null, dl_count: 0,
+    });
+    db.savePriceIfChanged('RJ900011', { price: 1000, sale_price: 700, point: null, discount_rate: 30, is_on_sale: 1, is_point_only: 0 });
+    db.markChecked('RJ900011', { check_interval: 7200, priority: 100, is_on_sale: 1, consecutive_no_change: 0, consecutive_errors: 0 });
+
+    const n = db.getOnSaleContaminationEstimate();
+    assert.ok(n >= 1, 'RJ900010(sale_price/discount_rateともに無い)は数えられるべき');
+  });
+
   await db.close();
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
 

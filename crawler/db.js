@@ -200,6 +200,34 @@ function repairContaminatedPriceData() {
   return totalFixed;
 }
 
+/**
+ * データ汚染対策(観測用、自動修復はしない): is_sale過剰判定バグ
+ * (2026-09-13修正、parser.js)の残留影響を追跡するための診断カウント。
+ *
+ * is_on_sale=1 なのに sale_price も discount_rate も一度も記録されていない
+ * レコード数を返す。この形は2種類のケースで区別なく現れる:
+ *   (a) 本バグの被害: is_sale過剰判定でisOnSale=trueと誤判定され、
+ *       実際には値引きが無いのでsale_price/discount_rateが埋まらなかった
+ *   (b) 正当なケース: 本物のポイント還元キャンペーン(is_point_only=1)は
+ *       価格自体が変わらないため、同じくsale_price=nullで記録される
+ * (a)と(b)はworks上に残る非正規化フィールドだけからは機械的に区別できない
+ * (どちらもis_point_only=1になり得る)ため、盲目的なSQL一括修復は
+ * 正当なポイントキャンペーンを誤って「セール解除」してしまうリスクがあり
+ * 採用しない。該当作品は次に実際に再取得された時点で(修正後のparser.jsが
+ * on_saleフィールドを正しく見るため)自動的に正しい値へ上書きされる。
+ * 現在の優先度スケジュール上、これらはonSale優先度[100]・2時間間隔と
+ * 誤って設定されているため通常の作品より早く再取得され、この数値は
+ * 数日以内に自然に減っていくはずである。デバッグバンドルで時系列追跡し、
+ * 「実際に減っているか」を確認する目的でのみ使う。
+ */
+function getOnSaleContaminationEstimate() {
+  const row = _get(`
+    SELECT COUNT(*) AS n FROM works
+    WHERE is_on_sale = 1 AND cur_sale_price IS NULL AND cur_discount_rate IS NULL
+  `);
+  return row?.n ?? 0;
+}
+
 /** DBをクローズする。呼び出し側の `await db.close()` との互換性のため async のまま維持。 */
 async function close() {
   if (_db) {
@@ -2372,6 +2400,7 @@ module.exports = {
   getSlowTransactionStats,
   getDataSanityReport,
   repairContaminatedPriceData,
+  getOnSaleContaminationEstimate,
   backup,
   verifyBackup,
   transaction,
