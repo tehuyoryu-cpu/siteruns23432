@@ -26,7 +26,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dlsite-discovery-test-'));
 process.env.DLSITE_DATA_DIR = tmpDir;
 
 const { __testHooks } = require(path.join(__dirname, '..', 'crawler', 'discovery'));
-const { _circleProfileUrl, _monthStart, _isMonthRollover, _classifyMakerIdMismatch } = __testHooks;
+const { _circleProfileUrl, _monthStart, _isMonthRollover, _classifyMakerIdMismatch, _parseListingDate } = __testHooks;
 
 let pass = 0, fail = 0;
 const failures = [];
@@ -172,6 +172,57 @@ test('mismatchが0件ならfiltered===items(不要なコピーを作らない)',
   const items = [{ makerId: 'RG01013422' }];
   const r = _classifyMakerIdMismatch(items, 'RG01013422');
   assert.strictEqual(r.filtered, items);
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// _parseListingDate() — リスティングページの発売日文字列を正規化する
+// (e12b46dで導入、newReleaseScanへの横展開に伴いテストを追加)
+// ════════════════════════════════════════════════════════════════════════════
+
+test('_parseListingDate: 「YYYY年M月D日」形式を YYYY-MM-DD に正規化する', () => {
+  assert.strictEqual(_parseListingDate('2024年10月15日'), '2024-10-15');
+});
+
+test('_parseListingDate: 「YYYY-MM-DD」形式(既に正規化済み)もそのまま通す', () => {
+  assert.strictEqual(_parseListingDate('2026-09-01'), '2026-09-01');
+});
+
+test('_parseListingDate: 1桁の月日をゼロ埋めする', () => {
+  assert.strictEqual(_parseListingDate('2026年3月5日'), '2026-03-05');
+});
+
+test('_parseListingDate: パースできない文字列/nullはnullを返す', () => {
+  assert.strictEqual(_parseListingDate('不明'), null);
+  assert.strictEqual(_parseListingDate(null), null);
+  assert.strictEqual(_parseListingDate(undefined), null);
+});
+
+// newReleaseScanの日付フィルタ破綻検知(regist_date_start単独、下限のみ)の
+// 閾値ロジックそのもののシミュレーション。実際のnewReleaseScan関数は
+// ネットワーク取得を伴うため、ここでは_parseListingDate + 同じ閾値計算
+// (サンプル5件以上・過半数がsinceDateより古ければ破綻とみなす)だけを
+// 独立して検証する。
+test('newReleaseScanの閾値ロジック: sinceDateより古い作品が過半数を占めれば破綻と判定できる', () => {
+  const sinceDate = '2025-09-15';
+  const releaseDates = [
+    '2024年10月15日', '2024年11月1日', '2024年12月20日', '2025年1月5日', // 4件が古い
+    '2025年10月1日', // 1件だけ新しい
+  ];
+  const parsed = releaseDates.map(_parseListingDate).filter(Boolean);
+  assert.strictEqual(parsed.length, 5);
+  const tooOld = parsed.filter(d => d < sinceDate).length;
+  assert.strictEqual(tooOld, 4);
+  assert.ok(tooOld / parsed.length >= 0.5, '過半数が古いのでフィルタ破綻と判定されるべき');
+});
+
+test('newReleaseScanの閾値ロジック: 正常時(新しい作品が大半)は破綻と判定しない', () => {
+  const sinceDate = '2025-09-15';
+  const releaseDates = [
+    '2026年9月10日', '2026年9月9日', '2026年9月8日', '2026年9月7日', '2024年10月1日',
+  ];
+  const parsed = releaseDates.map(_parseListingDate).filter(Boolean);
+  const tooOld = parsed.filter(d => d < sinceDate).length;
+  assert.ok(tooOld / parsed.length < 0.5, '正常な新着ページなので破綻と判定してはいけない');
 });
 
 // ── 結果サマリ ───────────────────────────────────────────────────────────────

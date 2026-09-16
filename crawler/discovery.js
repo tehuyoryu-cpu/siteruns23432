@@ -874,6 +874,28 @@ async function runNewReleaseScan({ onProgress = null } = {}) {
       }
       failCount = 0;
 
+      // バグ修正(安全網の横展開、実害はまだ未確認・予防的対応): newReleaseの
+      // URLはregist_date_start(下限)のみでregist_date_endを持たない
+      // (config.js側の理由: 「今日まで」が上限のため上限指定が元々不要)。
+      // e12b46dで判明した「日付フィルタは深いページで維持できなくなり、
+      // フィルタ無視のフォールバック(カタログ全体を発売日順に並べたもの)を
+      // 返し始める」という同じDLsite側の挙動が、start単独のこのURLでも
+      // 理論上は起こりうる(sinceDateより古い作品が返り始める)。現状の
+      // 実測規模(1年分でも数千件程度)ではこの閾値(実機確認で15万件目付近)に
+      // 遠く及ばず発火しないはずだが、_scanFsrMonthlyと同じ検知パターンを
+      // ほぼ無償で横展開できるため、将来の規模拡大・DLsite側の挙動変化に
+      // 備えて同じ安全網を入れておく(下限のみなので「sinceDateより古い」
+      // 側だけをチェックする)。
+      const parsedReleaseDates = items.map(it => _parseListingDate(it.releaseDate)).filter(Boolean);
+      if (parsedReleaseDates.length >= 5) {
+        const tooOld = parsedReleaseDates.filter(d => d < sinceDate).length;
+        if (tooOld / parsedReleaseDates.length >= 0.5) {
+          log.warn('[discovery] newReleaseScan: 深いページで日付フィルタ破綻を検知、打ち切ります',
+            { site, page, sinceDate, tooOld, sampled: parsedReleaseDates.length });
+          break;
+        }
+      }
+
       // 効率化(重要): このURLは1年分をorder/release_d（新しい順）で走査するため、
       // ページ数が多いと数百ページに及ぶ。以前はturbo実行のたびに毎回1年分を
       // 最初から全ページ再走査しており、既に収集済みの大半のページまで
