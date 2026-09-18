@@ -79,14 +79,29 @@ function daysAgo(n) {
 // _schedule() — 優先度・チェック間隔の決定テーブル
 // ════════════════════════════════════════════════════════════════════════════
 
-test('セール中は他条件に優先してonSaleへ分類される(新着かつ0連続無変化でも)', () => {
+test('セール中(sale_price確定)は他条件に優先してonSaleへ分類される(新着かつ0連続無変化でも)', () => {
   const r = _schedule(
     { release_date: daysAgo(0), dl_count: 0 },
-    { is_on_sale: 1 },
+    { is_on_sale: 1, sale_price: 700 },
     0
   );
   assert.strictEqual(r.priority, config.priority.onSale);
   assert.strictEqual(r.interval, config.checkInterval.onSale);
+});
+
+// バグ修正回帰テスト(構造的対策): is_on_sale=1でもsale_priceが無い場合
+// (本物のポイント還元キャンペーン、または万一のis_on_sale誤判定)は
+// 最優先層(onSale)ではなくpopular相当に留まるべき。2026-09のis_sale
+// 過剰判定インシデントで、due queueの大部分がonSale最優先層を占め、
+// 真に急ぐべき作品の再チェックが希釈された教訓への構造的対策。
+test('is_on_sale=1でもsale_priceが無ければ最優先(onSale)にはせずpopularに留める', () => {
+  const r = _schedule(
+    { release_date: daysAgo(0), dl_count: 0 },
+    { is_on_sale: 1, sale_price: null },
+    0
+  );
+  assert.strictEqual(r.priority, config.priority.popular);
+  assert.strictEqual(r.interval, config.checkInterval.popular);
 });
 
 test('セール中でなくても連続無変化5回以上はcoldへ分類される(新着でも)', () => {

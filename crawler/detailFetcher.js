@@ -1645,7 +1645,24 @@ function _handleCircleSale(makerId, price) {
 
 function _schedule(work, price, noChange) {
   const ci = config.checkInterval, p = config.priority;
-  if (price.is_on_sale)   return { interval: ci.onSale,     priority: p.onSale };
+  if (price.is_on_sale) {
+    // バグ修正(構造的対策、2026-09のis_sale過剰判定インシデントを受けて):
+    // 以前はis_on_sale=1であれば無条件に最優先(onSale, 2時間間隔)にしていた。
+    // これ自体は「本物のセールを取りこぼさない」ために合理的だが、
+    // is_on_sale判定が(is_sale過剰判定バグ等で)万一誤って広く立った場合、
+    // due queueの大部分が最優先層を占めてしまい、真に急ぐべき他の
+        // onSale/endingSoon作品の再チェックが希釈される「優先度飢餓」を
+    // 引き起こしうることが実際に観測された(dueNowの99%超がonSale優先度)。
+    // sale_priceが実際に記録できている(=本物の値引きを確認できた)場合のみ
+    // 最優先を与え、is_on_sale=1でもsale_price=null(本物のポイント還元
+    // キャンペーン、または万一のis_on_sale誤判定)の場合はpopular相当の
+    // 中間的な間隔に留める。これにより、たとえ将来is_on_sale判定が
+    // 再び過剰になっても、最優先層の膨張を price.sale_price という
+    // 別のシグナルで自動的に食い止められる(is_on_saleの値そのものは
+    // 一切変更しないため、正当なポイントキャンペーンの分類を壊すことはない)。
+    if (price.sale_price != null) return { interval: ci.onSale, priority: p.onSale };
+    return { interval: ci.popular, priority: p.popular };
+  }
   if (noChange >= 5)      return { interval: ci.cold,       priority: p.cold };
   const days = _ageDays(work.release_date);
   if (days <  7)          return { interval: ci.newWork,    priority: p.newWork };
