@@ -1,0 +1,52 @@
+[
+  {
+    "ts": "2026-09-18T23:50:46.282Z",
+    "trigger": "startup",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  },
+  {
+    "ts": "2026-09-19T14:32:56.544Z",
+    "trigger": "reactive",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  }
+]
