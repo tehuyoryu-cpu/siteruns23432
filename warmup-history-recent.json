@@ -1,0 +1,152 @@
+[
+  {
+    "ts": "2026-09-18T23:50:46.282Z",
+    "trigger": "startup",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  },
+  {
+    "ts": "2026-09-19T14:32:56.544Z",
+    "trigger": "reactive",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  },
+  {
+    "ts": "2026-09-19T20:58:18.842Z",
+    "trigger": "periodic",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "product-page-fail-load:-331",
+        "regionBlocked": false
+      }
+    }
+  },
+  {
+    "ts": "2026-09-20T02:47:00.028Z",
+    "trigger": "periodic",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  },
+  {
+    "ts": "2026-09-20T08:46:23.999Z",
+    "trigger": "periodic",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  },
+  {
+    "ts": "2026-09-20T14:47:08.256Z",
+    "trigger": "periodic",
+    "allOk": true,
+    "results": {
+      "maniax": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "bl": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      },
+      "girls": {
+        "cookieObtained": true,
+        "clicked": false,
+        "reason": "gate-absent(product)",
+        "regionBlocked": false
+      }
+    }
+  }
+]
